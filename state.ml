@@ -16,13 +16,13 @@ type player =
   }
 
 (* [region] represents a region in Risk, which has fields for
- * its name, the number of troops on it, and the player's id that controls it.
+ * its name, the number of troops on it, and the player that controls it.
  *)
 type region = 
   {
     name: string;
     troops: int;
-    controller: player;
+    controller: player option;
   }
 
 (* [continent] represents a continent in Risk, which has fields for its name,
@@ -49,7 +49,6 @@ type state =
     players: player list;
     turns: int;
     winner: player option;
-    started: boolean;
     map: continent list;
   }
 
@@ -58,28 +57,20 @@ let create_player name =
     id = name;
     cards = [];
     total_troops = 0;
+    controlls = [];
   }
 
 let init_state p = 
   {
-    current_player = p;
-    players = [p];
+    current_player = List.head p;
+    players = p;
     turns = 0;
     winner = None;
     started = false;
-  }
-
-let add_player p s = 
-  {
-    players = p::s.players;
-    turns = s.turns;
-    winner = s.winner;
-    started = s.started;
+    map = [];
   }
 
 let get_turns s = s.turns
-
-let has_started s = s.started
 
 
 
