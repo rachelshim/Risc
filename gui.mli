@@ -14,3 +14,9 @@ val update : state -> unit
 
 (*selects the region that is underneath the coordinates provided*)
 val select : (int * int) -> game_map -> unit
+
+(*requests an action be pushed to the server*)
+val request_action : actions -> unit
+
+(*display error message string to the user*)
+val print_rejection : string -> unit
