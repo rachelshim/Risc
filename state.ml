@@ -1,11 +1,19 @@
 
 (* Variant [card_type] represents the type of card *)
-type card_type = Infantry | Cavalry | Artillery
+type card_type = Infantry | Cavalry | Artillery | Wild
 
 (* [card] represents a card in risk, which is a tuple of territory name 
  * (as a string) and card type
  *)
 type card = string * card_type
+
+type player = 
+  {
+    id: string;
+    cards: card list;
+    total_troops: int;
+    controlls: (string * int) list; (* name of the region, # of troops on it *)
+  }
 
 (* [region] represents a region in Risk, which has fields for
  * its name, the number of troops on it, and the player's id that controls it.
@@ -14,7 +22,7 @@ type region =
   {
     name: string;
     troops: int;
-    controller: string;
+    controller: player;
   }
 
 (* [continent] represents a continent in Risk, which has fields for its name,
@@ -25,16 +33,9 @@ type region =
 type continent = 
   {
     name: string;
-    controller: string option;
+    controller: player option;
     bonus: int;
     regions: region list;
-  }
-
-type player = 
-  {
-    id: string;
-    cards: card list;
-    total_troops: int;
   }
 
 type action = 
