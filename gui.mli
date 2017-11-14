@@ -17,7 +17,7 @@ val update : state -> unit
 val select : (int * int) -> game_map -> unit
 
 (*requests an action be pushed to the server*)
-val request_action : actions -> unit
+val request_action : action -> unit
 
 (*display error message string to the user*)
 val print_rejection : string -> unit

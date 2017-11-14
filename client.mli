@@ -1,11 +1,11 @@
 (*client will contain the polling REPL; poll every 2 seconds and update gui*)
 
 
-(*hang the client until a update is pushed from the server
- * Should probably have a timeout time in case connection is lost
-  Try serversent events possibly?
-*)
-val wait_for_update : unit -> unit
+(*
+ * Two second loop that polls for updates every 2 seconds, updates the gui
+ * and enters play mode when it is the current user's turn
+ *)
+val polling_repl : unit -> unit
 
 (*send an action to the server*)
 val send_action : action -> unit
