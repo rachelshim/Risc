@@ -1,12 +1,11 @@
-type country = String
+open Map
 
 (*Variant representing actions the user can take*)
-(*type action =
-  | APlace_Troops of (country * int) list
-  | AAttack of country * country
+type client_action =
+  | APlace_Troops of (region_id * int) list
+  | AAttack of region_id * region_id
   | AFinish_Attacking
-  | AMove_Troops of (country * country) * int
-*)
+  | AMove_Troops of (region_id * region_id) * int
 
 type state
 
