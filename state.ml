@@ -37,22 +37,31 @@ type player =
     total_troops: int;
   }
 
+type action = 
+  | Reinforce of region * int
+  | Attack of region * region
+  | Fortify of (region * region) * int
+
 type state = 
   {
+    current_player: player;
     players: player list;
     turns: int;
     winner: player option;
     started: boolean;
+    map: continent list;
   }
 
 let create_player name = 
   {
     id = name;
     cards = [];
+    total_troops = 0;
   }
 
 let init_state p = 
   {
+    current_player = p;
     players = [p];
     turns = 0;
     winner = None;

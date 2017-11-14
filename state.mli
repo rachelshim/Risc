@@ -8,6 +8,9 @@ type state
 (* [gamelog] keeps track of every action that has been taken in the game. *)
 type gamelog
 
+(* [action] defines an action a player can do in a turn. *)
+type action
+
 (* [create_player str] creates a new player with id [str]. *)
 val create_player : string -> player
 
@@ -35,4 +38,4 @@ val is_over : state -> boolean
 val has_started : state -> boolean
 
 (* [update a s] updates the state in accordance with the action [a]. *)
-val update : Action.action -> state -> state
+val update : action -> state -> state
