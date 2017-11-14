@@ -5,6 +5,12 @@ type player
 (* [state] represents the current state of the game *)
 type state
 
+(* [gamelog] keeps track of every action that has been taken in the game. *)
+type gamelog
+
+(* [action] defines an action a player can do in a turn. *)
+type action
+
 (* [create_player str] creates a new player with id [str]. *)
 val create_player : string -> player
 
@@ -16,7 +22,7 @@ val init_state : player -> state
  * has not started. If the game has already started, or [p] is already in the 
  * game, [s] is returned.
  *)
- val add_player : player -> state -> state
+val add_player : player -> state -> state
 
 (* [get_turns s] returns the number of turns that have been played in the game
  *)
@@ -30,3 +36,6 @@ val is_over : state -> boolean
  * otherwise (i.e., if a player can still be added to the game.)
  *)
 val has_started : state -> boolean
+
+(* [update a s] updates the state in accordance with the action [a]. *)
+val update : action -> state -> state
