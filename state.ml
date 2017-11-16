@@ -16,13 +16,15 @@ type player =
   }
 
 (* [region] represents a region in Risk, which has fields for
- * its name, the number of troops on it, and the player that controls it.
+ * its name, the number of troops on it, the player that controls it, and
+ * the other names of the other regions connected to it.
  *)
 type region = 
   {
     name: string;
     troops: int;
     controller: player option;
+    routes: string list;
   }
 
 (* [continent] represents a continent in Risk, which has fields for its name,
@@ -50,6 +52,7 @@ type state =
     turns: int;
     winner: player option;
     map: continent list;
+    deck: card list;
   }
 
 let create_player name = 
@@ -67,10 +70,42 @@ let init_state p =
     turns = 0;
     winner = None;
     started = false;
-    map = [];
+    map = 
+      [ (* asia 7, europe 5, NA 5, africa 3, SA/Aust 2 *)
+        {
+          name = "Asia";
+          controller = None;
+          bonus = 7;
+          regions = 
+            [
+              {
+                name = "Afghanistan";
+                troops = 0;
+                controller = None;
+                routes = ["Ukraine"; "Ural"; "China"; "India"; "Middle East"];
+              };
+              {
+                name = "China";
+                troops = 0;
+                controller = None;
+                routes = ["Mongolia"; "Siberia"; "Afghanistan"; "Siam"; "India";
+                          "Ural"];
+              };
+              {
+                name = "India";
+                troops = 0;
+                controller = None;
+                routes = ["Middle East"; "Afghanistan"; "China"; "Siam"];
+              };
+              {
+                name = "";
+              }
+            ];
+        }
+      ];
+    deck = [];
   }
 
-let get_turns s = s.turns
 
 
 
