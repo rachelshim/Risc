@@ -1,13 +1,19 @@
-(*client will contain the polling REPL; poll every 2 seconds and update gui*)
-
+(* Client will contain the polling REPL; poll every 2 seconds and update gui *)
 
 (*
- * Two second loop that polls for updates every 2 seconds, updates the gui
- * and enters play mode when it is the current user's turn
+ * Loop that polls the server every 2 seconds, receiving a JSON object
+  representing the game state. If it is the user's turn, both a) enter
+  play mode by activating GUI buttons allowing the user to take actions and
+  b) check for any updates in the game state and call respective handlers in
+ the GUI.
  *)
 val polling_repl : unit -> unit
 
-(*send an action to the server*)
+(* Take in an action from the GUI and send its information to the server in
+  JSON format. *)
 val send_action : action -> unit
 
-(*val init_connection : *)
+(** Start up the client by prompting for a username and IP to connect to. Once
+    provided, connect to the server using the provided IP and call the
+    main function that runs the GUI. *)
+val init_connection : unit -> unit
