@@ -98,8 +98,74 @@ let init_state p =
                 routes = ["Middle East"; "Afghanistan"; "China"; "Siam"];
               };
               {
-                name = "";
-              }
+                name = "Irkutsk";
+                troops = 0;
+                controller = None;
+                routes = ["Mongolia"; "Yakutsk"; "Siberia"; "Kamchatka"];
+              };
+              {
+                name = "Japan";
+                troops = 0;
+                controller = None;
+                routes = ["Mongolia"; "Kamchatka"];
+              };
+              {
+                name = "Kamchatka";
+                troops = 0;
+                controller = None;
+                routes = ["Alaska"; "Yakutsk"; "Japan"; "Mongolia"; "Irkutsk"];
+              };
+              {
+                name = "Middle East";
+                troops = 0;
+                controller = None;
+                routes = ["India"; "Egypt"; "Ukraine"; "Afghanistan";
+                          "East Africa"; "Southern Europe"];
+              };
+              {
+                name = "Mongolia";
+                troops = 0;
+                controller = None;
+                routes = ["Japan"; "Kamchatka"; "Irkutsk"; "China"; "Siberia"];
+              };
+              {
+                name = "Siam";
+                troops = 0;
+                controller = None;
+                routes = ["India"; "China"; "Indonesia"];
+              };
+              {
+                name = "Siberia";
+                troops = 0;
+                controller = None;
+                routes = ["Ural"; "China"; "Mongolia"; "Irkutsk"; "Yakutsk"];
+              };
+              {
+                name = "Ural";
+                troops = 0;
+                controller = None;
+                routes = ["Ukraine"; "Afghanistan"; "China"; "Siberia"];
+              };
+              {
+                name = "Yakutsk";
+                troops = 0;
+                controller = None;
+                routes = ["Siberia"; "Irkutsk"; "Kamchatka"];
+              };
+            ];
+        };
+        {
+          name = "Asia";
+          controller = None;
+          bonus = 5;
+          regions = 
+            [
+              {
+                name = "Great Britain";
+                troops = 0;
+                controller = None;
+                routes = ["Iceland"; "Western Europe"; "Scandinavia"];
+              };
             ];
         }
       ];
