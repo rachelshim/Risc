@@ -7,35 +7,29 @@ type client_action =
     | AFinish_Attacking
     | AMove_Troops of (region_id * region_id) * int
 
-(*
- * Loop that polls the server every 2 seconds, receiving a JSON object
-  representing the game state. If it is the user's turn, both a) enter
-  play mode by activating GUI buttons allowing the user to take actions and
-  b) check for any updates in the game state and call respective handlers in
- the GUI.
+(* Polls the server and updates the gui based on the returned state data
  *)
-val polling_repl : client_action -> unit
+val refresh : client_action -> unit
 
 (* Take in an action from the GUI and send its information to the server in
   JSON format. *)
 val send_action : client_action -> unit
 
-(* [create_game req] starts up a game; it updates the game state with the
-   information that the game is in progress; it returns a response containing
-   the initial, empty map state. *)
-val create_game : client_action -> unit
+(* [create_game req] starts a game if the one doesn't already exist on the 
+ * server. Currently unused because server starts a game by default*)
+(*val create_game : client_action -> unit*)
 
-(* [join_game req] takes in a JSON request containing a player username and
-   updates the game state with the new user; it returns a response containing
-   the new state of user info. *)
+(* [join_game (url, username)] sends a request to he specified url asking to 
+ * join a game in progress with the provided username.
+ *)
 val join_game : string * string -> unit
 
-(** [move req] takes in a JSON request containing information about a player
-    move: the type of action and the regions and number of troops involved *)
+(** [move move_action] sends a request to the server to move units between
+    territories. Server may reject this action if it is invalid.`*)
 val move : client_action -> unit
 
-(* [quit_game req] updates the game state with the information that the game is
-   no longer in progress; it returns a response containing the winner. *)
+(* [quit_game req] informs the server that the client is quitting and to end
+    the game in progress. *)
 val quit_game : client_action -> unit
 
 (** Start up the client by prompting for a username and IP to connect to. Once
