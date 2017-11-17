@@ -5,3 +5,5 @@ PKG str
 PKG ANSITerminal
 PKG core
 PKG lablgtk2
+PKG async
+PKG lwt

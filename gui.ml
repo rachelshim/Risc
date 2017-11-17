@@ -1,5 +1,7 @@
 open GMain
 open GdkKeysyms
+open Unix
+open Thread
 
 let locale = GtkMain.Main.init ()
 
@@ -7,8 +9,15 @@ let mymutex = Core.Mutex.create ()
 
 let myfunction () =
   Mutex.lock mymutex;
+  Unix.sleep 5;
   prerr_endline "lock/unlock";
   Mutex.unlock mymutex
+
+let rec heartbeat () = 
+  print_endline "beat";
+  Unix.sleep 1;
+  heartbeat ();
+  ()
 
 let main () =
   let window = GWindow.window ~width:320 ~height:240
@@ -36,4 +45,5 @@ let main () =
               window#show ();
               Main.main ()
 
+let thr = Thread.create heartbeat ()
 let () = main ()
