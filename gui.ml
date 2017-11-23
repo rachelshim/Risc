@@ -23,8 +23,9 @@ let myfunction () =
 let main () =
   let window = GWindow.window ~width:1400 ~height:700
                                     ~title:"Risc" () in
-    let vbox = GPack.vbox ~packing:window#add () in
     let a = window#connect#destroy ~callback:Main.quit; in
+    let vbox = GPack.vbox ~packing:window#add () in
+    
 
 
       (* Menu bar *)
