@@ -12,10 +12,9 @@ let log_buffer = GText.buffer ()
 
 let mymutex = Core.Mutex.create ()
 
-let myfunction x =
+let button_handler name (event: GdkEvent.Button.t) =
   Mutex.lock mymutex;
-  (*Unix.sleep 5;*)
-  prerr_endline "lock/unlock";
+  print_endline ("Region: " ^ name);
   Mutex.unlock mymutex;
   true
 
@@ -26,7 +25,7 @@ let add_button (pack:GPack.fixed) x y name extra =
   GtkData.Tooltips.set_tip (GtkData.Tooltips.create ()) button#as_widget 
                           ~text:name ~privat:extra;
   let button_signal = button#event#connect#button_press 
-                          ~callback: (myfunction) in
+                          ~callback: (button_handler name) in
   buttons_list := (name,button)::(!buttons_list)
 
 let main () =
@@ -77,7 +76,7 @@ let main () =
   let file_quit_signal = factory#add_item "Quit" ~key:_Q 
                                 ~callback: Main.quit in
 
-  (*Territory button setup*)
+  (*Region button setup*)
   add_button gameplay_pack 68 60 "Alaska" "Part of North America";
   add_button gameplay_pack 137 110 "Alberta" "Part of North America";
   add_button gameplay_pack 133 245 "Centrial America" "Part of North America";
