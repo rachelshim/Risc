@@ -4,8 +4,9 @@ open Gtk
 open Unix
 open Thread
 
-(*GTK globals setup*)
+(*Globals setup*)
 let locale = GtkMain.Main.init ()
+let buttons_list = ref []
 let map_pixbuf = GdkPixbuf.from_file "resources/map.png"
 let log_buffer = GText.buffer ()
 
@@ -26,7 +27,7 @@ let add_button (pack:GPack.fixed) x y name extra =
                           ~text:name ~privat:extra;
   let button_signal = button#event#connect#button_press 
                           ~callback: (myfunction) in
-  ()
+  buttons_list := (name,button)::(!buttons_list)
 
 let main () =
   let window = GWindow.window ~width:1600 ~height:960
@@ -78,6 +79,14 @@ let main () =
 
   (*Territory button setup*)
   add_button gameplay_pack 68 60 "Alaska" "Part of North America";
+  add_button gameplay_pack 137 110 "Alberta" "Part of North America";
+  add_button gameplay_pack 133 245 "Centrial America" "Part of North America";
+  add_button gameplay_pack 204 183 "Eastern US" "Part of North America";
+  add_button gameplay_pack 427 33 "Greenland" "Part of North America";
+  add_button gameplay_pack 175 65 "Northwest Territory" "Part of North America";
+  add_button gameplay_pack 225 115 "Ontario" "Part of North America";
+  add_button gameplay_pack 302 113 "Quebec" "Part of North America";
+  add_button gameplay_pack 120 170 "Western US" "Part of North America";
 
   (*Final window configuration and display*)
   window#add_accel_group accel_group;
