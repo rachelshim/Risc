@@ -7,6 +7,7 @@ open Thread
 (*GTK globals setup*)
 let locale = GtkMain.Main.init ()
 let map_pixbuf = GdkPixbuf.from_file "resources/map.png"
+let log_buffer = GText.buffer ()
 
 let mymutex = Core.Mutex.create ()
 
@@ -17,11 +18,12 @@ let myfunction x =
   Mutex.unlock mymutex;
   true
 
-let add_button (pack:GPack.fixed) x y tooltip1 tooltip2 = 
+let add_button (pack:GPack.fixed) x y name extra = 
   let button = GButton.button ~label:"0"
   ~packing:(pack#put ~x:x ~y:y) () in
+  button#misc#set_name name;
   GtkData.Tooltips.set_tip (GtkData.Tooltips.create ()) button#as_widget 
-                          ~text:tooltip1 ~privat:tooltip2;
+                          ~text:name ~privat:extra;
   let button_signal = button#event#connect#button_press 
                           ~callback: (myfunction) in
   ()
@@ -58,13 +60,18 @@ let main () =
                   ~packing:(sidebar_pack#pack2 ~resize:false ~shrink:false)
                   () in
 
+  (*Game log setup*)
+  let log_view = GText.view ~buffer:log_buffer ~editable:false ~width:1590 
+                            ~height:300 ~packing:log_pack#add () in
+  log_buffer#set_text "Gameplay Log:\ntest";
+
   (*Menu bar creation*)
   let menubar = GMenu.menu_bar ~packing:(gameplay_pack#add) () in
   let factory = new GMenu.factory menubar in
   let accel_group = factory#accel_group in
   let file_menu = factory#add_submenu "File" in
 
-  (*File menu setup *)
+  (*File menu setup*)
   let factory = new GMenu.factory file_menu ~accel_group in
   let file_quit_signal = factory#add_item "Quit" ~key:_Q 
                                 ~callback: Main.quit in
