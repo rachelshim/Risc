@@ -30,28 +30,28 @@ let add_button (pack:GPack.fixed) x y name extra =
   buttons_list := (name,button)::(!buttons_list)
 
 let main () =
-  let window = GWindow.window ~width:1600 ~height:960
+  let window = GWindow.window ~width:1600 ~height:860
                               ~title:"Risc" ~resizable:false () in
   let window_exit_signal = window#connect#destroy ~callback:Main.quit; in
 
-  let top_pane_pack = GPack.paned ~width:1600 ~height:960 
+  let top_pane_pack = GPack.paned ~width:1600 ~height:860 
                               ~packing:window#add ~border_width:5 
-                              `VERTICAL () in
+                              `HORIZONTAL () in
 
-  let log_pack = GPack.vbox ~width:1590 ~height:300 
-                  ~packing:(top_pane_pack#pack2 ~resize:false ~shrink:false)
-                  () in
-
-  let bottom_pane_pack = GPack.paned ~width:1600 ~height:650 
+  let bottom_pane_pack = GPack.paned ~width:1230 ~height:650 
                   ~packing:(top_pane_pack#pack1 ~resize:false ~shrink:false) 
-                  ~border_width:5 `HORIZONTAL () in
+                  ~border_width:5 `VERTICAL () in
+  
+  let sidebar_pack = GPack.paned ~width:370 ~height:850 ~border_width:5 
+                  ~packing:(top_pane_pack#pack2 ~resize:false ~shrink:false)
+                  `VERTICAL () in
 
-  let gameplay_pack = GPack.fixed ~has_window:true ~width:1227 ~height:650 
+  let gameplay_pack = GPack.fixed ~has_window:true ~width:1227 ~height:640 
                   ~packing:(bottom_pane_pack#pack1 ~resize:false ~shrink:false) () in
 
-  let sidebar_pack = GPack.paned ~width:370 ~height:650 ~border_width:5 
+  let log_pack = GPack.vbox ~width:1230 ~height:210 
                   ~packing:(bottom_pane_pack#pack2 ~resize:false ~shrink:false)
-                  `VERTICAL () in
+                  () in
 
   let info_pack = GPack.vbox ~width:360 ~height:240 
                   ~packing:(sidebar_pack#pack1 ~resize:false ~shrink:false)
