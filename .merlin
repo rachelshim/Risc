@@ -7,4 +7,4 @@ PKG core
 PKG lablgtk2
 PKG async
 PKG lwt
-PKG Gtkg
+PKG Gtk
