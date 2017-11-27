@@ -12,8 +12,11 @@ let log_buffer = GText.buffer ()
 
 let mymutex = Core.Mutex.create ()
 
-let button_handler name (event: GdkEvent.Button.t) =
+let button_handler name (button: GButton.button) (event: GdkEvent.Button.t) =
   Mutex.lock mymutex;
+  let sty = button#misc#style#copy in
+  sty#set_bg[`NORMAL,`NAME "green"];
+  button#misc#set_style sty;
   print_endline ("Region: " ^ name);
   Mutex.unlock mymutex;
   true
@@ -25,7 +28,7 @@ let add_button (pack:GPack.fixed) x y name extra =
   GtkData.Tooltips.set_tip (GtkData.Tooltips.create ()) button#as_widget 
                           ~text:name ~privat:extra;
   let button_signal = button#event#connect#button_press 
-                          ~callback: (button_handler name) in
+                          ~callback: (button_handler name button) in
   buttons_list := (name,button)::(!buttons_list)
 
 let main () =
