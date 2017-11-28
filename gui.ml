@@ -82,7 +82,7 @@ let main () =
   (*Region button setup*)
   add_button gameplay_pack 68 60 "Alaska" "Part of North America";
   add_button gameplay_pack 137 110 "Alberta" "Part of North America";
-  add_button gameplay_pack 133 245 "Centrial America" "Part of North America";
+  add_button gameplay_pack 133 245 "Central America" "Part of North America";
   add_button gameplay_pack 204 183 "Eastern US" "Part of North America";
   add_button gameplay_pack 427 33 "Greenland" "Part of North America";
   add_button gameplay_pack 175 65 "Northwest Territory" "Part of North America";
