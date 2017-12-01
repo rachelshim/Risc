@@ -21,7 +21,8 @@ let write_log (message : string) =
 let button_handler name (button: GButton.button) (event: GdkEvent.Button.t) =
   Mutex.lock mymutex;
   let sty = button#misc#style#copy in
-  sty#set_bg[`NORMAL,`NAME "green"];
+  sty#set_bg[`NORMAL,`NAME "green"; `INSENSITIVE,`NAME "green" ; 
+    `NORMAL,`NAME "green" ; `PRELIGHT,`NAME "green" ; `SELECTED,`NAME "green"];
   button#misc#set_style sty;
   write_log ("Region: " ^ name);
   Mutex.unlock mymutex;
@@ -102,6 +103,22 @@ let main () =
   add_button gameplay_pack 332 405 "Brazil" "South America";
   add_button gameplay_pack 224 390 "Peru" "South America";
   add_button gameplay_pack 256 320 "Venezuela" "South America";
+
+  add_button gameplay_pack 505 115 "Great Britain" "Europe";
+  add_button gameplay_pack 490 83 "Iceland" "Europe";
+  add_button gameplay_pack 590 116 "Northern Europe" "Europe";
+  add_button gameplay_pack 585 58 "Scandinavia" "Europe";
+  add_button gameplay_pack 631 156 "Southern Europe" "Europe";
+  add_button gameplay_pack 678 108 "Ukraine" "Europe";
+  add_button gameplay_pack 553 156 "Western Europe" "Europe";
+
+  add_button gameplay_pack 0 0 "Congo" "Africa";
+  add_button gameplay_pack 0 0 "East Africa" "Africa";
+  add_button gameplay_pack 0 0 "" "Africa";
+  add_button gameplay_pack 0 0 "" "Africa";
+  add_button gameplay_pack 0 0 "" "Africa";
+  add_button gameplay_pack 0 0 "" "Africa";
+  add_button gameplay_pack 0 0 "" "Africa";
 
   (*Final window configuration and display*)
   window#add_accel_group accel_group;
