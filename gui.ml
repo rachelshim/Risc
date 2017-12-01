@@ -12,15 +12,21 @@ let log_buffer = GText.buffer ()
 
 let mymutex = Core.Mutex.create ()
 
+let write_log (message : string) = 
+  let old_text = log_buffer#get_text () in
+  let new_text = (old_text ^ "\n> ") ^ message in
+  log_buffer#set_text new_text;
+  ()
+
 let button_handler name (button: GButton.button) (event: GdkEvent.Button.t) =
   Mutex.lock mymutex;
   let sty = button#misc#style#copy in
   sty#set_bg[`NORMAL,`NAME "green"];
   button#misc#set_style sty;
-  print_endline ("Region: " ^ name);
+  write_log ("Region: " ^ name);
   Mutex.unlock mymutex;
   true
-
+  
 let add_button (pack:GPack.fixed) x y name extra = 
   let button = GButton.button ~label:"0"
   ~packing:(pack#put ~x:x ~y:y) () in
@@ -64,9 +70,11 @@ let main () =
                   () in
 
   (*Game log setup*)
+  let log_window = GBin.scrolled_window ~width:1590 ~height:300 ~border_width:0
+                            ~packing:log_pack#add () in
   let log_view = GText.view ~buffer:log_buffer ~editable:false ~width:1590 
-                            ~height:300 ~packing:log_pack#add () in
-  log_buffer#set_text "Gameplay Log:\ntest";
+                            ~height:300 ~packing:log_window#add () in
+  log_buffer#set_text "Gameplay Log:";
 
   (*Menu bar creation*)
   let menubar = GMenu.menu_bar ~packing:(gameplay_pack#add) () in
@@ -80,15 +88,20 @@ let main () =
                                 ~callback: Main.quit in
 
   (*Region button setup*)
-  add_button gameplay_pack 68 60 "Alaska" "Part of North America";
-  add_button gameplay_pack 137 110 "Alberta" "Part of North America";
-  add_button gameplay_pack 133 245 "Central America" "Part of North America";
-  add_button gameplay_pack 204 183 "Eastern US" "Part of North America";
-  add_button gameplay_pack 427 33 "Greenland" "Part of North America";
-  add_button gameplay_pack 175 65 "Northwest Territory" "Part of North America";
-  add_button gameplay_pack 225 115 "Ontario" "Part of North America";
-  add_button gameplay_pack 302 113 "Quebec" "Part of North America";
-  add_button gameplay_pack 120 170 "Western US" "Part of North America";
+  add_button gameplay_pack 68 60 "Alaska" "North America";
+  add_button gameplay_pack 137 110 "Alberta" "North America";
+  add_button gameplay_pack 133 245 "Central America" "North America";
+  add_button gameplay_pack 204 183 "Eastern US" "North America";
+  add_button gameplay_pack 427 33 "Greenland" "North America";
+  add_button gameplay_pack 175 65 "Northwest Territory" "North America";
+  add_button gameplay_pack 225 115 "Ontario" "North America";
+  add_button gameplay_pack 302 113 "Quebec" "North America";
+  add_button gameplay_pack 120 170 "Western US" "North America";
+
+  add_button gameplay_pack 290 500 "Argentina" "South America";
+  add_button gameplay_pack 332 405 "Brazil" "South America";
+  add_button gameplay_pack 224 390 "Peru" "South America";
+  add_button gameplay_pack 256 320 "Venezuela" "South America";
 
   (*Final window configuration and display*)
   window#add_accel_group accel_group;
