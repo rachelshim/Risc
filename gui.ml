@@ -112,13 +112,30 @@ let main () =
   add_button gameplay_pack 678 108 "Ukraine" "Europe";
   add_button gameplay_pack 553 156 "Western Europe" "Europe";
 
-  add_button gameplay_pack 0 0 "Congo" "Africa";
-  add_button gameplay_pack 0 0 "East Africa" "Africa";
-  add_button gameplay_pack 0 0 "" "Africa";
-  add_button gameplay_pack 0 0 "" "Africa";
-  add_button gameplay_pack 0 0 "" "Africa";
-  add_button gameplay_pack 0 0 "" "Africa";
-  add_button gameplay_pack 0 0 "" "Africa";
+  add_button gameplay_pack 633 354 "Congo" "Africa";
+  add_button gameplay_pack 710 319 "East Africa" "Africa";
+  add_button gameplay_pack 635 235 "Egypt" "Africa";
+  add_button gameplay_pack 754 450 "Madagascar" "Africa";
+  add_button gameplay_pack 545 275 "North Africa" "Africa";
+  add_button gameplay_pack 638 447 "South Africa" "Africa";
+
+  add_button gameplay_pack 793 152 "Afghanistan" "Asia";
+  add_button gameplay_pack 983 216 "China" "Asia";
+  add_button gameplay_pack 863 246 "India" "Asia";
+  add_button gameplay_pack 940 105 "Irkutsk" "Asia";
+  add_button gameplay_pack 1105 187 "Japan" "Asia";
+  add_button gameplay_pack 1065 70 "Kamchatka" "Asia";
+  add_button gameplay_pack 716 202 "Middle East" "Asia";
+  add_button gameplay_pack 957 153 "Mongolia" "Asia";
+  add_button gameplay_pack 970 276 "Siam" "Asia";
+  add_button gameplay_pack 860 61 "Siberia" "Asia";
+  add_button gameplay_pack 784 78 "Ural" "Asia";
+  add_button gameplay_pack 955 56 "Yakutsk" "Asia";
+
+  add_button gameplay_pack 1140 472 "Eastern Australia" "Australia";
+  add_button gameplay_pack 1016 352 "Indonesia" "Australia";
+  add_button gameplay_pack 1140 377 "New Guinea" "Australia";
+  add_button gameplay_pack 1036 473 "Western Australia" "Australia";
 
   (*Final window configuration and display*)
   window#add_accel_group accel_group;
