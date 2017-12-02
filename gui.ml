@@ -6,12 +6,20 @@ open Thread
 
 (*Globals setup*)
 let locale = GtkMain.Main.init ()
+let continent_labels_list = ref []
 let buttons_list = ref []
 let map_pixbuf = GdkPixbuf.from_file "resources/map.png"
 let log_buffer = GText.buffer ()
 let log_window_global = ref (GBin.scrolled_window ())
 
 let mymutex = Core.Mutex.create ()
+
+let set_color wid col_str = 
+  let sty = wid#misc#style#copy in
+  sty#set_bg[`NORMAL,`NAME col_str; `INSENSITIVE,`NAME col_str; 
+    `NORMAL,`NAME col_str; `PRELIGHT,`NAME col_str; `SELECTED,`NAME col_str];
+  wid#misc#set_style sty;
+  ()
 
 let write_log (message : string) = 
   let old_text = log_buffer#get_text () in
@@ -24,23 +32,31 @@ let write_log (message : string) =
 
 let button_handler name (button: GButton.button) (event: GdkEvent.Button.t) =
   Mutex.lock mymutex;
-  let sty = button#misc#style#copy in
-  sty#set_bg[`NORMAL,`NAME "green"; `INSENSITIVE,`NAME "green" ; 
-    `NORMAL,`NAME "green" ; `PRELIGHT,`NAME "green" ; `SELECTED,`NAME "green"];
-  button#misc#set_style sty;
+  set_color button "green";
   write_log ("Region: " ^ name);
   Mutex.unlock mymutex;
   true
   
 let add_button (pack:GPack.fixed) x y name extra = 
   let button = GButton.button ~label:"0"
-  ~packing:(pack#put ~x:x ~y:y) () in
+                              ~packing:(pack#put ~x:x ~y:y) () in
   button#misc#set_name name;
   GtkData.Tooltips.set_tip (GtkData.Tooltips.create ()) button#as_widget 
                           ~text:name ~privat:extra;
   let button_signal = button#event#connect#button_press 
                           ~callback: (button_handler name button) in
-  buttons_list := (name,button)::(!buttons_list)
+  buttons_list := (name,button)::(!buttons_list);
+  ()
+
+let add_label (pack:GPack.fixed) x y width height name = 
+  let label_frame = GBin.frame ~width:width ~height:height 
+                               ~packing:(pack#put ~x:x ~y:y) () in
+  let label = GMisc.label ~text: name 
+                          (*~markup:("<bold>" ^ name ^ "</bold>")*)
+                          ~packing:label_frame#add () in
+  continent_labels_list := (name, label_frame)::(!continent_labels_list);
+  set_color label_frame "red";
+  ()
 
 let main () =
   let window = GWindow.window ~width:1600 ~height:860
@@ -92,6 +108,9 @@ let main () =
   let factory = new GMenu.factory file_menu ~accel_group in
   let file_quit_signal = factory#add_item "Quit" ~key:_Q 
                                 ~callback: Main.quit in
+
+  (*Continent label setup*)
+  add_label gameplay_pack 100 300 110 25 "North America";
 
   (*Region button setup*)
   add_button gameplay_pack 68 60 "Alaska" "North America";
