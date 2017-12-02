@@ -9,6 +9,7 @@ let locale = GtkMain.Main.init ()
 let buttons_list = ref []
 let map_pixbuf = GdkPixbuf.from_file "resources/map.png"
 let log_buffer = GText.buffer ()
+let log_window_global = ref (GBin.scrolled_window ())
 
 let mymutex = Core.Mutex.create ()
 
@@ -16,6 +17,9 @@ let write_log (message : string) =
   let old_text = log_buffer#get_text () in
   let new_text = (old_text ^ "\n> ") ^ message in
   log_buffer#set_text new_text;
+  let current_adj = !log_window_global#vadjustment in
+  current_adj#set_value current_adj#upper;
+  !log_window_global#set_vadjustment current_adj;
   ()
 
 let button_handler name (button: GButton.button) (event: GdkEvent.Button.t) =
@@ -73,6 +77,7 @@ let main () =
   (*Game log setup*)
   let log_window = GBin.scrolled_window ~width:1590 ~height:300 ~border_width:0
                             ~packing:log_pack#add () in
+  log_window_global := log_window;
   let log_view = GText.view ~buffer:log_buffer ~editable:false ~width:1590 
                             ~height:300 ~packing:log_window#add () in
   log_buffer#set_text "Gameplay Log:";
