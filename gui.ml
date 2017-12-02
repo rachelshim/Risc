@@ -13,6 +13,16 @@ let territory_troop_list = ref []
 let map_pixbuf = GdkPixbuf.from_file "resources/map.png"
 let log_buffer = GText.buffer ()
 let log_window_global = ref (GBin.scrolled_window ())
+let player_label_global = ref (GMisc.label ())
+let reinforcement_label_global = ref (GMisc.label ())
+let infantry_label_global = ref (GMisc.label ())
+let calvalry_label_global = ref (GMisc.label ())
+let artillery_label_global = ref (GMisc.label ())
+let wildcard_label_global = ref (GMisc.label ())
+let territories_label_global = ref (GMisc.label ())
+let troops_label_global = ref (GMisc.label ())
+let selection1_label_global = ref (GMisc.label ())
+let selection2_label_global = ref (GMisc.label ())
 let mutex = Core.Mutex.create ()
 
 let set_color wid col_str = 
@@ -115,8 +125,57 @@ let main () =
                   ~packing:actions_frame#add () in
 
   (*Info pack setup*)
-  let player_label = GMisc.label ~text:"Current player: "
+  let player_label = GMisc.label ~text:"Current Player: "
                                  ~packing:info_pack#add () in
+  player_label_global := player_label;
+
+  let reinforcement_label = GMisc.label ~text:"Reinforcements Available: "
+                                 ~packing:info_pack#add () in
+  reinforcement_label_global := reinforcement_label;
+
+  let infantry_label = GMisc.label ~text:"Infantry Cards: "
+                                 ~packing:info_pack#add () in
+  infantry_label_global := infantry_label;
+
+  let calvalry_label = GMisc.label ~text:"Calvalry Cards: "
+                                 ~packing:info_pack#add () in
+  calvalry_label_global := calvalry_label;
+
+  let artillery_label = GMisc.label ~text:"Artillery Cards: "
+                                 ~packing:info_pack#add () in
+  artillery_label_global := artillery_label;
+
+  let wildcard_label = GMisc.label ~text:"Wildcards: "
+                                 ~packing:info_pack#add () in
+  wildcard_label_global := wildcard_label;
+
+  let territories_label = GMisc.label ~text:"Territories Controlled: "
+                                 ~packing:info_pack#add () in
+  territories_label_global := territories_label;
+
+  let troops_label = GMisc.label ~text:"Troops Deployed: "
+                                 ~packing:info_pack#add () in
+  troops_label_global := troops_label;
+
+  (*Action pack setup*)
+  let actions_cbox = GEdit.combo_box_text 
+              ~strings:["Deploy"; "Attack"; "Reinforce"; "Move"; "Expend Cards"]
+              ~width:100 ~height:20 
+              ~packing:actions_pack#add () in
+
+  let confirm_button = GButton.button ~label:"Confirm"
+                                      ~packing:actions_pack#add () in
+
+  let cancel_button = GButton.button ~label:"Cancel"
+                                      ~packing:actions_pack#add () in
+
+  let selection1_label = GMisc.label ~text:"Territory Selection 1: "
+                                     ~packing:actions_pack#add () in         
+  selection1_label_global := selection1_label;
+
+  let selection2_label = GMisc.label ~text:"Territory Selection 2: "
+                                     ~packing:actions_pack#add () in
+  selection2_label_global := selection2_label;
 
   (*Game log setup*)
   let log_window = GBin.scrolled_window ~width:1590 ~height:300 ~border_width:0
