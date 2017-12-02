@@ -4,6 +4,12 @@ open Gtk
 open Unix
 open Thread
 
+(*Selection modes*)
+type selection_mode = 
+  | No_selection
+  | Single
+  | Double
+
 (*Globals setup*)
 let color_options = ["red"; "LightSlateBlue"; "green"; "yellow"; "purple"; "orange"]
 let locale = GtkMain.Main.init ()
@@ -23,6 +29,11 @@ let territories_label_global = ref (GMisc.label ())
 let troops_label_global = ref (GMisc.label ())
 let selection1_label_global = ref (GMisc.label ())
 let selection2_label_global = ref (GMisc.label ())
+
+let current_selection_mode = ref No_selection
+let selection1 = ref None
+let selection2 = ref None
+
 let mutex = Core.Mutex.create ()
 
 let set_color wid col_str = 
@@ -34,6 +45,65 @@ let set_color wid col_str =
 
 let lookup_troop_count name = 
   List.assoc name !territory_troop_list
+
+let lock_territory_buttons () = 
+  let buttons = snd (List.split !buttons_list) in
+  let u_list = List.map (fun b -> b#misc#set_sensitive false) buttons in
+  ()
+
+let clear_selections () = 
+  selection1 := None;
+  selection2 := None;
+  !selection1_label_global#set_text 
+    ("Territory Selection 1: No Selection");
+  !selection2_label_global#set_text 
+    ("Territory Selection 2: No Selection");
+  ()
+
+(*
+ * [make_selection name] sets the global territory selection set based
+ * on the current state of the set and the current global selection mode.
+ * For single selection settings, selection1 and its associated label are set
+ * if no selection already exists. for double selection settings, selection1 
+ * is set first if it is not already set, followed by selection2 if selection1
+ * contains a selection. For No_selection mode, this method has no effect.
+ * If possible, selects the territory specified by [name], and returns true if
+ * successful, false if not.
+ *)
+let make_selection name = 
+  match !current_selection_mode with
+  | No_selection -> false
+  | Single -> begin
+    match !selection1 with
+    | None -> selection1 := Some name;
+            selection2 := None;
+            !selection1_label_global#set_text 
+              ("Territory Selection 1: " ^ name);
+            !selection2_label_global#set_text 
+              ("Territory Selection 2: No Selection");
+            lock_territory_buttons ();
+            true
+    | Some _ -> false
+  end
+  | Double -> begin
+    match !selection1 with
+    | None -> selection1 := Some name;
+              selection2 := None;
+              !selection1_label_global#set_text 
+                ("Territory Selection 1: " ^ name);
+              !selection2_label_global#set_text 
+                ("Territory Selection 2: No Selection");
+              true
+    | Some _ -> begin
+      match !selection2 with
+      | None -> selection2 := Some name;
+                !selection2_label_global#set_text 
+                  ("Territory Selection 2: " ^ name);
+                lock_territory_buttons ();
+                true
+      | Some _ -> false
+    end
+  end
 
 let set_territory_troops name num = 
   let button = List.assoc name !buttons_list in
@@ -56,6 +126,8 @@ let button_handler name (button: GButton.button) _ =
   set_color button "LightSlateBlue";
   set_territory_troops name (lookup_troop_count name |> succ);
   write_log ("Region: " ^ name);
+  current_selection_mode := Double;
+  let sel_result = make_selection name in
   Mutex.unlock mutex;
   ()
   
@@ -66,7 +138,7 @@ let add_territory (pack:GPack.fixed) x y name extra =
   GtkData.Tooltips.set_tip (GtkData.Tooltips.create ()) button#as_widget 
                           ~text:name ~privat:extra;
   let button_signal = button#connect#clicked
-                          ~callback: (button_handler name button) in
+                          ~callback: (button_handler name button) in                          
   buttons_list := (name,button)::(!buttons_list);
   territory_troop_list := (name, 0)::(!territory_troop_list);
   ()
@@ -169,11 +241,11 @@ let main () =
   let cancel_button = GButton.button ~label:"Cancel"
                                       ~packing:actions_pack#add () in
 
-  let selection1_label = GMisc.label ~text:"Territory Selection 1: "
+  let selection1_label = GMisc.label ~text:"Territory Selection 1: No Selection"
                                      ~packing:actions_pack#add () in         
   selection1_label_global := selection1_label;
 
-  let selection2_label = GMisc.label ~text:"Territory Selection 2: "
+  let selection2_label = GMisc.label ~text:"Territory Selection 2: No Selection"
                                      ~packing:actions_pack#add () in
   selection2_label_global := selection2_label;
 
