@@ -110,7 +110,12 @@ let main () =
                                 ~callback: Main.quit in
 
   (*Continent label setup*)
-  add_label gameplay_pack 100 300 110 25 "North America";
+  add_label gameplay_pack 274 204 110 25 "North America";
+  add_label gameplay_pack 138 445 110 25 "South America";
+  add_label gameplay_pack 602 25 60 25 "Europe";
+  add_label gameplay_pack 530 355 60 25 "Africa";
+  add_label gameplay_pack 1056 231 55 25 "Asia";
+  add_label gameplay_pack 990 415 70 25 "Australia";
 
   (*Region button setup*)
   add_button gameplay_pack 68 60 "Alaska" "North America";
