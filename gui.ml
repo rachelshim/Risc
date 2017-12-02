@@ -5,9 +5,11 @@ open Unix
 open Thread
 
 (*Globals setup*)
+let color_options = ["red"; "LightSlateBlue"; "green"; "yellow"; "purple"; "orange"]
 let locale = GtkMain.Main.init ()
 let continent_labels_list = ref []
 let buttons_list = ref []
+let territory_troop_list = ref []
 let map_pixbuf = GdkPixbuf.from_file "resources/map.png"
 let log_buffer = GText.buffer ()
 let log_window_global = ref (GBin.scrolled_window ())
@@ -21,6 +23,16 @@ let set_color wid col_str =
   wid#misc#set_style sty;
   ()
 
+let lookup_troop_count name = 
+  List.assoc name !territory_troop_list
+
+let set_territory_troops name num = 
+  let button = List.assoc name !buttons_list in
+  territory_troop_list := List.remove_assoc name !territory_troop_list;
+  territory_troop_list := (name, num)::!territory_troop_list;
+  button#set_label (string_of_int num);
+  ()
+
 let write_log (message : string) = 
   let old_text = log_buffer#get_text () in
   let new_text = (old_text ^ "\n> ") ^ message in
@@ -30,22 +42,24 @@ let write_log (message : string) =
   !log_window_global#set_vadjustment current_adj;
   ()
 
-let button_handler name (button: GButton.button) (event: GdkEvent.Button.t) =
+let button_handler name (button: GButton.button) _ =
   Mutex.lock mymutex;
-  set_color button "green";
+  set_color button "LightSlateBlue";
+  set_territory_troops name (lookup_troop_count name |> succ);
   write_log ("Region: " ^ name);
   Mutex.unlock mymutex;
-  true
+  ()
   
-let add_button (pack:GPack.fixed) x y name extra = 
+let add_territory (pack:GPack.fixed) x y name extra = 
   let button = GButton.button ~label:"0"
                               ~packing:(pack#put ~x:x ~y:y) () in
   button#misc#set_name name;
   GtkData.Tooltips.set_tip (GtkData.Tooltips.create ()) button#as_widget 
                           ~text:name ~privat:extra;
-  let button_signal = button#event#connect#button_press 
+  let button_signal = button#connect#clicked
                           ~callback: (button_handler name button) in
   buttons_list := (name,button)::(!buttons_list);
+  territory_troop_list := (name, 0)::(!territory_troop_list);
   ()
 
 let add_label (pack:GPack.fixed) x y width height name = 
@@ -118,53 +132,53 @@ let main () =
   add_label gameplay_pack 990 415 70 25 "Australia";
 
   (*Region button setup*)
-  add_button gameplay_pack 68 60 "Alaska" "North America";
-  add_button gameplay_pack 137 110 "Alberta" "North America";
-  add_button gameplay_pack 133 245 "Central America" "North America";
-  add_button gameplay_pack 204 183 "Eastern US" "North America";
-  add_button gameplay_pack 427 33 "Greenland" "North America";
-  add_button gameplay_pack 175 65 "Northwest Territory" "North America";
-  add_button gameplay_pack 225 115 "Ontario" "North America";
-  add_button gameplay_pack 302 113 "Quebec" "North America";
-  add_button gameplay_pack 120 170 "Western US" "North America";
+  add_territory gameplay_pack 68 60 "Alaska" "North America";
+  add_territory gameplay_pack 137 110 "Alberta" "North America";
+  add_territory gameplay_pack 133 245 "Central America" "North America";
+  add_territory gameplay_pack 204 183 "Eastern US" "North America";
+  add_territory gameplay_pack 427 33 "Greenland" "North America";
+  add_territory gameplay_pack 175 65 "Northwest Territory" "North America";
+  add_territory gameplay_pack 225 115 "Ontario" "North America";
+  add_territory gameplay_pack 302 113 "Quebec" "North America";
+  add_territory gameplay_pack 120 170 "Western US" "North America";
 
-  add_button gameplay_pack 290 500 "Argentina" "South America";
-  add_button gameplay_pack 332 405 "Brazil" "South America";
-  add_button gameplay_pack 224 390 "Peru" "South America";
-  add_button gameplay_pack 256 320 "Venezuela" "South America";
+  add_territory gameplay_pack 290 500 "Argentina" "South America";
+  add_territory gameplay_pack 332 405 "Brazil" "South America";
+  add_territory gameplay_pack 224 390 "Peru" "South America";
+  add_territory gameplay_pack 256 320 "Venezuela" "South America";
 
-  add_button gameplay_pack 505 115 "Great Britain" "Europe";
-  add_button gameplay_pack 490 83 "Iceland" "Europe";
-  add_button gameplay_pack 590 116 "Northern Europe" "Europe";
-  add_button gameplay_pack 585 58 "Scandinavia" "Europe";
-  add_button gameplay_pack 631 156 "Southern Europe" "Europe";
-  add_button gameplay_pack 678 108 "Ukraine" "Europe";
-  add_button gameplay_pack 553 156 "Western Europe" "Europe";
+  add_territory gameplay_pack 505 115 "Great Britain" "Europe";
+  add_territory gameplay_pack 490 83 "Iceland" "Europe";
+  add_territory gameplay_pack 590 116 "Northern Europe" "Europe";
+  add_territory gameplay_pack 585 58 "Scandinavia" "Europe";
+  add_territory gameplay_pack 631 156 "Southern Europe" "Europe";
+  add_territory gameplay_pack 678 108 "Ukraine" "Europe";
+  add_territory gameplay_pack 553 156 "Western Europe" "Europe";
 
-  add_button gameplay_pack 633 354 "Congo" "Africa";
-  add_button gameplay_pack 710 319 "East Africa" "Africa";
-  add_button gameplay_pack 635 235 "Egypt" "Africa";
-  add_button gameplay_pack 754 450 "Madagascar" "Africa";
-  add_button gameplay_pack 545 275 "North Africa" "Africa";
-  add_button gameplay_pack 638 447 "South Africa" "Africa";
+  add_territory gameplay_pack 633 354 "Congo" "Africa";
+  add_territory gameplay_pack 710 319 "East Africa" "Africa";
+  add_territory gameplay_pack 635 235 "Egypt" "Africa";
+  add_territory gameplay_pack 754 450 "Madagascar" "Africa";
+  add_territory gameplay_pack 545 275 "North Africa" "Africa";
+  add_territory gameplay_pack 638 447 "South Africa" "Africa";
 
-  add_button gameplay_pack 793 152 "Afghanistan" "Asia";
-  add_button gameplay_pack 983 216 "China" "Asia";
-  add_button gameplay_pack 863 246 "India" "Asia";
-  add_button gameplay_pack 940 105 "Irkutsk" "Asia";
-  add_button gameplay_pack 1105 187 "Japan" "Asia";
-  add_button gameplay_pack 1065 70 "Kamchatka" "Asia";
-  add_button gameplay_pack 716 202 "Middle East" "Asia";
-  add_button gameplay_pack 957 153 "Mongolia" "Asia";
-  add_button gameplay_pack 970 276 "Siam" "Asia";
-  add_button gameplay_pack 860 61 "Siberia" "Asia";
-  add_button gameplay_pack 784 78 "Ural" "Asia";
-  add_button gameplay_pack 955 56 "Yakutsk" "Asia";
+  add_territory gameplay_pack 793 152 "Afghanistan" "Asia";
+  add_territory gameplay_pack 983 216 "China" "Asia";
+  add_territory gameplay_pack 863 246 "India" "Asia";
+  add_territory gameplay_pack 940 105 "Irkutsk" "Asia";
+  add_territory gameplay_pack 1105 187 "Japan" "Asia";
+  add_territory gameplay_pack 1065 70 "Kamchatka" "Asia";
+  add_territory gameplay_pack 716 202 "Middle East" "Asia";
+  add_territory gameplay_pack 957 153 "Mongolia" "Asia";
+  add_territory gameplay_pack 970 276 "Siam" "Asia";
+  add_territory gameplay_pack 860 61 "Siberia" "Asia";
+  add_territory gameplay_pack 784 78 "Ural" "Asia";
+  add_territory gameplay_pack 955 56 "Yakutsk" "Asia";
 
-  add_button gameplay_pack 1140 472 "Eastern Australia" "Australia";
-  add_button gameplay_pack 1016 352 "Indonesia" "Australia";
-  add_button gameplay_pack 1140 377 "New Guinea" "Australia";
-  add_button gameplay_pack 1036 473 "Western Australia" "Australia";
+  add_territory gameplay_pack 1140 472 "Eastern Australia" "Australia";
+  add_territory gameplay_pack 1016 352 "Indonesia" "Australia";
+  add_territory gameplay_pack 1140 377 "New Guinea" "Australia";
+  add_territory gameplay_pack 1036 473 "Western Australia" "Australia";
 
   (*Final window configuration and display*)
   window#add_accel_group accel_group;
