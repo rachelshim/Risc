@@ -46,9 +46,9 @@ let set_color wid col_str =
 let lookup_troop_count name = 
   List.assoc name !territory_troop_list
 
-let lock_territory_buttons () = 
+let set_territory_buttons_sensitivity new_sens = 
   let buttons = snd (List.split !buttons_list) in
-  let u_list = List.map (fun b -> b#misc#set_sensitive false) buttons in
+  let u_list = List.map (fun b -> b#misc#set_sensitive new_sens) buttons in
   ()
 
 let clear_selections () = 
@@ -81,7 +81,7 @@ let make_selection name =
               ("Territory Selection 1: " ^ name);
             !selection2_label_global#set_text 
               ("Territory Selection 2: No Selection");
-            lock_territory_buttons ();
+              set_territory_buttons_sensitivity false;
             true
     | Some _ -> false
   end
@@ -99,7 +99,7 @@ let make_selection name =
       | None -> selection2 := Some name;
                 !selection2_label_global#set_text 
                   ("Territory Selection 2: " ^ name);
-                lock_territory_buttons ();
+                  set_territory_buttons_sensitivity false;
                 true
       | Some _ -> false
     end
@@ -121,7 +121,7 @@ let write_log (message : string) =
   !log_window_global#set_vadjustment current_adj;
   ()
 
-let button_handler name (button: GButton.button) _ =
+let territory_button_handler name (button: GButton.button) () =
   Mutex.lock mutex;
   set_color button "LightSlateBlue";
   set_territory_troops name (lookup_troop_count name |> succ);
@@ -129,6 +129,11 @@ let button_handler name (button: GButton.button) _ =
   current_selection_mode := Double;
   let sel_result = make_selection name in
   Mutex.unlock mutex;
+  ()
+
+let cancel_button_handler () = 
+  clear_selections ();
+  set_territory_buttons_sensitivity true;
   ()
   
 let add_territory (pack:GPack.fixed) x y name extra = 
@@ -138,7 +143,7 @@ let add_territory (pack:GPack.fixed) x y name extra =
   GtkData.Tooltips.set_tip (GtkData.Tooltips.create ()) button#as_widget 
                           ~text:name ~privat:extra;
   let button_signal = button#connect#clicked
-                          ~callback: (button_handler name button) in                          
+                          ~callback: (territory_button_handler name button) in                          
   buttons_list := (name,button)::(!buttons_list);
   territory_troop_list := (name, 0)::(!territory_troop_list);
   ()
@@ -240,6 +245,8 @@ let main () =
 
   let cancel_button = GButton.button ~label:"Cancel"
                                       ~packing:actions_pack#add () in
+  let cancel_button_signal = 
+    cancel_button#connect#clicked cancel_button_handler in
 
   let selection1_label = GMisc.label ~text:"Territory Selection 1: No Selection"
                                      ~packing:actions_pack#add () in         
