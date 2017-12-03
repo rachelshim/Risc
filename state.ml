@@ -51,7 +51,6 @@ type curr_move =
 
 type state =
   {
-    current_player: player;
     players: player list;
     turns: int;
     continents: (string * string option) list;
@@ -107,7 +106,21 @@ let init_regions =
    ("South Africa", ["Congo"; "East Africa"; "Madagascar"]);
    ("Madagascar", ["South Africa"; "East Africa"]);
    ("Middle East", ["East Africa"; "Egypt"; "Ukraine"; "Afghanistan"; "India"]);
-   ("Afghanistan", ["Middle East"; "Ukraine"; "Ural"; "China"; "India"])
+   ("Afghanistan", ["Middle East"; "Ukraine"; "Ural"; "China"; "India"]);
+   ("Ural", ["Siberia"; "China"; "Afghanistan"; "Ukraine"]);
+   ("Siberia", ["Yakutsk"; "Irkutsk"; "Mongolia"; "China"; "Ural"]);
+   ("India", ["Middle East"; "Afghanistan"; "China"; "Siam"]);
+   ("Siam", ["India"; "China"; "Indonesia"]);
+   ("China", ["Siam"; "India"; "Afghanistan"; "Ural"; "Siberia"; "Mongolia"]);
+   ("Mongolia", ["China"; "Siberia"; "Irkutsk"; "Kamchatka"; "Japan"]);
+   ("Japan", ["Mongolia"; "Kamchatka"]);
+   ("Kamchatka", ["Mongolia"; "Japan"; "Alaska"; "Irkutsk"; "Yakutsk"]);
+   ("Irkutsk", ["Ural"; "Yakutsk"; "Kamchatka"; "Mongolia"]);
+   ("Yakutsk", ["Ural"; "Irkutsk"; "Kamchatka"]);
+   ("Indonesia", ["Siam"; "New Guinea"; "Western Australia"]);
+   ("New Guinea", ["Indonesia"; "Eastern Australia"; "Western Australia"]);
+   ("Western Australia", ["Indonesia"; "New Guinea"; "Eastern Australia"]);
+   ("Eastern Australia", ["Indonesia"; "New Guinea"; "Western Australia"])
   ]
 
 let rec first_n lst n =
@@ -128,12 +141,11 @@ let init_state n =
            cards = [];
            total_troops = 0;
            controls = [];
-           continents = [("Asia", 0); ("Africa", 0); ("North America", 0); 
+           continents = [("Asia", 0); ("Africa", 0); ("North America", 0);
                          ("South America", 0); ("Europe", 0); ("Australia", 0)]
          })
       colors in
   {
-    current_player = List.hd players;
     players = players;
     turns = 0;
     continents = [];
@@ -159,15 +171,17 @@ let increment_bonus n =
   else if n = 12 then 15
   else n + 5
 
+
 let update st = function
-  | AInitial_Reinforce r -> let p = st.current_player in
-                              (try
-                                let n = List.assoc r p.controls in
-                                let c = List.remove_assoc r p.controls in
-                                let p' = { p with controls = (r, n + 1)::c } in
-                                (* make sure to also update players list *)
-                                { st with current_player = p';
-                                          log = "Successfuly reinforced " ^ r }
-                              with
-                              | Not_found -> st)
+  | ADeployment r -> 
+    let p = List.hd st.players in
+      (try
+        let n = List.assoc r p.controls in
+        let new_controls = List.remove_assoc r p.controls in
+        let p' = { p with controls = (r, n + 1)::new_controls } in
+        let p_list = (fun (h::t) -> t @ [p']) st.players in
+        { st with players = p_list;
+                  log = "Successfuly reinforced " ^ r }
+      with
+      | Not_found -> { st with log = "Invalid move bitch"})
   | _ -> failwith "TODO"
