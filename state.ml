@@ -51,7 +51,6 @@ type curr_move =
 
 type state =
   {
-    current_player: player;
     players: player list;
     turns: int;
     continents: (string * string option) list;
@@ -133,7 +132,6 @@ let init_state n =
          })
       colors in
   {
-    current_player = List.hd players;
     players = players;
     turns = 0;
     continents = [];
@@ -159,15 +157,17 @@ let increment_bonus n =
   else if n = 12 then 15
   else n + 5
 
+
 let update st = function
-  | AInitial_Reinforce r -> let p = st.current_player in
-                              (try
-                                let n = List.assoc r p.controls in
-                                let c = List.remove_assoc r p.controls in
-                                let p' = { p with controls = (r, n + 1)::c } in
-                                (* make sure to also update players list *)
-                                { st with current_player = p';
-                                          log = "Successfuly reinforced " ^ r }
-                              with
-                              | Not_found -> st)
+  | ADeployment r -> 
+    let p = List.hd st.players in
+      (try
+        let n = List.assoc r p.controls in
+        let new_controls = List.remove_assoc r p.controls in
+        let p' = { p with controls = (r, n + 1)::new_controls } in
+        let p_list = (fun (h::t) -> t @ [p']) st.players in
+        { st with players = p_list;
+                  log = "Successfuly reinforced " ^ r }
+      with
+      | Not_found -> { st with log = "Invalid move bitch"})
   | _ -> failwith "TODO"
