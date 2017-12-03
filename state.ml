@@ -31,20 +31,20 @@ type region =
   }
 
 type action =
-  | ADeployment of string (*places one troop on region s*)
+  | ADeployment of string (* places one troop on region s *)
   | APlay_Cards of (card * card * card) (* the cards to trade in *)
-  | AMovement of (string * int) list (* reinforce region s with n troops *)
+  | AReinforcement of (string * int) list (* reinforce region s with n troops *)
   | AAttack of string * string (* attack from region s1 to region s2 *)
-  | AReinforcement of (string * string) * int
+  | AMovement of (string * string) * int
       (* move n troops from region s1 to region s2 *)
   | ANext_Turn
 
 type curr_move =
   | CNew_Game
   | CDeployment
-  | CMovement of int (* reinforce with n total troops *)
+  | CReinforcement of int (* reinforce with n total troops *)
   | CAttack
-  | CReinforcement
+  | CMovement
   | CRecieve_Card of card
   | CNext_Turn
   | CGame_Won of string (* player s won the game *)
@@ -106,7 +106,21 @@ let init_regions =
    ("South Africa", ["Congo"; "East Africa"; "Madagascar"]);
    ("Madagascar", ["South Africa"; "East Africa"]);
    ("Middle East", ["East Africa"; "Egypt"; "Ukraine"; "Afghanistan"; "India"]);
-   ("Afghanistan", ["Middle East"; "Ukraine"; "Ural"; "China"; "India"])
+   ("Afghanistan", ["Middle East"; "Ukraine"; "Ural"; "China"; "India"]);
+   ("Ural", ["Siberia"; "China"; "Afghanistan"; "Ukraine"]);
+   ("Siberia", ["Yakutsk"; "Irkutsk"; "Mongolia"; "China"; "Ural"]);
+   ("India", ["Middle East"; "Afghanistan"; "China"; "Siam"]);
+   ("Siam", ["India"; "China"; "Indonesia"]);
+   ("China", ["Siam"; "India"; "Afghanistan"; "Ural"; "Siberia"; "Mongolia"]);
+   ("Mongolia", ["China"; "Siberia"; "Irkutsk"; "Kamchatka"; "Japan"]);
+   ("Japan", ["Mongolia"; "Kamchatka"]);
+   ("Kamchatka", ["Mongolia"; "Japan"; "Alaska"; "Irkutsk"; "Yakutsk"]);
+   ("Irkutsk", ["Ural"; "Yakutsk"; "Kamchatka"; "Mongolia"]);
+   ("Yakutsk", ["Ural"; "Irkutsk"; "Kamchatka"]);
+   ("Indonesia", ["Siam"; "New Guinea"; "Western Australia"]);
+   ("New Guinea", ["Indonesia"; "Eastern Australia"; "Western Australia"]);
+   ("Western Australia", ["Indonesia"; "New Guinea"; "Eastern Australia"]);
+   ("Eastern Australia", ["Indonesia"; "New Guinea"; "Western Australia"])
   ]
 
 let rec first_n lst n =
@@ -127,7 +141,7 @@ let init_state n =
            cards = [];
            total_troops = 0;
            controls = [];
-           continents = [("Asia", 0); ("Africa", 0); ("North America", 0); 
+           continents = [("Asia", 0); ("Africa", 0); ("North America", 0);
                          ("South America", 0); ("Europe", 0); ("Australia", 0)]
          })
       colors in
@@ -159,7 +173,7 @@ let increment_bonus n =
 
 
 let update st = function
-  | ADeployment r -> 
+  | ADeployment r ->
     let p = List.hd st.players in
       (try
         let n = List.assoc r p.controls in

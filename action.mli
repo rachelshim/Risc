@@ -3,6 +3,8 @@ type action =
 | Reinforce of string * int
 | Move of (string * string) * int
 | Attack of string * string
-| TradeSame
+| TradeSameInf
+| TradeSameCav
+| TradeSameArt
 | TradeDiff
 | EndTurn
