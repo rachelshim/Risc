@@ -5,6 +5,17 @@
 
 ##############################################################################*)
 
+(**
+ * List of continents. Structured as (String name, (int num territories in
+ * continent, int troops given for continent control))
+ *)
+let continents =
+  [("North America", (9, 5));
+   ("South America", (4, 2));
+   ("Europe", (7, 5));
+   ("Africa", (6, 3));
+   ("Asia", (12, 7));
+   ("Australia", (4, 2))]
 
 (* Variant [card] represents the type of card *)
 type card = Infantry | Cavalry | Artillery | Wild
@@ -15,7 +26,8 @@ type player =
     cards: card list;
     total_troops: int;
     controls: (string * int) list; (* name of the region, # of troops on it *)
-    continents: (string * int) list (*regions owned per continent*)
+    continents: (string * int) list; (* regions owned per continent *)
+    controls_cont: string list;
   }
 
 (* [region] represents a region in Risk, which has fields for
@@ -31,30 +43,31 @@ type region =
   }
 
 type action =
-  | ADeployment of string (*places one troop on region s*)
-  | APlay_Cards of card list (*play 3 cards in list*)
-  | AMovement of (string * int) list (*reinforce region s with n troops*)
-  | AAttack of string * string (*attack from region s1 to region s2*)
-  | AReinforcement of (string * string) * int
-      (*move n troops from region s1 to region s2*)
+  | ADeployment of string (* places one troop on region s *)
+  | APlay_Cards of (card * card * card) (* the cards to trade in *)
+  | AWait_Reinforcement
+  | AReinforcement of string * int (* reinforce region s with n troops *)
+  | AAttack of string * string (* attack from region s1 to region s2 *)
+  | AMovement of (string * string) * int
+      (* move n troops from region s1 to region s2 *)
   | ANext_Turn
 
 type curr_move =
-  | CNew_Game
   | CDeployment
-  | CMovement of int (*reinforce with n total troops*)
+  | CReinforcement of int (* reinforce with n total troops *)
   | CAttack
-  | CReinforcement
+  | CMovement
   | CRecieve_Card of card
   | CNext_Turn
-  | CGame_Won of string (*player s won the game*)
+  | CGame_Won of string (* player s won the game *)
 
 type state =
   {
+    current_move: curr_move;
     players: player list;
     turns: int;
     continents: (string * string option) list;
-        (*continent s is controlled by player s_opt*)
+        (* continent s is controlled by player s_opt *)
     bonus_troops: int;
     log: string;
   }
@@ -68,15 +81,6 @@ type state =
 
 ##############################################################################*)
 
-
-
-(**
- * List of continents. Structured as (String name, (int num territories in
- * continent, int troops given for continent control))
- *)
-let continents =
-  [("North America", (9, 5));("South America", (4, 2)); ("Europe", (7, 5));
-   ("Africa", (6, 3)); ("Asia", (12, 7)); ("Australia", (4, 2))]
 
 let init_regions =
   [("Alaska", ["Northwest Territory"; "Alberta"; "Kamchatka"]);
@@ -142,10 +146,12 @@ let init_state n =
            total_troops = 0;
            controls = [];
            continents = [("Asia", 0); ("Africa", 0); ("North America", 0);
-                         ("South America", 0); ("Europe", 0); ("Australia", 0)]
+                         ("South America", 0); ("Europe", 0); ("Australia", 0)];
+           controls_cont = [];
          })
       colors in
   {
+    current_move = CDeployment;
     players = players;
     turns = 0;
     continents = [];
@@ -172,16 +178,68 @@ let increment_bonus n =
   else n + 5
 
 
+let prepend_player p = function
+  | [] -> [p]
+  | h::t -> p::t
+
+let rec remove_cards c l =
+  match l with
+  | [] -> l
+  | h::t -> if h = c then t
+            else remove_cards c t
+
+
 let update st = function
-  | ADeployment r -> 
-    let p = List.hd st.players in
-      (try
-        let n = List.assoc r p.controls in
-        let new_controls = List.remove_assoc r p.controls in
-        let p' = { p with controls = (r, n + 1)::new_controls } in
-        let p_list = (fun (h::t) -> t @ [p']) st.players in
-        { st with players = p_list;
-                  log = "Successfuly reinforced " ^ r }
-      with
-      | Not_found -> { st with log = "Invalid move bitch"})
+  | ADeployment r ->
+    if st.current_move = CDeployment then
+      let p = List.hd st.players in
+        (try
+          let n = List.assoc r p.controls in
+          let new_controls = List.remove_assoc r p.controls in
+          let p' = { p with controls = (r, n + 1)::new_controls } in
+          let p_list = prepend_player p' st.players in
+          { st with players = p_list;
+                    log = "Successfuly reinforced " ^ r }
+        with
+        | Not_found -> { st with log = "Invalid move bitch" })
+    else { st with log = "Invalid move" } (* make more descriptive *)
+  | APlay_Cards (c1, c2, c3) -> 
+    (match st.current_move with
+    | CReinforcement n -> 
+      let p = List.hd st.players in
+    (* pretend there's some code to make sure l is a subset of head player's cards *)
+    (* also force players with 5+ cards to trade in their cards *)
+      if (c1 = c2 && c2 = c3) || (c1 <> c2 && c2 <> c3 && c1 <> c3) then
+        let bonus_n = st.bonus_troops + n in (* n should be 0 probably *)
+        let new_cards = remove_cards c1 p.cards
+                        |> remove_cards c2 |> remove_cards c3 in
+        let p' = { p with cards = new_cards } in 
+        let p_list = prepend_player p' st.players in
+        { st with current_move = CReinforcement bonus_n;
+                  players = p_list;
+                  bonus_troops = increment_bonus bonus_n; 
+                  log = "Successfully traded in cards for " ^ 
+                        (string_of_int bonus_n) ^ " extra troops"; }
+      else
+        { st with log = "Invalid card trade in" }
+    | _ -> { st with log = "Invalid move" })
+  | AWait_Reinforcement -> 
+    (match st.current_move with 
+    | CReinforcement n -> 
+      let p = List.hd st.players in
+      let n_controls = (List.length p.controls) / 3 in
+      let rec n_continents acc = function
+        | [] -> acc
+        | h::t -> n_continents (acc + (snd (List.assoc h continents))) t in
+      let troops = n_continents 0 p.controls_cont + n_controls + n in
+      { st with current_move = CReinforcement troops; 
+                log = "You have " ^ (string_of_int troops) ^ " to deploy."; }
+    | _ -> { st with log = "Invalid move" })
+  | AReinforcement (s, i) -> 
+    (match st.current_move with
+    | CReinforcement n -> 
+      let p = List.hd st.players in
+      failwith "TODO"
+      (* calculate how many troops p will get with continents, etc. *)
+    | _ -> { st with log = "Invalid move"; })
   | _ -> failwith "TODO"
