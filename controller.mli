@@ -7,7 +7,7 @@ open Action
 val update_gui : action -> unit
 
 (* Take in an action from the GUI and a state and return an updated state. *)
-val update : action -> state -> state
+val controller_update : action -> state -> state
 
 (* [init_game i] returns a new game state with the specified number of players.
  *)

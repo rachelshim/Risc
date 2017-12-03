@@ -1,4 +1,4 @@
-
+open Action
 (* ############################################################################
 
   DEFINING TYPES
@@ -16,9 +16,6 @@ let continents =
    ("Africa", (6, 3));
    ("Asia", (12, 7));
    ("Australia", (4, 2))]
-
-(** Variant [card] represents the type of card *)
-type card = Infantry | Cavalry | Artillery | Wild
 
 (** [region] represents a region in Risk. *)
 type region =
@@ -58,6 +55,8 @@ type curr_move =
   | CNext_Turn
   | CGame_Won of string (* player s won the game *)
 
+(** Represents the current game state. The head of the [players] list is the
+    current player whose turn it is. *)
 type state =
   {
     current_move: curr_move;
@@ -369,7 +368,6 @@ let rec remove_cards c l =
   | h::t -> if h = c then t
             else remove_cards c t
 
-
 let update st = function
   | ADeployment r ->
     if st.current_move = CDeployment then
@@ -428,7 +426,7 @@ let update st = function
           let p_list = prepend_player p' st.players in
           { st with current_move = CReinforcement (n - i);
                     players = p_list;
-                    log = "Successfully reinforced " ^ r ^ " with " ^ 
+                    log = "Successfully reinforced " ^ r ^ " with " ^
                           (string_of_int i) ^ " new troops." }
         with
         | Not_found -> { st with log = "You don't control that territory." })
