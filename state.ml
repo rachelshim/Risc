@@ -173,24 +173,47 @@ let increment_bonus n =
   else n + 5
 
 
+let prepend_player p = function
+  | [] -> [p]
+  | h::t -> p::t
+
+let rec remove_cards c l =
+  match l with
+  | [] -> l
+  | h::t -> if h = c then t
+            else remove_cards c t
+
+
 let update st = function
   | ADeployment r ->
-    let p = List.hd st.players in
-      (try
-        let n = List.assoc r p.controls in
-        let new_controls = List.remove_assoc r p.controls in
-        let p' = { p with controls = (r, n + 1)::new_controls } in
-        let p_list = (fun (h::t) -> p'::t) st.players in
-        { st with players = p_list;
-                  log = "Successfuly reinforced " ^ r }
-      with
-      | Not_found -> { st with log = "Invalid move bitch" })
+    if st.current_move = CDeployment then
+      let p = List.hd st.players in
+        (try
+          let n = List.assoc r p.controls in
+          let new_controls = List.remove_assoc r p.controls in
+          let p' = { p with controls = (r, n + 1)::new_controls } in
+          let p_list = prepend_player p' st.players in
+          { st with players = p_list;
+                    log = "Successfuly reinforced " ^ r }
+        with
+        | Not_found -> { st with log = "Invalid move bitch" })
+    else { st with log = "Invalid move" } (* make more descriptive *)
   | APlay_Cards (c1, c2, c3) -> 
+    (match st.current_move with
+    | CReinforcement n -> 
+      let p = List.hd st.players in
     (* pretend there's some code to make sure l is a subset of head player's cards *)
-    if c1 = c2 && c2 = c3 then
-      failwith "TODO"
-    else if c1 <> c2 && c2 <> c3 && c1 <> c3 then
-      failwith "TODO"
-    else
-      { st with log = "Invalid card trade in" }
+    (* also force players with 5+ cards to trade in their cards *)
+      if (c1 = c2 && c2 = c3) || (c1 <> c2 && c2 <> c3 && c1 <> c3) then
+        let bonus_n = st.bonus_troops + n in (* n should be 0 probably *)
+        let new_cards = remove_cards c1 p.cards
+                        |> remove_cards c2 |> remove_cards c3 in
+        let p' = { p with cards = new_cards } in 
+        let p_list = prepend_player p' st.players in
+        { st with current_move = CReinforcement bonus_n;
+                  players = p_list;
+                  bonus_troops = increment_bonus bonus_n; }
+      else
+        { st with log = "Invalid card trade in" }
+    | _ -> { st with log = "Invalid move" })
   | _ -> failwith "TODO"
