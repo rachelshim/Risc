@@ -75,7 +75,7 @@ let update_current_player player =
 let update_available_reinforcements num = 
   failwith "todo"
 
-let update_cards cards_data = 
+let update_cards (inf, cav, art, wild) = 
   failwith "todo"
 
 let update_territories_count count = 
