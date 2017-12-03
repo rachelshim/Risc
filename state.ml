@@ -33,7 +33,7 @@ type region =
 type action =
   | AInitial_Reinforce of string (*places one troop on region s*)
   | APlay_Cards of card list (*play 3 cards in list*)
-  | AReinforce of (string * int) list (*reinforce region s with n troops*)
+  | AMovement of (string * int) list (*reinforce region s with n troops*)
   | AAttack of string * string (*attack from region s1 to region s2*)
   | AFortify of (string * string) * int
       (*move n troops from region s1 to region s2*)
@@ -42,7 +42,7 @@ type action =
 type curr_move =
   | CNew_Game
   | CInitial_Reinforce
-  | CReinforce of int (*reinforce with n total troops*)
+  | CMovement of int (*reinforce with n total troops*)
   | CAttack
   | CFortify
   | CRecieve_Card of card
@@ -57,6 +57,7 @@ type state =
     continents: (string * string option) list;
         (*continent s is controlled by player s_opt*)
     bonus_troops: int;
+    log: string;
   }
 
 
@@ -126,7 +127,8 @@ let init_state n =
            cards = [];
            total_troops = 0;
            controls = [];
-           continents = [("Asia", 0); ("Africa", 0); ("North America", 0); ("South America", 0); ("Europe", 0); ("Australia", 0)]
+           continents = [("Asia", 0); ("Africa", 0); ("North America", 0); 
+                         ("South America", 0); ("Europe", 0); ("Australia", 0)]
          })
       colors in
   {
@@ -135,6 +137,7 @@ let init_state n =
     turns = 0;
     continents = [];
     bonus_troops = 4;
+    log = "";
   }
 
 
@@ -157,9 +160,13 @@ let increment_bonus n =
 
 let update st = function
   | AInitial_Reinforce r -> let p = st.current_player in
-                              try
+                              (try
                                 let n = List.assoc r p.controls in
-                                failwith "TODO"
+                                let c = List.remove_assoc r p.controls in
+                                let p' = { p with controls = (r, n + 1)::c } in
+                                (* make sure to also update players list *)
+                                { st with current_player = p';
+                                          log = "Successfuly reinforced " ^ r }
                               with
-                              | Not_found -> st
+                              | Not_found -> st)
   | _ -> failwith "TODO"
