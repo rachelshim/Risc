@@ -11,7 +11,7 @@ type selection_mode =
   | Double
 
 (*Globals setup*)
-let color_options = ["red"; "LightSlateBlue"; "green"; "yellow"; "purple"; "orange"]
+let color_options = ["Red"; "Blue"; "Green"; "Yellow"; "Purple"; "Orange"]
 let locale = GtkMain.Main.init ()
 let continent_labels_list = ref []
 let buttons_list = ref []
@@ -46,9 +46,30 @@ let set_color wid col_str =
 let lookup_troop_count name = 
   List.assoc name !territory_troop_list
 
+let set_territory_sensitivity name new_sens = 
+  let button = List.assoc name !buttons_list in
+  button#misc#set_sensitive new_sens;
+  ()
+
 let set_territory_buttons_sensitivity new_sens = 
   let buttons = snd (List.split !buttons_list) in
   let u_list = List.map (fun b -> b#misc#set_sensitive new_sens) buttons in
+  ()
+
+let set_territory_troops name num = 
+  let button = List.assoc name !buttons_list in
+  territory_troop_list := List.remove_assoc name !territory_troop_list;
+  territory_troop_list := (name, num)::!territory_troop_list;
+  button#set_label (string_of_int num);
+  ()
+
+let write_log (message : string) = 
+  let old_text = log_buffer#get_text () in
+  let new_text = (old_text ^ "\n> ") ^ message in
+  log_buffer#set_text new_text;
+  let current_adj = !log_window_global#vadjustment in
+  current_adj#set_value current_adj#upper;
+  !log_window_global#set_vadjustment current_adj;
   ()
 
 let clear_selections () = 
@@ -93,6 +114,7 @@ let make_selection name =
                 ("Territory Selection 1: " ^ name);
               !selection2_label_global#set_text 
                 ("Territory Selection 2: No Selection");
+              set_territory_sensitivity name false;
               true
     | Some _ -> begin
       match !selection2 with
@@ -105,25 +127,15 @@ let make_selection name =
     end
   end
 
-let set_territory_troops name num = 
-  let button = List.assoc name !buttons_list in
-  territory_troop_list := List.remove_assoc name !territory_troop_list;
-  territory_troop_list := (name, num)::!territory_troop_list;
-  button#set_label (string_of_int num);
-  ()
-
-let write_log (message : string) = 
-  let old_text = log_buffer#get_text () in
-  let new_text = (old_text ^ "\n> ") ^ message in
-  log_buffer#set_text new_text;
-  let current_adj = !log_window_global#vadjustment in
-  current_adj#set_value current_adj#upper;
-  !log_window_global#set_vadjustment current_adj;
+let action_combobox_handler (selection: string) () = 
+  Mutex.lock mutex;
+  write_log ("selection: " ^ selection);
+  Mutex.unlock mutex;
   ()
 
 let territory_button_handler name (button: GButton.button) () =
   Mutex.lock mutex;
-  set_color button "LightSlateBlue";
+  set_color button "Blue";
   set_territory_troops name (lookup_troop_count name |> succ);
   write_log ("Region: " ^ name);
   current_selection_mode := Double;
@@ -132,8 +144,10 @@ let territory_button_handler name (button: GButton.button) () =
   ()
 
 let cancel_button_handler () = 
+  Mutex.lock mutex;
   clear_selections ();
   set_territory_buttons_sensitivity true;
+  Mutex.unlock mutex;
   ()
   
 let add_territory (pack:GPack.fixed) x y name extra = 
@@ -152,7 +166,6 @@ let add_label (pack:GPack.fixed) x y width height name =
   let label_frame = GBin.frame ~width:width ~height:height 
                                ~packing:(pack#put ~x:x ~y:y) () in
   let label = GMisc.label ~text: name 
-                          (*~markup:("<bold>" ^ name ^ "</bold>")*)
                           ~packing:label_frame#add () in
   continent_labels_list := (name, label_frame)::(!continent_labels_list);
   set_color label_frame "red";
@@ -236,9 +249,11 @@ let main () =
 
   (*Action pack setup*)
   let actions_cbox = GEdit.combo_box_text 
-              ~strings:["Deploy"; "Attack"; "Reinforce"; "Move"; "Expend Cards"]
+              ~strings:["Deploy"; "Attack"; "Reinforce"; "Move"; "Trade Cards"; 
+                        "End turn"]
               ~width:100 ~height:20 
               ~packing:actions_pack#add () in
+  
 
   let confirm_button = GButton.button ~label:"Confirm"
                                       ~packing:actions_pack#add () in
@@ -331,6 +346,12 @@ let main () =
   add_territory gameplay_pack 1016 352 "Indonesia" "Australia";
   add_territory gameplay_pack 1140 377 "New Guinea" "Australia";
   add_territory gameplay_pack 1036 473 "Western Australia" "Australia";
+
+  (*
+  let names = fst (List.split !buttons_list) in
+  let st = String.concat "; " names in
+  print_endline st;
+  *)
 
   (*Final window configuration and display*)
   window#add_accel_group accel_group;
