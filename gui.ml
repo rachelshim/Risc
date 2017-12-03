@@ -56,6 +56,9 @@ let set_territory_buttons_sensitivity new_sens =
   let u_list = List.map (fun b -> b#misc#set_sensitive new_sens) buttons in
   ()
 
+let set_all_sensitivity new_sens =
+  failwith "todo: all sensitivity"
+
 (* EXPOSED SETTER METHODS BEGIN *)
 
 let set_territory_troops name num = 
@@ -206,6 +209,35 @@ let cancel_button_handler () =
   set_territory_buttons_sensitivity true;
   Mutex.unlock mutex;
   ()
+
+
+let run_init_dialog parent = 
+  let players_num = ref None in
+  let init_dialog_accept_handler cbox dialog () = 
+    let num = ((fst cbox)#active + 2) in
+    let res = dialog#event#send (GdkEvent.create `DELETE) in
+    dialog#destroy ();
+    if num = 1 then (players_num := None)
+    else (players_num := Some num);
+    ()
+  in
+  let init_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true 
+                  ~title:"Initialization Dialog" ~deletable:true () in
+  let init_dialog_label = GMisc.label 
+                  ~text:"Please select the number of players."
+                  ~packing:init_dialog#vbox#add () in
+  let init_dialog_options = ["2";"3";"4";"5";"6"] in
+  let init_dialog_combobox = GEdit.combo_box_text 
+                  ~strings:init_dialog_options
+                  (* ~width:100 ~height:20 *)
+                  ~packing:init_dialog#vbox#add () in
+  let init_dialog_accept_button = GButton.button ~label:"Accept"
+                  ~packing:init_dialog#vbox#add () in
+  let accept_signal = 
+      init_dialog_accept_button#connect#clicked 
+      (init_dialog_accept_handler init_dialog_combobox init_dialog) in
+  let init_dialog_delete_event = init_dialog#run () in
+  !players_num
   
 let add_territory (pack:GPack.fixed) x y name extra = 
   let button = GButton.button ~label:"0"
@@ -270,6 +302,19 @@ let main () =
 
   let actions_pack = GPack.vbox ~width:360 ~height:400 
                   ~packing:actions_frame#add () in
+
+  (*Get number of players via dialog box*)
+  let got_player_num = ref false in
+  let player_num = ref 0 in
+  while not (!got_player_num) do
+    let init_result= run_init_dialog window in
+    match init_result with
+    | Some x -> player_num := x;
+                got_player_num := true;
+    | _ -> ()
+  done;
+
+  print_endline (string_of_int !player_num);
 
   (*Info pack setup*)
   let player_label = GMisc.label ~text:"Current Player: N/A"
