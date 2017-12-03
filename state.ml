@@ -182,6 +182,10 @@ let prepend_player p = function
   | [] -> [p]
   | h::t -> p::t
 
+let append_player p = function
+  | [] -> [p]
+  | h::t -> t @ [p]
+
 let rec remove_cards c l =
   match l with
   | [] -> l
