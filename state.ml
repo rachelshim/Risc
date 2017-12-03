@@ -5,6 +5,17 @@
 
 ##############################################################################*)
 
+(**
+ * List of continents. Structured as (String name, (int num territories in
+ * continent, int troops given for continent control))
+ *)
+let continents =
+  [("North America", (9, 5));
+   ("South America", (4, 2));
+   ("Europe", (7, 5));
+   ("Africa", (6, 3));
+   ("Asia", (12, 7));
+   ("Australia", (4, 2))]
 
 (** Variant [card] represents the type of card *)
 type card = Infantry | Cavalry | Artillery | Wild
@@ -24,13 +35,15 @@ type player =
     cards: card list;
     total_troops: int;
     controls: region list;
-    continents: (string * int) list (*regions owned per continent*)
+    continent_troops: (string * int) list; (*regions owned per continent*)
+    controls_cont: string list;
   }
 
 type action =
   | ADeployment of string (* places one troop on region s *)
   | APlay_Cards of (card * card * card) (* the cards to trade in *)
-  | AReinforcement of (string * int) list (* reinforce region s with n troops *)
+  | AWait_Reinforcement
+  | AReinforcement of string * int (* reinforce region s with n troops *)
   | AAttack of string * string (* attack from region s1 to region s2 *)
   | AMovement of (string * string) * int
       (* move n troops from region s1 to region s2 *)
@@ -65,15 +78,6 @@ type state =
 
 ##############################################################################*)
 
-
-
-(**
- * List of continents. Structured as (String name, (int num territories in
- * continent, int troops given for continent control))
- *)
-let continents =
-  [("North America", (9, 5));("South America", (4, 2)); ("Europe", (7, 5));
-   ("Africa", (6, 3)); ("Asia", (12, 7)); ("Australia", (4, 2))]
 
 let init_regions =
   [{name = "Alaska";
@@ -266,7 +270,7 @@ let rec first_n lst n =
     | [] -> []
     | h::t -> h::(first_n t (n-1))
 
-let rec add_regions rs ps =
+let rec add_regions ps rs =
   match rs with
   | [] -> ps
   | (_, h)::t ->
@@ -275,12 +279,20 @@ let rec add_regions rs ps =
       {p with
        total_troops = p.total_troops + 1;
        controls = h::p.controls;
-       continents =
-         let in_cont = List.assoc h.continent p.continents + 1 in
-         List.remove_assoc h.continent p.continents |>
+       continent_troops =
+         let in_cont = List.assoc h.continent p.continent_troops + 1 in
+         List.remove_assoc h.continent p.continent_troops |>
          List.cons (h.continent, in_cont)
       } in
-    add_regions t ((List.tl ps) @ [new_p])
+    add_regions ((List.tl ps) @ [new_p]) t
+
+let rec add_conts c_ts =
+  match c_ts with
+  | [] -> []
+  | h::t ->
+      if fst (List.assoc (fst h) continents) = snd h
+      then (fst h)::(add_conts t)
+      else add_conts t
 
 let init_state n =
   let players =
@@ -292,21 +304,38 @@ let init_state n =
            cards = [];
            total_troops = 0;
            controls = [];
-           continents = [("Asia", 0); ("Africa", 0); ("North America", 0);
-                         ("South America", 0); ("Europe", 0); ("Australia", 0)]
+           continent_troops = [("Asia", 0); ("Africa", 0); ("North America", 0);
+                         ("South America", 0); ("Europe", 0); ("Australia", 0)];
+           controls_cont = [];
          }) in
-  let rand_init_regions =
+  let players_w_regions =
     Random.self_init ();
     List.map (fun r -> (Random.float 5.0, r)) init_regions |>
-    List.sort (fun c1 c2 -> compare (fst c1) (fst c2)) in
+    List.sort (fun c1 c2 -> compare (fst c1) (fst c2)) |>
+    add_regions players in
+  let players_w_continents =
+    List.map
+      (fun p -> {p with controls_cont = add_conts p.continent_troops}) players_w_regions in
+  let total_conts =
+    List.fold_left
+      (fun cs p ->
+         List.fold_left
+           (fun cs c ->
+              List.remove_assoc c cs |>
+              List.cons (c, Some p.id))
+           cs p.controls_cont)
+      [("Asia", None); ("Africa", None); ("North America", None);
+       ("South America", None); ("Europe", None); ("Australia", None)]
+      players_w_continents in
   {
-    players = add_regions rand_init_regions players;
+    players = players_w_continents;
     current_move = CDeployment;
     turns = 0;
-    continents = [];
+    continents = total_conts;
     bonus_troops = 4;
     log = "Game started!" (*TODO: Make more rich*)
   }
+
 
 
 
@@ -366,8 +395,29 @@ let update st = function
         let p_list = prepend_player p' st.players in
         { st with current_move = CReinforcement bonus_n;
                   players = p_list;
-                  bonus_troops = increment_bonus bonus_n; }
+                  bonus_troops = increment_bonus bonus_n;
+                  log = "Successfully traded in cards for " ^
+                        (string_of_int bonus_n) ^ " extra troops"; }
       else
         { st with log = "Invalid card trade in" }
     | _ -> { st with log = "Invalid move" })
+  | AWait_Reinforcement ->
+    (match st.current_move with
+    | CReinforcement n ->
+      let p = List.hd st.players in
+      let n_controls = (List.length p.controls) / 3 in
+      let rec n_continents acc = function
+        | [] -> acc
+        | h::t -> n_continents (acc + (snd (List.assoc h continents))) t in
+      let troops = n_continents 0 p.controls_cont + n_controls + n in
+      { st with current_move = CReinforcement troops;
+                log = "You have " ^ (string_of_int troops) ^ " to deploy."; }
+    | _ -> { st with log = "Invalid move" })
+  | AReinforcement (s, i) ->
+    (match st.current_move with
+    | CReinforcement n ->
+      let p = List.hd st.players in
+      failwith "TODO"
+      (* calculate how many troops p will get with continents, etc. *)
+    | _ -> { st with log = "Invalid move"; })
   | _ -> failwith "TODO"
