@@ -12,6 +12,9 @@ type selection_mode =
 
 (*Globals setup*)
 let color_options = ["Red"; "Blue"; "Green"; "Yellow"; "Purple"; "Orange"]
+let actions_strings =   ["Deploy"; "Attack"; "Reinforce"; "Move"; 
+                         "Trade Cards - 3 Same"; "Trade Cards - 3 Different"; 
+                         "End turn"]
 let locale = GtkMain.Main.init ()
 let continent_labels_list = ref []
 let buttons_list = ref []
@@ -121,6 +124,15 @@ let lock_all () =
   !confirm_button_global#misc#set_sensitive false;
   ()
 
+let set_selection_mode mode = 
+  match mode with
+  | No_selection -> set_territory_buttons_sensitivity false;
+                    current_selection_mode := mode
+  | Single -> set_territory_buttons_sensitivity true;
+              current_selection_mode := mode
+  | Double -> set_territory_buttons_sensitivity true;
+              current_selection_mode := mode
+
 (* EXPOSED SETTER METHODS BEGIN *)
 
 let set_territory_troops name num = 
@@ -198,12 +210,31 @@ let set_game_over over =
 
 (* EXPOSED SETTER METHODS END *)
 
-let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) (options: string list) () = 
+let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () = 
   Mutex.lock mutex;
-  let sel = (fst box)#active in
-  write_log ("Selected Action: " ^ (List.nth options sel));
-  clear_selections ();
-  (*todo: unlock things based on request, unset selections*)
+  let index = (fst box)#active in
+  (*disallow illegal arguments*)
+  if index >= 0 || index >= List.length actions_strings then begin
+    let sel = List.nth actions_strings index in
+    write_log ("Selected Action: " ^ sel);
+    clear_selections ();
+    !confirm_button_global#misc#set_sensitive true;
+    (*todo: unlock things, set selection mode based on request*)
+    if sel = "Deploy" then begin
+      set_selection_mode Single; ()
+    end
+    else if sel = "Attack" then begin
+      set_selection_mode Double; ()
+    end
+    else if sel = "Reinforce" then begin
+      set_selection_mode Single; ()
+    end
+    else if sel = "Move" then begin
+      set_selection_mode Double; ()
+    end;
+    (*todo: card trading*)
+  end
+  else ();
   Mutex.unlock mutex;
   ()
 
@@ -212,7 +243,6 @@ let territory_button_handler name (button: GButton.button) () =
   set_color button "Blue";
   set_territory_troops name (lookup_troop_count name |> succ);
   write_log ("Region: " ^ name);
-  current_selection_mode := Double;
   let sel_result = make_selection name in
   Mutex.unlock mutex;
   ()
@@ -365,17 +395,14 @@ let main () =
 
   (*Action pack setup*)
   
-  let actions_list = ["Deploy"; "Attack"; "Reinforce"; "Move"; 
-                      "Trade Cards - 3 Same"; "Trade Cards - 3 Different"; 
-                      "End turn"] in
   let actions_cbox_frame = GBin.frame ~label:"Move Selection" ~border_width:3
                   ~packing:actions_pack#add () in
   let actions_cbox = GEdit.combo_box_text 
-              ~strings:actions_list
+              ~strings:actions_strings
               ~width:100 ~height:20 
               ~packing:actions_cbox_frame#add () in
   let actions_signal = (fst actions_cbox)#connect#changed 
-                        (actions_cbox_handler actions_cbox actions_list) in
+                        (actions_cbox_handler actions_cbox) in
   actions_cbox_global := fst actions_cbox;
 
   let cards_cbox_frame = GBin.frame ~label:"Card Selection" ~border_width:3
@@ -489,6 +516,7 @@ let main () =
   (*Set some sensitivities before game starts*)
   set_territory_buttons_sensitivity false;
   (fst cards_cbox)#misc#set_sensitive false;
+  confirm_button#misc#set_sensitive false;
 
   (*Final window configuration and display*)
   window#add_accel_group accel_group;
