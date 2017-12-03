@@ -56,6 +56,8 @@ let set_territory_buttons_sensitivity new_sens =
   let u_list = List.map (fun b -> b#misc#set_sensitive new_sens) buttons in
   ()
 
+(* EXPOSED SETTER METHODS BEGIN *)
+
 let set_territory_troops name num = 
   let button = List.assoc name !buttons_list in
   territory_troop_list := List.remove_assoc name !territory_troop_list;
@@ -63,26 +65,54 @@ let set_territory_troops name num =
   button#set_label (string_of_int num);
   ()
 
-let update_territories data = 
-  failwith "todo"
+let rec update_territories (data:(string * string * int) list) = 
+  match data with
+  | [] -> ()
+  | (name, owner, troops)::tl -> begin
+    let button = List.assoc name !buttons_list in
+    set_color button owner;
+    button#set_label (string_of_int troops);
+    update_territories tl
+  end
 
-let update_continent_owners data = 
-  failwith "todo"
+let rec update_continent_owners (data:(string * string) list) = 
+  match data with
+  | [] -> ()
+  | (c_name, owner)::tl -> begin
+    let frame = List.assoc c_name !continent_labels_list in
+    set_color frame owner;
+    update_continent_owners tl
+  end
 
 let update_current_player player = 
-  failwith "todo"
+  !player_label_global#set_text ("Current Player: " ^ player);
+  ()
 
 let update_available_reinforcements num = 
-  failwith "todo"
+  !reinforcement_label_global#set_text 
+    ("Reinforcements Available: " ^ (string_of_int num));
+  ()
 
 let update_cards (inf, cav, art, wild) = 
-  failwith "todo"
+  !infantry_label_global#set_text 
+    ("Infantry Cards: " ^ (string_of_int inf));
+  !calvalry_label_global#set_text 
+    ("Calvalry Cards: " ^ (string_of_int cav));
+  !artillery_label_global#set_text 
+    ("Artillery Cards: " ^ (string_of_int art));
+  !wildcard_label_global#set_text 
+    ("Wildcards: " ^ (string_of_int wild));
+  ()
 
 let update_territories_count count = 
-  failwith "todo"
+  !territories_label_global#set_text 
+    ("Territories Controlled: " ^ (string_of_int count));
+  ()
 
 let update_troop_count count = 
-  failwith "todo"
+  !troops_label_global#set_text 
+    ("Troops Deployed: " ^ (string_of_int count));
+  ()
 
 let set_game_over over = 
   failwith "todo"
@@ -95,6 +125,8 @@ let write_log (message : string) =
   current_adj#set_value current_adj#upper;
   !log_window_global#set_vadjustment current_adj;
   ()
+
+(* EXPOSED SETTER METHODS END *)
 
 let clear_selections () = 
   selection1 := None;
@@ -193,7 +225,7 @@ let add_label (pack:GPack.fixed) x y width height name =
   let label = GMisc.label ~text: name 
                           ~packing:label_frame#add () in
   continent_labels_list := (name, label_frame)::(!continent_labels_list);
-  set_color label_frame "red";
+  set_color label_frame "grey";
   ()
 
 let main () =
@@ -240,35 +272,35 @@ let main () =
                   ~packing:actions_frame#add () in
 
   (*Info pack setup*)
-  let player_label = GMisc.label ~text:"Current Player: "
+  let player_label = GMisc.label ~text:"Current Player: N/A"
                                  ~packing:info_pack#add () in
   player_label_global := player_label;
 
-  let reinforcement_label = GMisc.label ~text:"Reinforcements Available: "
+  let reinforcement_label = GMisc.label ~text:"Reinforcements Available: 0"
                                  ~packing:info_pack#add () in
   reinforcement_label_global := reinforcement_label;
 
-  let infantry_label = GMisc.label ~text:"Infantry Cards: "
+  let infantry_label = GMisc.label ~text:"Infantry Cards: 0"
                                  ~packing:info_pack#add () in
   infantry_label_global := infantry_label;
 
-  let calvalry_label = GMisc.label ~text:"Calvalry Cards: "
+  let calvalry_label = GMisc.label ~text:"Calvalry Cards: 0"
                                  ~packing:info_pack#add () in
   calvalry_label_global := calvalry_label;
 
-  let artillery_label = GMisc.label ~text:"Artillery Cards: "
+  let artillery_label = GMisc.label ~text:"Artillery Cards: 0"
                                  ~packing:info_pack#add () in
   artillery_label_global := artillery_label;
 
-  let wildcard_label = GMisc.label ~text:"Wildcards: "
+  let wildcard_label = GMisc.label ~text:"Wildcards: 0"
                                  ~packing:info_pack#add () in
   wildcard_label_global := wildcard_label;
 
-  let territories_label = GMisc.label ~text:"Territories Controlled: "
+  let territories_label = GMisc.label ~text:"Territories Controlled: 0"
                                  ~packing:info_pack#add () in
   territories_label_global := territories_label;
 
-  let troops_label = GMisc.label ~text:"Troops Deployed: "
+  let troops_label = GMisc.label ~text:"Troops Deployed: 0"
                                  ~packing:info_pack#add () in
   troops_label_global := troops_label;
 
@@ -309,7 +341,7 @@ let main () =
   log_buffer#set_text "> Game started";
 
   (*Menu bar creation*)
-  let menubar = GMenu.menu_bar ~packing:(gameplay_pack#add) () in
+  let menubar = GMenu.menu_bar ~packing:(info_pack#add) () in
   let factory = new GMenu.factory menubar in
   let accel_group = factory#accel_group in
   let file_menu = factory#add_submenu "File" in
