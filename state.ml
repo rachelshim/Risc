@@ -158,9 +158,8 @@ let increment_bonus n =
 let update st = function
   | AInitial_Reinforce r -> let p = st.current_player in
                               try
-                                n = List.assoc r p.controls in
+                                let n = List.assoc r p.controls in
                                 failwith "TODO"
                               with
                               | Not_found -> st
   | _ -> failwith "TODO"
-
