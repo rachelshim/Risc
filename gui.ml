@@ -66,9 +66,9 @@ let clear_selections () =
   selection1 := None;
   selection2 := None;
   !selection1_label_global#set_text 
-    ("Territory Selection 1: No Selection");
+    ("No Selection");
   !selection2_label_global#set_text 
-    ("Territory Selection 2: No Selection");
+    ("No Selection");
   ()
 
 (*
@@ -88,10 +88,8 @@ let make_selection name =
     match !selection1 with
     | None -> selection1 := Some name;
             selection2 := None;
-            !selection1_label_global#set_text 
-              ("Territory Selection 1: " ^ name);
-            !selection2_label_global#set_text 
-              ("Territory Selection 2: No Selection");
+            !selection1_label_global#set_text name;
+            !selection2_label_global#set_text "No Selection";
               set_territory_buttons_sensitivity false;
             true
     | Some _ -> false
@@ -100,17 +98,14 @@ let make_selection name =
     match !selection1 with
     | None -> selection1 := Some name;
               selection2 := None;
-              !selection1_label_global#set_text 
-                ("Territory Selection 1: " ^ name);
-              !selection2_label_global#set_text 
-                ("Territory Selection 2: No Selection");
+              !selection1_label_global#set_text name;
+              !selection2_label_global#set_text "No Selection";
               set_territory_sensitivity name false;
               true
     | Some _ -> begin
       match !selection2 with
       | None -> selection2 := Some name;
-                !selection2_label_global#set_text 
-                  ("Territory Selection 2: " ^ name);
+                !selection2_label_global#set_text name;
                   set_territory_buttons_sensitivity false;
                 true
       | Some _ -> false
@@ -219,20 +214,28 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
     write_log ("Selected Action: " ^ sel);
     clear_selections ();
     !confirm_button_global#misc#set_sensitive true;
-    (*todo: unlock things, set selection mode based on request*)
     if sel = "Deploy" then begin
-      set_selection_mode Single; ()
+      set_selection_mode Single
     end
     else if sel = "Attack" then begin
-      set_selection_mode Double; ()
+      set_selection_mode Double
     end
     else if sel = "Reinforce" then begin
-      set_selection_mode Single; ()
+      set_selection_mode Single
     end
     else if sel = "Move" then begin
-      set_selection_mode Double; ()
+      set_selection_mode Double
+    end
+    else begin
+      set_selection_mode No_selection
     end;
-    (*todo: card trading*)
+    (*card trading in separate if-clause because all others should lock it*)
+    if sel = "Trade Cards - 3 Same" then begin
+      !cards_cbox_global#misc#set_sensitive true
+    end
+    else begin
+      !cards_cbox_global#misc#set_sensitive false
+    end
   end
   else ();
   Mutex.unlock mutex;
@@ -251,6 +254,12 @@ let cancel_button_handler () =
   Mutex.lock mutex;
   clear_selections ();
   set_territory_buttons_sensitivity true;
+  Mutex.unlock mutex;
+  ()
+
+let confirm_button_handler () = 
+  Mutex.lock mutex;
+  print_endline "confirm button";
   Mutex.unlock mutex;
   ()
 
@@ -285,6 +294,41 @@ let run_init_dialog parent =
   let init_dialog_delete_event = init_dialog#run () in
   !players_num
   
+let run_troop_dialog parent message (min, max) = 
+  let value = ref None in
+  let troop_dialog_accept_handler scale dialog () = 
+    let num = int_of_float scale#adjustment#value in
+    let res = dialog#event#send (GdkEvent.create `DELETE) in
+    dialog#destroy ();
+    value := Some num;
+    ()
+  in
+  let fmin = float_of_int min in
+  let fmax = float_of_int max in
+  let troop_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true 
+                  ~title:"Troop Selection" ~deletable:true 
+                  ~resizable:false () in
+  let troop_dialog_label = GMisc.label 
+                  ~text:message
+                  ~packing:troop_dialog#vbox#add () in
+  let troop_dialog_adjustment = GData.adjustment ~value:fmin
+                  ~lower:fmin ~upper:fmax () in
+  let scale_frame = GBin.frame ~width:200 ~height:50 ~border_width:3
+                  ~packing:troop_dialog#vbox#add () in
+  let troop_dialog_scale = GRange.scale `HORIZONTAL 
+                  ~draw_value:true ~digits:0 ~update_policy:`CONTINUOUS
+                  ~adjustment:troop_dialog_adjustment 
+                  ~packing:scale_frame#add () in
+  let troop_dialog_accept_button = GButton.button ~label:"Accept"
+                  ~packing:troop_dialog#vbox#add () in
+  let accept_signal = 
+    troop_dialog_accept_button#connect#clicked 
+      ~callback:(troop_dialog_accept_handler troop_dialog_scale troop_dialog) in
+  let close_event = troop_dialog#event#connect#delete 
+      ~callback:(fun _ -> troop_dialog#destroy (); true) in
+  let init_dialog_delete_event = troop_dialog#run () in
+  !value
+
 let add_territory (pack:GPack.fixed) x y name extra = 
   let button = GButton.button ~label:"0"
                               ~packing:(pack#put ~x:x ~y:y) () in
@@ -415,19 +459,27 @@ let main () =
 
   let confirm_button = GButton.button ~label:"Confirm"
                                       ~packing:actions_pack#add () in
+  let confirm_button_signal = confirm_button#connect#clicked 
+                                      (confirm_button_handler) in
   confirm_button_global := confirm_button;
 
   let cancel_button = GButton.button ~label:"Cancel"
                                       ~packing:actions_pack#add () in
   let cancel_button_signal = 
     cancel_button#connect#clicked cancel_button_handler in
-
-  let selection1_label = GMisc.label ~text:"Territory Selection 1: No Selection"
-                                     ~packing:actions_pack#add () in         
+  
+  let selection1_frame = GBin.frame ~label:"Territory Selection 1" 
+                                    ~border_width:3 
+                                    ~packing:actions_pack#add () in
+  let selection1_label = GMisc.label ~text:"No Selection"
+                                     ~packing:selection1_frame#add () in         
   selection1_label_global := selection1_label;
 
-  let selection2_label = GMisc.label ~text:"Territory Selection 2: No Selection"
-                                     ~packing:actions_pack#add () in
+  let selection2_frame = GBin.frame ~label:"Territory Selection 2" 
+                                    ~border_width:3 
+                                    ~packing:actions_pack#add () in
+  let selection2_label = GMisc.label ~text:"No Selection"
+                                     ~packing:selection2_frame#add () in
   selection2_label_global := selection2_label;
 
   (*Game log setup*)
@@ -511,6 +563,13 @@ let main () =
   let names = fst (List.split !buttons_list) in
   let st = String.concat "; " names in
   print_endline st;
+  *)
+
+  (*
+  let fres = run_troop_dialog window "message" (1, 40) in
+  match fres with
+  | None -> print_endline "none"
+  | Some x -> print_endline ("some: " ^ string_of_int x);
   *)
 
   (*Set some sensitivities before game starts*)

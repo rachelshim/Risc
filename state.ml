@@ -364,10 +364,13 @@ let increment_bonus n =
   else if n = 12 then 15
   else n + 5
 
-
 let prepend_player p = function
   | [] -> [p]
   | h::t -> p::t
+
+let append_player p = function
+  | [] -> [p]
+  | h::t -> t @ [p]
 
 let rec remove_cards c l =
   match l with
@@ -422,10 +425,22 @@ let update st = function
       { st with current_move = CReinforcement troops;
                 log = "You have " ^ (string_of_int troops) ^ " to deploy."; }
     | _ -> { st with log = "Invalid move" })
-  | AReinforcement (s, i) ->
+  | AReinforcement (r, i) ->
     (match st.current_move with
     | CReinforcement n ->
-      let p = List.hd st.players in
-      failwith "TODO"
+      if n >= i then
+        let p = List.hd st.players in
+        (try
+          let n = List.assoc r p.controls in
+          let new_controls = List.remove_assoc r p.controls in
+          let p' = { p with controls = (r, n + i)::new_controls } in
+          let p_list = prepend_player p' st.players in
+          { st with current_move = CReinforcement (n - i);
+                    players = p_list;
+                    log = "Successfully reinforced " ^ r ^ " with " ^ 
+                          (string_of_int i) ^ " new troops." }
+        with
+        | Not_found -> { st with log = "You don't control that territory." })
+      else { st with log = "You don't have enough troops. Try again." }
     | _ -> { st with log = "Invalid move"; })
   | _ -> failwith "TODO"
