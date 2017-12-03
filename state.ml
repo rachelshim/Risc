@@ -1,4 +1,3 @@
-
 (* ############################################################################
 
   DEFINING TYPES
@@ -263,6 +262,10 @@ let init_regions =
     troops = 1}
   ]
 
+(**
+ * [first_n lst n] is [lst] truncated to have maximum length [n]
+ * requires: [n] >= 0.
+*)
 let rec first_n lst n =
   if n = 0 then []
   else
@@ -270,6 +273,12 @@ let rec first_n lst n =
     | [] -> []
     | h::t -> h::(first_n t (n-1))
 
+(**
+ * [add_regions ps rs] is a [ps] with the regions from [rs] distributed to each
+ * player (with other fields in player excluding [controls_cont] updated
+ * accordingly). If some players have one more region than other players, the
+ * result is rotated so the head is the first player with one less region.
+ *)
 let rec add_regions ps rs =
   match rs with
   | [] -> ps
