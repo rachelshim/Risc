@@ -1,4 +1,11 @@
 
+(* ############################################################################
+
+  DEFINING TYPES
+
+##############################################################################*)
+
+
 (* Variant [card] represents the type of card *)
 type card = Infantry | Cavalry | Artillery | Wild
 
@@ -24,7 +31,6 @@ type region =
   }
 
 type action =
-  | ANew_Game of int (*creates new game with n players*)
   | AInitial_Reinforce of string (*places one troop on region s*)
   | APlay_Cards of card list (*play 3 cards in list*)
   | AReinforce of (string * int) list (*reinforce region s with n troops*)
@@ -52,6 +58,17 @@ type state =
         (*continent s is controlled by player s_opt*)
     bonus_troops: int;
   }
+
+
+
+
+(* ############################################################################
+
+  Initial state stuff
+
+##############################################################################*)
+
+
 
 (**
  * List of continents. Structured as (String name, (int num territories in
@@ -108,5 +125,33 @@ let init_state p =
     players = players;
     turns = 0;
     continents = [];
-    bonus_troops = 0;
+    bonus_troops = 4;
   }
+
+
+
+
+
+
+(* ############################################################################
+
+  Gameplay
+
+##############################################################################*)
+
+(* Returns the next number of bonus troops to be given when cards are traded in
+ *)
+let increment_bonus n =
+  if n < 12 then n + 2
+  else if n = 12 then 15
+  else n + 5
+
+let update st = function
+  | AInitial_Reinforce r -> let p = st.current_player in
+                              try
+                                n = List.assoc r p.controls in
+                                failwith "TODO"
+                              with
+                              | Not_found -> st
+  | _ -> failwith "TODO"
+
