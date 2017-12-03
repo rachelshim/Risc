@@ -31,20 +31,20 @@ type region =
   }
 
 type action =
-  | AInitial_Reinforce of string (*places one troop on region s*)
+  | ADeployment of string (*places one troop on region s*)
   | APlay_Cards of card list (*play 3 cards in list*)
   | AMovement of (string * int) list (*reinforce region s with n troops*)
   | AAttack of string * string (*attack from region s1 to region s2*)
-  | AFortify of (string * string) * int
+  | AReinforcement of (string * string) * int
       (*move n troops from region s1 to region s2*)
   | ANext_Turn
 
 type curr_move =
   | CNew_Game
-  | CInitial_Reinforce
+  | CDeployment
   | CMovement of int (*reinforce with n total troops*)
   | CAttack
-  | CFortify
+  | CReinforcement
   | CRecieve_Card of card
   | CNext_Turn
   | CGame_Won of string (*player s won the game*)
@@ -106,7 +106,8 @@ let init_regions =
    ("East Africa", ["North Africa"; "Egypt"; "Middle East"; "Madagascar"; "South Africa"; "Congo"]);
    ("South Africa", ["Congo"; "East Africa"; "Madagascar"]);
    ("Madagascar", ["South Africa"; "East Africa"]);
-   (*"Middle East", *)
+   ("Middle East", ["East Africa"; "Egypt"; "Ukraine"; "Afghanistan"; "India"]);
+   ("Afghanistan", ["Middle East"; "Ukraine"; "Ural"; "China"; "India"])
   ]
 
 let rec first_n lst n =
@@ -137,7 +138,7 @@ let init_state n =
     turns = 0;
     continents = [];
     bonus_troops = 4;
-    log = "";
+    log = "Game started!" (*TODO: Make more rich*)
   }
 
 
