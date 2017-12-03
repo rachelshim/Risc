@@ -33,18 +33,18 @@ type region =
 type action =
   | ADeployment of string (*places one troop on region s*)
   | APlay_Cards of card list (*play 3 cards in list*)
-  | AMovement of (string * int) list (*reinforce region s with n troops*)
+  | AReinforcement of (string * int) list (*reinforce region s with n troops*)
   | AAttack of string * string (*attack from region s1 to region s2*)
-  | AReinforcement of (string * string) * int
+  | AMovement of (string * string) * int
       (*move n troops from region s1 to region s2*)
   | ANext_Turn
 
 type curr_move =
   | CNew_Game
   | CDeployment
-  | CMovement of int (*reinforce with n total troops*)
+  | CReinforcement of int (*reinforce with n total troops*)
   | CAttack
-  | CReinforcement
+  | CMovement
   | CRecieve_Card of card
   | CNext_Turn
   | CGame_Won of string (*player s won the game*)
@@ -173,7 +173,7 @@ let increment_bonus n =
 
 
 let update st = function
-  | ADeployment r -> 
+  | ADeployment r ->
     let p = List.hd st.players in
       (try
         let n = List.assoc r p.controls in
