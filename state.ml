@@ -128,7 +128,8 @@ let init_state n =
            cards = [];
            total_troops = 0;
            controls = [];
-           continents = [("Asia", 0); ("Africa", 0); ("North America", 0); ("South America", 0); ("Europe", 0); ("Australia", 0)]
+           continents = [("Asia", 0); ("Africa", 0); ("North America", 0); 
+                         ("South America", 0); ("Europe", 0); ("Australia", 0)]
          })
       colors in
   {
@@ -160,9 +161,13 @@ let increment_bonus n =
 
 let update st = function
   | AInitial_Reinforce r -> let p = st.current_player in
-                              try
+                              (try
                                 let n = List.assoc r p.controls in
-                                failwith "TODO"
+                                let c = List.remove_assoc r p.controls in
+                                let p' = { p with controls = (r, n + 1)::c } in
+                                (* make sure to also update players list *)
+                                { st with current_player = p';
+                                          log = "Successfuly reinforced " ^ r }
                               with
-                              | Not_found -> st
+                              | Not_found -> st)
   | _ -> failwith "TODO"
