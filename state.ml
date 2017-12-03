@@ -1,177 +1,112 @@
 
-(* Variant [card_type] represents the type of card *)
-type card_type = Infantry | Cavalry | Artillery | Wild
+(* Variant [card] represents the type of card *)
+type card = Infantry | Cavalry | Artillery | Wild
 
-(* [card] represents a card in risk, which is a tuple of territory name 
- * (as a string) and card type
- *)
-type card = string * card_type
-
-type player = 
+type player =
   {
     id: string;
     cards: card list;
     total_troops: int;
-    controlls: (string * int) list; (* name of the region, # of troops on it *)
+    controls: (string * int) list; (* name of the region, # of troops on it *)
+    continents: (string * int) list (*regions owned per continent*)
   }
 
 (* [region] represents a region in Risk, which has fields for
  * its name, the number of troops on it, the player that controls it, and
  * the other names of the other regions connected to it.
  *)
-type region = 
+type region =
   {
     name: string;
     troops: int;
-    controller: player option;
+    controller: player;
     routes: string list;
   }
 
-(* [continent] represents a continent in Risk, which has fields for its name,
- * the number of bonus troops its controller recieves, the list of regions
- * in the continent, as well as an option for the id of the player who controls
- * it.
- *)
-type continent = 
-  {
-    name: string;
-    controller: player option;
-    bonus: int;
-    regions: region list;
-  }
+type action =
+  | ANew_Game of int (*creates new game with n players*)
+  | AInitial_Reinforce of string (*places one troop on region s*)
+  | APlay_Cards of card list (*play 3 cards in list*)
+  | AReinforce of (string * int) list (*reinforce region s with n troops*)
+  | AAttack of string * string (*attack from region s1 to region s2*)
+  | AFortify of (string * string) * int
+      (*move n troops from region s1 to region s2*)
+  | ANext_Turn
 
-type action = 
-  | Reinforce of region * int
-  | Attack of region * region
-  | Fortify of (region * region) * int
+type curr_move =
+  | CNew_Game
+  | CInitial_Reinforce
+  | CReinforce of int (*reinforce with n total troops*)
+  | CAttack
+  | CFortify
+  | CRecieve_Card of card
+  | CNext_Turn
+  | CGame_Won of string (*player s won the game*)
 
-type state = 
+type state =
   {
     current_player: player;
     players: player list;
     turns: int;
-    winner: player option;
-    map: continent list;
-    deck: card list;
+    continents: (string * string option) list;
+        (*continent s is controlled by player s_opt*)
+    bonus_troops: int;
   }
 
-let create_player name = 
-  {
-    id = name;
-    cards = [];
-    total_troops = 0;
-    controlls = [];
-  }
+(**
+ * List of continents. Structured as (String name, (int num territories in
+ * continent, int troops given for continent control))
+ *)
+let continents =
+  [("North America", (9, 5));("South America", (4, 2)); ("Europe", (7, 5));
+   ("Africa", (6, 3)); ("Asia", (12, 7)); ("Australia", (4, 2))]
 
-let init_state p = 
+let init_regions =
+  [("Alaska", ["Northwest Territory"; "Alberta"; "Kamchatka"]);
+   ("Northwest Territory", ["Alaska"; "Alberta"; "Ontario"; "Greenland"]);
+   ("Alberta", ["Alaska"; "Northwest Territory"; "Ontario"; "Western United States"]);
+   ("Greenland", ["Northwest Territory"; "Ontario"; "Quebec"; "Iceland"]);
+   ("Ontario", ["Alberta"; "Northwest Territory"; "Greenland"; "Quebec"; "Eastern United States"; "Western US"]);
+   ("Quebec", ["Ontario"; "Greenland"; "Eastern United States"]);
+   ("Western United States", ["Alberta"; "Ontario"; "Eastern United States"; "Central America"]);
+   ("Eastern United States", ["Western United States"; "Ontario"; "Quebec"; "Central America"]);
+   ("Central America", ["Western United States"; "Eastern United States"; "Venezuela"]);
+   ("Venezuela", ["Peru"; "Brazil"]);
+   ("Peru", ["Venezuela"; "Brazil"; "Argentina"]);
+   ("Argentina", ["Peru"; "Brazil"]);
+   ("Brazil", ["Venezuela"; "Peru"; "Argentina"; "North Africa"]);
+   ("Iceland", ["Greenland"; "Great Britain"; "Scandinavia"]);
+   ("Great Britain", ["Iceland"; "Western Europe"; "Scandinavia"; "Northern Europe"]);
+   ("Western Europe", ["Great Britain"; "Northern Europe"; "Southern Europe"; "North Africa"]);
+   ("Scandinavia", ["Iceland"; "Great Britain"; "Northern Europe"; "Ukraine"]);
+   ("Northern Europe", ["Great Britain"])
+  ]
+
+let rec first_n lst n =
+  if n = 0 then []
+  else
+    match lst with
+    | [] -> []
+    | h::t -> h::(first_n t (n-1))
+
+let init_state p =
+  let colors =
+    first_n ["Red"; "Blue"; "Green"; "Yellow"; "Purple"; "Orange"] p in
+  let players =
+    List.map
+      (fun name ->
+         {
+           id = name;
+           cards = [];
+           total_troops = 0;
+           controls = [];
+           continents = []
+         })
+      colors in
   {
-    current_player = List.head p;
-    players = p;
+    current_player = List.hd players;
+    players = players;
     turns = 0;
-    winner = None;
-    started = false;
-    map = 
-      [ (* asia 7, europe 5, NA 5, africa 3, SA/Aust 2 *)
-        {
-          name = "Asia";
-          controller = None;
-          bonus = 7;
-          regions = 
-            [
-              {
-                name = "Afghanistan";
-                troops = 0;
-                controller = None;
-                routes = ["Ukraine"; "Ural"; "China"; "India"; "Middle East"];
-              };
-              {
-                name = "China";
-                troops = 0;
-                controller = None;
-                routes = ["Mongolia"; "Siberia"; "Afghanistan"; "Siam"; "India";
-                          "Ural"];
-              };
-              {
-                name = "India";
-                troops = 0;
-                controller = None;
-                routes = ["Middle East"; "Afghanistan"; "China"; "Siam"];
-              };
-              {
-                name = "Irkutsk";
-                troops = 0;
-                controller = None;
-                routes = ["Mongolia"; "Yakutsk"; "Siberia"; "Kamchatka"];
-              };
-              {
-                name = "Japan";
-                troops = 0;
-                controller = None;
-                routes = ["Mongolia"; "Kamchatka"];
-              };
-              {
-                name = "Kamchatka";
-                troops = 0;
-                controller = None;
-                routes = ["Alaska"; "Yakutsk"; "Japan"; "Mongolia"; "Irkutsk"];
-              };
-              {
-                name = "Middle East";
-                troops = 0;
-                controller = None;
-                routes = ["India"; "Egypt"; "Ukraine"; "Afghanistan";
-                          "East Africa"; "Southern Europe"];
-              };
-              {
-                name = "Mongolia";
-                troops = 0;
-                controller = None;
-                routes = ["Japan"; "Kamchatka"; "Irkutsk"; "China"; "Siberia"];
-              };
-              {
-                name = "Siam";
-                troops = 0;
-                controller = None;
-                routes = ["India"; "China"; "Indonesia"];
-              };
-              {
-                name = "Siberia";
-                troops = 0;
-                controller = None;
-                routes = ["Ural"; "China"; "Mongolia"; "Irkutsk"; "Yakutsk"];
-              };
-              {
-                name = "Ural";
-                troops = 0;
-                controller = None;
-                routes = ["Ukraine"; "Afghanistan"; "China"; "Siberia"];
-              };
-              {
-                name = "Yakutsk";
-                troops = 0;
-                controller = None;
-                routes = ["Siberia"; "Irkutsk"; "Kamchatka"];
-              };
-            ];
-        };
-        {
-          name = "Asia";
-          controller = None;
-          bonus = 5;
-          regions = 
-            [
-              {
-                name = "Great Britain";
-                troops = 0;
-                controller = None;
-                routes = ["Iceland"; "Western Europe"; "Scandinavia"];
-              };
-            ];
-        }
-      ];
-    deck = [];
+    continents = [];
+    bonus_troops = 0;
   }
-
-
-
-
