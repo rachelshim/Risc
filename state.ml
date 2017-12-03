@@ -32,29 +32,29 @@ type region =
 
 type action =
   | ADeployment of string (*places one troop on region s*)
-  | APlay_Cards of card list (*play 3 cards in list*)
-  | AMovement of (string * int) list (*reinforce region s with n troops*)
-  | AAttack of string * string (*attack from region s1 to region s2*)
+  | APlay_Cards of (card * card * card) (* the cards to trade in *)
+  | AMovement of (string * int) list (* reinforce region s with n troops *)
+  | AAttack of string * string (* attack from region s1 to region s2 *)
   | AReinforcement of (string * string) * int
-      (*move n troops from region s1 to region s2*)
+      (* move n troops from region s1 to region s2 *)
   | ANext_Turn
 
 type curr_move =
   | CNew_Game
   | CDeployment
-  | CMovement of int (*reinforce with n total troops*)
+  | CMovement of int (* reinforce with n total troops *)
   | CAttack
   | CReinforcement
   | CRecieve_Card of card
   | CNext_Turn
-  | CGame_Won of string (*player s won the game*)
+  | CGame_Won of string (* player s won the game *)
 
 type state =
   {
     players: player list;
     turns: int;
     continents: (string * string option) list;
-        (*continent s is controlled by player s_opt*)
+        (* continent s is controlled by player s_opt *)
     bonus_troops: int;
     log: string;
   }
@@ -165,9 +165,17 @@ let update st = function
         let n = List.assoc r p.controls in
         let new_controls = List.remove_assoc r p.controls in
         let p' = { p with controls = (r, n + 1)::new_controls } in
-        let p_list = (fun (h::t) -> t @ [p']) st.players in
+        let p_list = (fun (h::t) -> p'::t) st.players in
         { st with players = p_list;
                   log = "Successfuly reinforced " ^ r }
       with
-      | Not_found -> { st with log = "Invalid move bitch"})
+      | Not_found -> { st with log = "Invalid move bitch" })
+  | APlay_Cards (c1, c2, c3) -> 
+    (* pretend there's some code to make sure l is a subset of head player's cards *)
+    if c1 = c2 && c2 = c3 then
+      failwith "TODO"
+    else if c1 <> c2 && c2 <> c3 && c1 <> c3 then
+      failwith "TODO"
+    else
+      { st with log = "Invalid card trade in" }
   | _ -> failwith "TODO"
