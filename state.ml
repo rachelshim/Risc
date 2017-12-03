@@ -40,7 +40,6 @@ type action =
   | ANext_Turn
 
 type curr_move =
-  | CNew_Game
   | CDeployment
   | CReinforcement of int (* reinforce with n total troops *)
   | CAttack
@@ -51,6 +50,7 @@ type curr_move =
 
 type state =
   {
+    current_move: curr_move;
     players: player list;
     turns: int;
     continents: (string * string option) list;
@@ -146,6 +146,7 @@ let init_state n =
          })
       colors in
   {
+    current_move = CDeployment;
     players = players;
     turns = 0;
     continents = [];
