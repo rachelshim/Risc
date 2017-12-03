@@ -222,7 +222,8 @@ let run_init_dialog parent =
     ()
   in
   let init_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true 
-                  ~title:"Initialization Dialog" ~deletable:true () in
+                  ~title:"Initialization Dialog" ~deletable:true 
+                  ~resizable:false () in
   let init_dialog_label = GMisc.label 
                   ~text:"Please select the number of players."
                   ~packing:init_dialog#vbox#add () in
@@ -236,6 +237,8 @@ let run_init_dialog parent =
   let accept_signal = 
       init_dialog_accept_button#connect#clicked 
       (init_dialog_accept_handler init_dialog_combobox init_dialog) in
+  let close_event = init_dialog#event#connect#delete 
+      (fun _ -> init_dialog#destroy (); true) in
   let init_dialog_delete_event = init_dialog#run () in
   !players_num
   
@@ -263,7 +266,7 @@ let add_label (pack:GPack.fixed) x y width height name =
 let main () =
   let window = GWindow.window ~width:1500 ~height:860
                               ~title:"Risc" ~resizable:false () in
-  let window_exit_signal = window#connect#destroy ~callback:Main.quit; in
+  let window_exit_signal = window#connect#destroy ~callback:Main.quit in
 
   let top_pane_pack = GPack.paned ~width:1500 ~height:860 
                               ~packing:window#add ~border_width:5 
