@@ -29,6 +29,9 @@ let territories_label_global = ref (GMisc.label ())
 let troops_label_global = ref (GMisc.label ())
 let selection1_label_global = ref (GMisc.label ())
 let selection2_label_global = ref (GMisc.label ())
+let confirm_button_global = ref (GButton.button ())
+let cards_cbox_global = ref (fst (GEdit.combo_box_text ()))
+let actions_cbox_global = ref (fst (GEdit.combo_box_text ()))
 
 let current_selection_mode = ref No_selection
 let selection1 = ref None
@@ -56,8 +59,67 @@ let set_territory_buttons_sensitivity new_sens =
   let u_list = List.map (fun b -> b#misc#set_sensitive new_sens) buttons in
   ()
 
-let set_all_sensitivity new_sens =
-  failwith "todo: all sensitivity"
+let clear_selections () = 
+  selection1 := None;
+  selection2 := None;
+  !selection1_label_global#set_text 
+    ("Territory Selection 1: No Selection");
+  !selection2_label_global#set_text 
+    ("Territory Selection 2: No Selection");
+  ()
+
+(*
+ * [make_selection name] sets the global territory selection set based
+ * on the current state of the set and the current global selection mode.
+ * For single selection settings, selection1 and its associated label are set
+ * if no selection already exists. for double selection settings, selection1 
+ * is set first if it is not already set, followed by selection2 if selection1
+ * contains a selection. For No_selection mode, this method has no effect.
+ * If possible, selects the territory specified by [name], and returns true if
+ * successful, false if not.
+ *)
+let make_selection name = 
+  match !current_selection_mode with
+  | No_selection -> false
+  | Single -> begin
+    match !selection1 with
+    | None -> selection1 := Some name;
+            selection2 := None;
+            !selection1_label_global#set_text 
+              ("Territory Selection 1: " ^ name);
+            !selection2_label_global#set_text 
+              ("Territory Selection 2: No Selection");
+              set_territory_buttons_sensitivity false;
+            true
+    | Some _ -> false
+  end
+  | Double -> begin
+    match !selection1 with
+    | None -> selection1 := Some name;
+              selection2 := None;
+              !selection1_label_global#set_text 
+                ("Territory Selection 1: " ^ name);
+              !selection2_label_global#set_text 
+                ("Territory Selection 2: No Selection");
+              set_territory_sensitivity name false;
+              true
+    | Some _ -> begin
+      match !selection2 with
+      | None -> selection2 := Some name;
+                !selection2_label_global#set_text 
+                  ("Territory Selection 2: " ^ name);
+                  set_territory_buttons_sensitivity false;
+                true
+      | Some _ -> false
+    end
+  end
+
+let lock_all () =
+  (*lock territories, clear selection, lock confirm *)
+  set_territory_buttons_sensitivity false;
+  clear_selections ();
+  !confirm_button_global#misc#set_sensitive false;
+  ()
 
 (* EXPOSED SETTER METHODS BEGIN *)
 
@@ -117,9 +179,6 @@ let update_troop_count count =
     ("Troops Deployed: " ^ (string_of_int count));
   ()
 
-let set_game_over over = 
-  failwith "todo"
-
 let write_log (message : string) = 
   let old_text = log_buffer#get_text () in
   let new_text = old_text ^ ("\n> " ^ message) in
@@ -129,67 +188,22 @@ let write_log (message : string) =
   !log_window_global#set_vadjustment current_adj;
   ()
 
+let set_game_over over = 
+  if over then begin
+    lock_all ();
+    write_log "Game ended.";
+    ()
+  end
+  else ()
+
 (* EXPOSED SETTER METHODS END *)
-
-let clear_selections () = 
-  selection1 := None;
-  selection2 := None;
-  !selection1_label_global#set_text 
-    ("Territory Selection 1: No Selection");
-  !selection2_label_global#set_text 
-    ("Territory Selection 2: No Selection");
-  ()
-
-(*
- * [make_selection name] sets the global territory selection set based
- * on the current state of the set and the current global selection mode.
- * For single selection settings, selection1 and its associated label are set
- * if no selection already exists. for double selection settings, selection1 
- * is set first if it is not already set, followed by selection2 if selection1
- * contains a selection. For No_selection mode, this method has no effect.
- * If possible, selects the territory specified by [name], and returns true if
- * successful, false if not.
- *)
-let make_selection name = 
-  match !current_selection_mode with
-  | No_selection -> false
-  | Single -> begin
-    match !selection1 with
-    | None -> selection1 := Some name;
-            selection2 := None;
-            !selection1_label_global#set_text 
-              ("Territory Selection 1: " ^ name);
-            !selection2_label_global#set_text 
-              ("Territory Selection 2: No Selection");
-              set_territory_buttons_sensitivity false;
-            true
-    | Some _ -> false
-  end
-  | Double -> begin
-    match !selection1 with
-    | None -> selection1 := Some name;
-              selection2 := None;
-              !selection1_label_global#set_text 
-                ("Territory Selection 1: " ^ name);
-              !selection2_label_global#set_text 
-                ("Territory Selection 2: No Selection");
-              set_territory_sensitivity name false;
-              true
-    | Some _ -> begin
-      match !selection2 with
-      | None -> selection2 := Some name;
-                !selection2_label_global#set_text 
-                  ("Territory Selection 2: " ^ name);
-                  set_territory_buttons_sensitivity false;
-                true
-      | Some _ -> false
-    end
-  end
 
 let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) (options: string list) () = 
   Mutex.lock mutex;
   let sel = (fst box)#active in
-  write_log ("selection: " ^ (List.nth options sel));
+  write_log ("Selected Action: " ^ (List.nth options sel));
+  clear_selections ();
+  (*todo: unlock things based on request, unset selections*)
   Mutex.unlock mutex;
   ()
 
@@ -209,7 +223,6 @@ let cancel_button_handler () =
   set_territory_buttons_sensitivity true;
   Mutex.unlock mutex;
   ()
-
 
 let run_init_dialog parent = 
   let players_num = ref None in
@@ -236,9 +249,9 @@ let run_init_dialog parent =
                   ~packing:init_dialog#vbox#add () in
   let accept_signal = 
       init_dialog_accept_button#connect#clicked 
-      (init_dialog_accept_handler init_dialog_combobox init_dialog) in
+      ~callback:(init_dialog_accept_handler init_dialog_combobox init_dialog) in
   let close_event = init_dialog#event#connect#delete 
-      (fun _ -> init_dialog#destroy (); true) in
+      ~callback:(fun _ -> init_dialog#destroy (); true) in
   let init_dialog_delete_event = init_dialog#run () in
   !players_num
   
@@ -317,8 +330,6 @@ let main () =
     | _ -> ()
   done;
 
-  print_endline (string_of_int !player_num);
-
   (*Info pack setup*)
   let player_label = GMisc.label ~text:"Current Player: N/A"
                                  ~packing:info_pack#add () in
@@ -357,15 +368,27 @@ let main () =
   let actions_list = ["Deploy"; "Attack"; "Reinforce"; "Move"; 
                       "Trade Cards - 3 Same"; "Trade Cards - 3 Different"; 
                       "End turn"] in
+  let actions_cbox_frame = GBin.frame ~label:"Move Selection" ~border_width:3
+                  ~packing:actions_pack#add () in
   let actions_cbox = GEdit.combo_box_text 
               ~strings:actions_list
               ~width:100 ~height:20 
-              ~packing:actions_pack#add () in
+              ~packing:actions_cbox_frame#add () in
   let actions_signal = (fst actions_cbox)#connect#changed 
                         (actions_cbox_handler actions_cbox actions_list) in
+  actions_cbox_global := fst actions_cbox;
+
+  let cards_cbox_frame = GBin.frame ~label:"Card Selection" ~border_width:3
+                  ~packing:actions_pack#add () in
+  let cards_cbox = GEdit.combo_box_text 
+              ~strings:["Infantry";"Calvalry";"Artillery"]
+              ~width:100 ~height:20 
+              ~packing:cards_cbox_frame#add () in
+  cards_cbox_global := fst cards_cbox;
 
   let confirm_button = GButton.button ~label:"Confirm"
                                       ~packing:actions_pack#add () in
+  confirm_button_global := confirm_button;
 
   let cancel_button = GButton.button ~label:"Cancel"
                                       ~packing:actions_pack#add () in
@@ -386,7 +409,8 @@ let main () =
   log_window_global := log_window;
   let log_view = GText.view ~buffer:log_buffer ~editable:false ~width:1590 
                             ~height:300 ~packing:log_window#add () in
-  log_buffer#set_text "> Game started";
+  log_buffer#set_text 
+    ("> Game started with " ^ (string_of_int !player_num) ^ " players.");
 
   (*Menu bar creation*)
   let menubar = GMenu.menu_bar ~packing:(info_pack#add) () in
@@ -461,6 +485,10 @@ let main () =
   let st = String.concat "; " names in
   print_endline st;
   *)
+
+  (*Set some sensitivities before game starts*)
+  set_territory_buttons_sensitivity false;
+  (fst cards_cbox)#misc#set_sensitive false;
 
   (*Final window configuration and display*)
   window#add_accel_group accel_group;
