@@ -221,18 +221,27 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
     !confirm_button_global#misc#set_sensitive true;
     (*todo: unlock things, set selection mode based on request*)
     if sel = "Deploy" then begin
-      set_selection_mode Single; ()
+      set_selection_mode Single
     end
     else if sel = "Attack" then begin
-      set_selection_mode Double; ()
+      set_selection_mode Double
     end
     else if sel = "Reinforce" then begin
-      set_selection_mode Single; ()
+      set_selection_mode Single
     end
     else if sel = "Move" then begin
-      set_selection_mode Double; ()
+      set_selection_mode Double
+    end
+    else begin
+      set_selection_mode No_selection
     end;
-    (*todo: card trading*)
+    (*card trading in separate if-clause because all others should lock it*)
+    if sel = "Trade Cards - 3 Same" then begin
+      !cards_cbox_global#misc#set_sensitive true
+    end
+    else begin
+      !cards_cbox_global#misc#set_sensitive false
+    end
   end
   else ();
   Mutex.unlock mutex;
@@ -547,7 +556,7 @@ let main () =
   let st = String.concat "; " names in
   print_endline st;
   *)
-  
+
   (*
   let fres = run_troop_dialog window "message" (1, 40) in
   match fres with
