@@ -96,7 +96,16 @@ let init_regions =
    ("Great Britain", ["Iceland"; "Western Europe"; "Scandinavia"; "Northern Europe"]);
    ("Western Europe", ["Great Britain"; "Northern Europe"; "Southern Europe"; "North Africa"]);
    ("Scandinavia", ["Iceland"; "Great Britain"; "Northern Europe"; "Ukraine"]);
-   ("Northern Europe", ["Great Britain"])
+   ("Northern Europe", ["Great Britain"; "Southern Europe"; "Western Europe"; "Scandinavia"; "Ukraine"]);
+   ("Southern Europe", ["Western Europe"; "North Africa"; "Egypt"; "Middle East"; "Ukraine"]);
+   ("Ukraine", ["Scandinavia"; "Northern Europe"; "Southern Europe"; "Ural"; "Afghanistan"; "Middle East"]);
+   ("North Africa", ["Brazil"; "Western Europe"; "Southern Europe"; "Egypt"; "East Africa"; "Congo"]);
+   ("Egypt", ["North Africa"; "Southern Europe"; "Middle East"; "East Africa"]);
+   ("Congo", ["North Africa"; "East Africa"; "South Africa"]);
+   ("East Africa", ["North Africa"; "Egypt"; "Middle East"; "Madagascar"; "South Africa"; "Congo"]);
+   ("South Africa", ["Congo"; "East Africa"; "Madagascar"]);
+   ("Madagascar", ["South Africa"; "East Africa"]);
+   (*"Middle East", *)
   ]
 
 let rec first_n lst n =
@@ -106,9 +115,9 @@ let rec first_n lst n =
     | [] -> []
     | h::t -> h::(first_n t (n-1))
 
-let init_state p =
+let init_state n =
   let colors =
-    first_n ["Red"; "Blue"; "Green"; "Yellow"; "Purple"; "Orange"] p in
+    first_n ["Red"; "Blue"; "Green"; "Yellow"; "Purple"; "Orange"] n in
   let players =
     List.map
       (fun name ->
@@ -117,7 +126,7 @@ let init_state p =
            cards = [];
            total_troops = 0;
            controls = [];
-           continents = []
+           continents = [("Asia", 0); ("Africa", 0); ("North America", 0); ("South America", 0); ("Europe", 0); ("Australia", 0)]
          })
       colors in
   {
