@@ -66,9 +66,9 @@ let clear_selections () =
   selection1 := None;
   selection2 := None;
   !selection1_label_global#set_text 
-    ("Territory Selection 1: No Selection");
+    ("No Selection");
   !selection2_label_global#set_text 
-    ("Territory Selection 2: No Selection");
+    ("No Selection");
   ()
 
 (*
@@ -88,10 +88,8 @@ let make_selection name =
     match !selection1 with
     | None -> selection1 := Some name;
             selection2 := None;
-            !selection1_label_global#set_text 
-              ("Territory Selection 1: " ^ name);
-            !selection2_label_global#set_text 
-              ("Territory Selection 2: No Selection");
+            !selection1_label_global#set_text name;
+            !selection2_label_global#set_text "No Selection";
               set_territory_buttons_sensitivity false;
             true
     | Some _ -> false
@@ -100,17 +98,14 @@ let make_selection name =
     match !selection1 with
     | None -> selection1 := Some name;
               selection2 := None;
-              !selection1_label_global#set_text 
-                ("Territory Selection 1: " ^ name);
-              !selection2_label_global#set_text 
-                ("Territory Selection 2: No Selection");
+              !selection1_label_global#set_text name;
+              !selection2_label_global#set_text "No Selection";
               set_territory_sensitivity name false;
               true
     | Some _ -> begin
       match !selection2 with
       | None -> selection2 := Some name;
-                !selection2_label_global#set_text 
-                  ("Territory Selection 2: " ^ name);
+                !selection2_label_global#set_text name;
                   set_territory_buttons_sensitivity false;
                 true
       | Some _ -> false
@@ -219,7 +214,6 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
     write_log ("Selected Action: " ^ sel);
     clear_selections ();
     !confirm_button_global#misc#set_sensitive true;
-    (*todo: unlock things, set selection mode based on request*)
     if sel = "Deploy" then begin
       set_selection_mode Single
     end
@@ -260,6 +254,12 @@ let cancel_button_handler () =
   Mutex.lock mutex;
   clear_selections ();
   set_territory_buttons_sensitivity true;
+  Mutex.unlock mutex;
+  ()
+
+let confirm_button_handler () = 
+  Mutex.lock mutex;
+  print_endline "confirm button";
   Mutex.unlock mutex;
   ()
 
@@ -459,19 +459,27 @@ let main () =
 
   let confirm_button = GButton.button ~label:"Confirm"
                                       ~packing:actions_pack#add () in
+  let confirm_button_signal = confirm_button#connect#clicked 
+                                      (confirm_button_handler) in
   confirm_button_global := confirm_button;
 
   let cancel_button = GButton.button ~label:"Cancel"
                                       ~packing:actions_pack#add () in
   let cancel_button_signal = 
     cancel_button#connect#clicked cancel_button_handler in
-
-  let selection1_label = GMisc.label ~text:"Territory Selection 1: No Selection"
-                                     ~packing:actions_pack#add () in         
+  
+  let selection1_frame = GBin.frame ~label:"Territory Selection 1" 
+                                    ~border_width:3 
+                                    ~packing:actions_pack#add () in
+  let selection1_label = GMisc.label ~text:"No Selection"
+                                     ~packing:selection1_frame#add () in         
   selection1_label_global := selection1_label;
 
-  let selection2_label = GMisc.label ~text:"Territory Selection 2: No Selection"
-                                     ~packing:actions_pack#add () in
+  let selection2_frame = GBin.frame ~label:"Territory Selection 2" 
+                                    ~border_width:3 
+                                    ~packing:actions_pack#add () in
+  let selection2_label = GMisc.label ~text:"No Selection"
+                                     ~packing:selection2_frame#add () in
   selection2_label_global := selection2_label;
 
   (*Game log setup*)
