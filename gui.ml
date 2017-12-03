@@ -261,11 +261,11 @@ let add_label (pack:GPack.fixed) x y width height name =
   ()
 
 let main () =
-  let window = GWindow.window ~width:1600 ~height:860
+  let window = GWindow.window ~width:1500 ~height:860
                               ~title:"Risc" ~resizable:false () in
   let window_exit_signal = window#connect#destroy ~callback:Main.quit; in
 
-  let top_pane_pack = GPack.paned ~width:1600 ~height:860 
+  let top_pane_pack = GPack.paned ~width:1500 ~height:860 
                               ~packing:window#add ~border_width:5 
                               `HORIZONTAL () in
 
@@ -273,7 +273,7 @@ let main () =
                   ~packing:(top_pane_pack#pack1 ~resize:false ~shrink:false) 
                   ~border_width:5 `VERTICAL () in
   
-  let sidebar_pack = GPack.paned ~width:370 ~height:850 ~border_width:5 
+  let sidebar_pack = GPack.paned ~width:270 ~height:850 ~border_width:5 
                   ~packing:(top_pane_pack#pack2 ~resize:false ~shrink:false)
                   `VERTICAL () in
 
@@ -292,7 +292,7 @@ let main () =
                   ~packing:(sidebar_pack#pack1 ~resize:false ~shrink:false)
                   () in
 
-  let info_pack = GPack.vbox ~width:360 ~height:240 
+  let info_pack = GPack.vbox ~width:260 ~height:240 
                   ~packing:info_frame#add
                   () in
   
@@ -300,7 +300,7 @@ let main () =
                   ~packing:(sidebar_pack#pack2 ~resize:false ~shrink:false)
                   () in
 
-  let actions_pack = GPack.vbox ~width:360 ~height:400 
+  let actions_pack = GPack.vbox ~width:260 ~height:400 
                   ~packing:actions_frame#add () in
 
   (*Get number of players via dialog box*)
