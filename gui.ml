@@ -63,9 +63,33 @@ let set_territory_troops name num =
   button#set_label (string_of_int num);
   ()
 
+let update_territories data = 
+  failwith "todo"
+
+let update_continent_owners data = 
+  failwith "todo"
+
+let update_current_player player = 
+  failwith "todo"
+
+let update_available_reinforcements num = 
+  failwith "todo"
+
+let update_cards cards_data = 
+  failwith "todo"
+
+let update_territories_count count = 
+  failwith "todo"
+
+let update_troop_count count = 
+  failwith "todo"
+
+let set_game_over over = 
+  failwith "todo"
+
 let write_log (message : string) = 
   let old_text = log_buffer#get_text () in
-  let new_text = (old_text ^ "\n> ") ^ message in
+  let new_text = old_text ^ ("\n> " ^ message) in
   log_buffer#set_text new_text;
   let current_adj = !log_window_global#vadjustment in
   current_adj#set_value current_adj#upper;
@@ -127,9 +151,10 @@ let make_selection name =
     end
   end
 
-let action_combobox_handler (selection: string) () = 
+let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) (options: string list) () = 
   Mutex.lock mutex;
-  write_log ("selection: " ^ selection);
+  let sel = (fst box)#active in
+  write_log ("selection: " ^ (List.nth options sel));
   Mutex.unlock mutex;
   ()
 
@@ -248,12 +273,16 @@ let main () =
   troops_label_global := troops_label;
 
   (*Action pack setup*)
+  
+  let actions_list = ["Deploy"; "Attack"; "Reinforce"; "Move"; 
+                      "Trade Cards - 3 Same"; "Trade Cards - 3 Different"; 
+                      "End turn"] in
   let actions_cbox = GEdit.combo_box_text 
-              ~strings:["Deploy"; "Attack"; "Reinforce"; "Move"; "Trade Cards"; 
-                        "End turn"]
+              ~strings:actions_list
               ~width:100 ~height:20 
               ~packing:actions_pack#add () in
-  
+  let actions_signal = (fst actions_cbox)#connect#changed 
+                        (actions_cbox_handler actions_cbox actions_list) in
 
   let confirm_button = GButton.button ~label:"Confirm"
                                       ~packing:actions_pack#add () in
@@ -302,12 +331,12 @@ let main () =
   add_territory gameplay_pack 68 60 "Alaska" "North America";
   add_territory gameplay_pack 137 110 "Alberta" "North America";
   add_territory gameplay_pack 133 245 "Central America" "North America";
-  add_territory gameplay_pack 204 183 "Eastern US" "North America";
+  add_territory gameplay_pack 204 183 "Eastern United States" "North America";
   add_territory gameplay_pack 427 33 "Greenland" "North America";
   add_territory gameplay_pack 175 65 "Northwest Territory" "North America";
   add_territory gameplay_pack 225 115 "Ontario" "North America";
   add_territory gameplay_pack 302 113 "Quebec" "North America";
-  add_territory gameplay_pack 120 170 "Western US" "North America";
+  add_territory gameplay_pack 120 170 "Western United States" "North America";
 
   add_territory gameplay_pack 290 500 "Argentina" "South America";
   add_territory gameplay_pack 332 405 "Brazil" "South America";
