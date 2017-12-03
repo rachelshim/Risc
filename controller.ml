@@ -1,4 +1,4 @@
-open States
+open State
 open Action
 
 let update_gui act =
@@ -7,5 +7,5 @@ let update_gui act =
 let update act st =
   st
 
-let init_state num =
+let init_game num =
   failwith "Unimplemented"
