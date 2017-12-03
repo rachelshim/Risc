@@ -379,7 +379,7 @@ let update st = function
           { st with players = p_list;
                     log = "Successfuly reinforced " ^ r }
         with
-        | Not_found -> { st with log = "Invalid move bitch" })
+        | Not_found -> { st with log = "You don't control that territory." })
     else { st with log = "Invalid move" } (* make more descriptive *)
   | APlay_Cards (c1, c2, c3) ->
     (match st.current_move with
@@ -388,7 +388,7 @@ let update st = function
     (* pretend there's some code to make sure l is a subset of head player's cards *)
     (* also force players with 5+ cards to trade in their cards *)
       if (c1 = c2 && c2 = c3) || (c1 <> c2 && c2 <> c3 && c1 <> c3) then
-        let bonus_n = st.bonus_troops + n in (* n should be 0 probably *)
+        let bonus_n = st.bonus_troops + n in
         let new_cards = remove_cards c1 p.cards
                         |> remove_cards c2 |> remove_cards c3 in
         let p' = { p with cards = new_cards } in
@@ -399,7 +399,7 @@ let update st = function
                   log = "Successfully traded in cards for " ^
                         (string_of_int bonus_n) ^ " extra troops"; }
       else
-        { st with log = "Invalid card trade in" }
+        { st with log = "Invalid card trade-in" }
     | _ -> { st with log = "Invalid move" })
   | AWait_Reinforcement ->
     (match st.current_move with
@@ -418,6 +418,5 @@ let update st = function
     | CReinforcement n ->
       let p = List.hd st.players in
       failwith "TODO"
-      (* calculate how many troops p will get with continents, etc. *)
     | _ -> { st with log = "Invalid move"; })
   | _ -> failwith "TODO"
