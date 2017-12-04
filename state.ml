@@ -335,14 +335,14 @@ let update st = function
       let p = List.hd st.players in
     (* pretend there's some code to make sure l is a subset of head player's cards *)
     (* also force players with 5+ cards to trade in their cards *)
-      if ((c1 <> c2 && c2 <> c3 && c1 <> c3) ||
+      if (c1 <> c2 && c2 <> c3 && c1 <> c3) ||
           (c1 = Wild && c2 = Wild) ||
           (c1 = Wild && c3 = Wild) ||
           (c2 = Wild && c3 = Wild) ||
           (c1 = c2 && c3 = Wild) ||
           (c1 = c3 && c2 = Wild) ||
-          (c2 = c3 && c1 = Wild) ||
-         ) then
+          (c2 = c3 && c1 = Wild)
+          then
         let bonus_n = st.bonus_troops + n in
         let new_cards = remove_cards c1 p.cards
                         |> remove_cards c2 |> remove_cards c3 in
@@ -357,7 +357,7 @@ let update st = function
         { st with log = "Invalid card trade-in" }
     | _ -> { st with log = "Invalid move" }
   end
-  | AWait_Reinforcement ->
+  | AWaitReinforcement ->
     (match st.current_move with
     | CReinforcement n ->
       let p = List.hd st.players in
