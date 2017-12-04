@@ -355,155 +355,177 @@ let run_troop_dialog parent message (min, max) =
 
 let confirm_button_handler parent () = 
   Mutex.lock mutex;
-  print_endline "confirm button";
-  let index = !actions_cbox_global#active in
-  let action = (
-    (*Deploy: 0*)
-    if index = 0 then begin
-        let loc = !selection1 in
-        match loc with
-        | None -> None
-        | Some dep -> Some (ADeployment dep)
-    end
-    (*Attack: 1*)
-    else if index = 1 then begin
-      let src = !selection1 in
-      let dest = !selection2 in
-      let src_troops = match src with
-      | None -> 0
-      | Some loc -> (Controller.get_troops_in_territory !controller loc) - 1 in 
-      if src_troops = 0 then begin
-        write_log "Unable to comply. Insufficient troops in source territory.";
-        None
-      end
-      else begin
-        let num = run_troop_dialog parent 
-          "Select the number of troops to attack with." (1, src_troops) in
-        match (src, dest, num) with
-        | (Some s, Some d, Some n) -> write_log ("Attacking " ^ d ^ " from " 
-                                                ^ s ^ " with " ^ 
-                                                (string_of_int n) ^ " unit(s).");
-                                      Some (AAttack ((s, d), n))
-        | _ -> None
-      end
-    end
-    (*Reinforce: 2*)
-    else if index = 2 then begin
-      let loc = !selection1 in
-        match loc with
-        | None -> None
-        | Some dep -> begin
-          let aval_troops = (Controller.get_available_reinforcement 
-                              !controller dep) in
-          let num = run_troop_dialog parent 
-            "Select the number of troops to reinforce with." 
-            (1, aval_troops) in
-          match num with
+  begin
+  try
+    let index = !actions_cbox_global#active in
+    let action = (
+      (*Deploy: 0*)
+      if index = 0 then begin
+          let loc = !selection1 in
+          match loc with
           | None -> None
-          | Some x -> write_log ("Reinforcing " ^ dep ^ " with " ^ 
-                        (string_of_int x) ^ " troops.");
-                      Some (AReinforcement (dep, x))
+          | Some dep -> Some (ADeployment dep)
+      end
+      (*Attack: 1*)
+      else if index = 1 then begin
+        let src = !selection1 in
+        let dest = !selection2 in
+        let src_troops = match src with
+        | None -> 0
+        | Some loc -> (Controller.get_troops_in_territory !controller loc) - 1 in 
+        if src_troops = 0 then begin
+          write_log "Unable to comply. Insufficient troops in source territory.";
+          None
         end
-    end
-    (*Move: 3*)
-    else if index = 3 then begin
-      let src = !selection1 in
-      let dest = !selection2 in
-      let src_troops = match src with
-      | None -> 0
-      | Some loc -> (Controller.get_troops_in_territory !controller loc) - 1 in 
-      if src_troops = 0 then begin
-        write_log "Unable to comply. Insufficient troops in source territory.";
-        None
+        else begin
+          let num = run_troop_dialog parent 
+            "Select the number of troops to attack with." (1, src_troops) in
+          match (src, dest, num) with
+          | (Some s, Some d, Some n) -> write_log ("Attacking " ^ d ^ " from " 
+                                                  ^ s ^ " with " ^ 
+                                                  (string_of_int n) ^ " unit(s).");
+                                        Some (AAttack ((s, d), n))
+          | _ -> None
+        end
+      end
+      (*Reinforce: 2*)
+      else if index = 2 then begin
+        let loc = !selection1 in
+          match loc with
+          | None -> None
+          | Some dep -> begin
+            let aval_troops = (Controller.get_available_reinforcement 
+                                !controller dep) in
+            let num = run_troop_dialog parent 
+              "Select the number of troops to reinforce with." 
+              (1, aval_troops) in
+            match num with
+            | None -> None
+            | Some x -> write_log ("Reinforcing " ^ dep ^ " with " ^ 
+                          (string_of_int x) ^ " troops.");
+                        Some (AReinforcement (dep, x))
+          end
+      end
+      (*Move: 3*)
+      else if index = 3 then begin
+        let src = !selection1 in
+        let dest = !selection2 in
+        let src_troops = match src with
+        | None -> 0
+        | Some loc -> (Controller.get_troops_in_territory !controller loc) - 1 in 
+        if src_troops = 0 then begin
+          write_log "Unable to comply. Insufficient troops in source territory.";
+          None
+        end
+        else begin
+          let num = run_troop_dialog parent 
+            "Select the number of troops to move." (1, src_troops) in
+          match (src, dest, num) with
+          | (Some s, Some d, Some n) -> write_log ("Moving " ^ (string_of_int n) ^  
+                                          " unit(s) from " ^ s ^ " to " ^ d ^ ".");
+                                        Some (AMovement ((s, d), n))
+          | _ -> None
+        end
+      end
+      (*Trade Cards: 4*)
+      else if index = 4 then begin
+        let cards = run_cards_dialog parent in
+        match cards with
+        | None -> None
+        | Some (c_int1, c_int2, c_int3) -> begin
+          let card1 = card_of_int c_int1 in
+          let card2 = card_of_int c_int2 in
+          let card3 = card_of_int c_int3 in
+          match (card1, card2, card3) with
+          | (Some c1, Some c2, Some c3) ->
+                                        let st1 = string_of_card c1 in
+                                        let st2 = string_of_card c2 in
+                                        let st3 = string_of_card c3 in
+                                        write_log ("Playing " ^ st1 ^ ", " ^ st2 
+                                                    ^ ", and " ^ st3 ^ ".");
+                                        Some (APlayCards (c1, c2, c3))
+          | _ -> None
+        end
+      end
+      (*End Turn: 5*)
+      else if index = 5 then begin
+        (*TODO: switch back to normal*)
+        Some ANextTurn
+        (*None*)
       end
       else begin
-        let num = run_troop_dialog parent 
-          "Select the number of troops to move." (1, src_troops) in
-        match (src, dest, num) with
-        | (Some s, Some d, Some n) -> write_log ("Moving " ^ (string_of_int n) ^  
-                                        " unit(s) from " ^ s ^ " to " ^ d ^ ".");
-                                      Some (AMovement ((s, d), n))
-        | _ -> None
-      end
-    end
-    (*Trade Cards: 4*)
-    else if index = 4 then begin
-      let cards = run_cards_dialog parent in
-      match cards with
-      | None -> None
-      | Some (c_int1, c_int2, c_int3) -> begin
-        let card1 = card_of_int c_int1 in
-        let card2 = card_of_int c_int2 in
-        let card3 = card_of_int c_int3 in
-        match (card1, card2, card3) with
-        | (Some c1, Some c2, Some c3) ->
-                                      let st1 = string_of_card c1 in
-                                      let st2 = string_of_card c2 in
-                                      let st3 = string_of_card c3 in
-                                      write_log ("Playing " ^ st1 ^ ", " ^ st2 
-                                                  ^ ", and " ^ st3 ^ ".");
-                                      Some (APlayCards (c1, c2, c3))
-        | _ -> None
-      end
-    end
-    (*End Turn: 5*)
-    else if index = 5 then begin
-      Some ANextTurn
-    end
-    else begin
-      None
-    end) 
-  in
-  (*Cases over - apply action*)
-  match action with
-  | None -> ()
-  | Some act -> controller := Controller.controller_update 
-                                !controller setters act;
-                ();
+        None
+      end) 
+    in
+    (*Cases over - apply action*)
+    match action with
+    | None -> ()
+    | Some act -> controller := Controller.controller_update 
+                                  !controller setters act;
+                  ();
+  with
+  | _ ->  write_log "An unexpected error has occurred.";
+  end;
   Mutex.unlock mutex;
   ()
 
 let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () = 
   Mutex.lock mutex;
-  let index = (fst box)#active in
-  (*disallow illegal arguments*)
-  if index >= 0 || index >= List.length actions_strings then begin
-    let sel = List.nth actions_strings index in
-    write_log ("Selected Action: " ^ sel);
-    clear_selections ();
-    !confirm_button_global#misc#set_sensitive true;
-    if index = 0 then begin
-      set_selection_mode Single
+  begin
+  try
+    let index = (fst box)#active in
+    (*disallow illegal arguments*)
+    if index >= 0 || index >= List.length actions_strings then begin
+      let sel = List.nth actions_strings index in
+      write_log ("Selected Action: " ^ sel);
+      clear_selections ();
+      !confirm_button_global#misc#set_sensitive true;
+      if index = 0 then begin
+        set_selection_mode Single
+      end
+      else if index = 1 then begin
+        set_selection_mode Double
+      end
+      else if index = 2 then begin
+        set_selection_mode Single
+      end
+      else if index = 3 then begin
+        set_selection_mode Double
+      end
+      else begin
+        set_selection_mode No_selection
+      end;
     end
-    else if index = 1 then begin
-      set_selection_mode Double
-    end
-    else if index = 2 then begin
-      set_selection_mode Single
-    end
-    else if index = 3 then begin
-      set_selection_mode Double
-    end
-    else begin
-      set_selection_mode No_selection
-    end;
-  end
-  else ();
+    else ();
+  with
+  | _ ->  write_log "An unexpected error has occurred.";
+  end;
   Mutex.unlock mutex;
   ()
 
 let territory_button_handler name (button: GButton.button) () =
   Mutex.lock mutex;
-  set_territory_troops name (lookup_troop_count name |> succ);
-  write_log ("Region: " ^ name);
-  let sel_result = make_selection name in
+  begin
+  try
+    set_territory_troops name (lookup_troop_count name |> succ);
+    write_log ("Region: " ^ name);
+    let sel_result = make_selection name in
+    ();
+  with
+  | _ ->  write_log "An unexpected error has occurred.";
+  end;
   Mutex.unlock mutex;
   ()
 
 let cancel_button_handler () = 
   Mutex.lock mutex;
-  clear_selections ();
-  set_territory_buttons_sensitivity true;
+  begin
+  try 
+    clear_selections ();
+    set_territory_buttons_sensitivity true;
+  with
+  | _ ->  write_log "An unexpected error has occurred.";
+  end;
   Mutex.unlock mutex;
   ()
 
