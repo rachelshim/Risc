@@ -429,7 +429,12 @@ let rec remove_cards c l =
     else remove_cards c t
 
 (** [get_player_reinforcments p] is the number of reinforcements given to [p] *)
-let get_player_reinforcements p = failwith "unimplemented"
+let get_player_reinforcements p =
+  let reg_troops =
+    (List.fold_left (fun tr tup -> snd tup + tr) 0 p.continent_troops) / 3 in
+  List.fold_left
+    (fun tr c -> (List.assoc c continents |> snd) + tr) reg_troops
+    p.controls_cont
 
 let update st = function
   | ADeployment r ->
