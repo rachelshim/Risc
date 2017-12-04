@@ -65,3 +65,6 @@ val avail_troops : player -> state -> int
 
 (** [troops_in st r] returns the number of troops currently in region r *)
 val troops_in : state -> string -> int
+
+(** [troops_controlled pl] returns the number of regions controlled by pl  *)
+val num_controlled : player -> int

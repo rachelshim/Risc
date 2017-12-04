@@ -573,3 +573,6 @@ let region_of_name st r =
 
 let troops_in st r =
   (region_of_name st r).troops
+
+let num_controlled pl =
+  List.fold_left ( fun acc (str, n) -> acc + n ) 0 pl.continent_troops
