@@ -1,12 +1,11 @@
+open Action
+open Map
 (* ############################################################################
 
   DEFINING TYPES
 
 ##############################################################################*)
 
-
-(** Variant [card] represents the type of card *)
-type card = Infantry | Cavalry | Artillery | Wild
 
 (** [region] represents a region in Risk. *)
 type region =
@@ -27,16 +26,6 @@ type player =
     controls_cont: string list;
   }
 
-type action =
-  | ADeployment of string (* places one troop on region s *)
-  | APlay_Cards of (card * card * card) (* the cards to trade in *)
-  | AWait_Reinforcement
-  | AReinforcement of string * int (* reinforce region s with n troops *)
-  | AAttack of string * string (* attack from region s1 to region s2 *)
-  | AMovement of (string * string) * int
-      (* move n troops from region s1 to region s2 *)
-  | ANext_Turn
-
 type curr_move =
   | CDeployment
   | CReinforcement of int (* reinforce with n total troops *)
@@ -47,8 +36,10 @@ type curr_move =
   | CGame_Won of string (* player s won the game *)
 
 (** Map representing region, with key region name and value [region] *)
-module Regions = Map.Make (String)
+module Regions = Map.Make(String)
 
+(** Represents the current game state. The head of the [players] list is the
+    current player whose turn it is. *)
 type state =
   {
     current_move: curr_move;
@@ -400,7 +391,6 @@ let rec remove_cards c l =
   | [] -> l
   | h::t -> if h = c then t
             else remove_cards c t
-
 
 let update st = function
   | ADeployment r ->

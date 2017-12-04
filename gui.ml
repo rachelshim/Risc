@@ -3,6 +3,7 @@ open GdkKeysyms
 open Gtk
 open Unix
 open Thread
+open Action
 
 (*Selection modes*)
 type selection_mode = 
@@ -15,6 +16,7 @@ let color_options = ["Red"; "Blue"; "Green"; "Yellow"; "Purple"; "Orange"]
 let actions_strings =   ["Deploy"; "Attack"; "Reinforce"; "Move"; 
                          "Trade Cards - 3 Same"; "Trade Cards - 3 Different"; 
                          "End turn"]
+let cards_strings = ["Infantry";"Calvalry";"Artillery"]
 let locale = GtkMain.Main.init ()
 let continent_labels_list = ref []
 let buttons_list = ref []
@@ -199,78 +201,22 @@ let set_game_over over =
   if over then begin
     lock_all ();
     write_log "Game ended.";
+    (*TODO: other things*)
     ()
   end
   else ()
 
 (* EXPOSED SETTER METHODS END *)
 
-let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () = 
-  Mutex.lock mutex;
-  let index = (fst box)#active in
-  (*disallow illegal arguments*)
-  if index >= 0 || index >= List.length actions_strings then begin
-    let sel = List.nth actions_strings index in
-    write_log ("Selected Action: " ^ sel);
-    clear_selections ();
-    !confirm_button_global#misc#set_sensitive true;
-    if sel = "Deploy" then begin
-      set_selection_mode Single
-    end
-    else if sel = "Attack" then begin
-      set_selection_mode Double
-    end
-    else if sel = "Reinforce" then begin
-      set_selection_mode Single
-    end
-    else if sel = "Move" then begin
-      set_selection_mode Double
-    end
-    else begin
-      set_selection_mode No_selection
-    end;
-    (*card trading in separate if-clause because all others should lock it*)
-    if sel = "Trade Cards - 3 Same" then begin
-      !cards_cbox_global#misc#set_sensitive true
-    end
-    else begin
-      !cards_cbox_global#misc#set_sensitive false
-    end
-  end
-  else ();
-  Mutex.unlock mutex;
-  ()
-
-let territory_button_handler name (button: GButton.button) () =
-  Mutex.lock mutex;
-  set_color button "Blue";
-  set_territory_troops name (lookup_troop_count name |> succ);
-  write_log ("Region: " ^ name);
-  let sel_result = make_selection name in
-  Mutex.unlock mutex;
-  ()
-
-let cancel_button_handler () = 
-  Mutex.lock mutex;
-  clear_selections ();
-  set_territory_buttons_sensitivity true;
-  Mutex.unlock mutex;
-  ()
-
-let confirm_button_handler () = 
-  Mutex.lock mutex;
-  print_endline "confirm button";
-  Mutex.unlock mutex;
-  ()
-
 let run_init_dialog parent = 
   let players_num = ref None in
   let init_dialog_accept_handler cbox dialog () = 
     let num = ((fst cbox)#active + 2) in
     let res = dialog#event#send (GdkEvent.create `DELETE) in
+    players_num :=
+      if num = 1 then None
+      else Some num;
     dialog#destroy ();
-    if num = 1 then (players_num := None)
-    else (players_num := Some num);
     ()
   in
   let init_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true 
@@ -293,14 +239,63 @@ let run_init_dialog parent =
       ~callback:(fun _ -> init_dialog#destroy (); true) in
   let init_dialog_delete_event = init_dialog#run () in
   !players_num
+
+let run_cards_dialog parent = 
+  let cards_selected = ref None in
+  let cards_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true 
+                  ~title:"Initialization Dialog" ~deletable:true 
+                  ~resizable:false () in
+  let cards_dialog_label = GMisc.label 
+                  ~text:"Please select the cards to exchange."
+                  ~packing:cards_dialog#vbox#add () in
+  (*Card selection UI components + containers*)
+  let cards_frame = GBin.frame ~width:400 ~height:80 ~border_width:3
+                  ~packing:cards_dialog#vbox#add () in
+  let cards_pack = GPack.hbox ~packing:cards_frame#add () in
+  let card1_frame = GBin.frame ~label:"Card 1" ~border_width:2 
+                  ~packing:cards_pack#add () in
+  let card1_cbox = GEdit.combo_box_text ~strings:cards_strings
+                  ~packing:card1_frame#add () in
+  let card2_frame = GBin.frame ~label:"Card 2" ~border_width:2 
+                  ~packing:cards_pack#add () in
+  let card2_cbox = GEdit.combo_box_text ~strings:cards_strings
+                  ~packing:card2_frame#add () in
+  let card3_frame = GBin.frame ~label:"Card 3" ~border_width:2 
+                  ~packing:cards_pack#add () in
+  let card3_cbox = GEdit.combo_box_text ~strings:cards_strings
+                  ~packing:card3_frame#add () in
+  (*Accept button components*)
+  let cards_dialog_accept_handler  () = 
+    (*Get cards*)
+    let card1 = (fst card1_cbox)#active in
+    let card2 = (fst card2_cbox)#active in
+    let card3 = (fst card3_cbox)#active in
+    (*save result values*)
+    cards_selected := 
+      if card1 = -1 || card2 = -1 || card3 = -1 then None
+      else Some (card1, card2, card3);
+    (*now we can kill the window*)
+    let res = cards_dialog#event#send (GdkEvent.create `DELETE) in
+    cards_dialog#destroy ();
+    ()
+  in
+  let cards_dialog_accept_button = GButton.button ~label:"Accept"
+                  ~packing:cards_dialog#vbox#add () in
+  let accept_signal = cards_dialog_accept_button#connect#clicked 
+                  ~callback:(cards_dialog_accept_handler) in
+  (*blocking loop*)
+  let close_event = cards_dialog#event#connect#delete 
+                  ~callback:(fun _ -> cards_dialog#destroy (); true) in
+  let init_dialog_delete_event = cards_dialog#run () in
+  !cards_selected
   
 let run_troop_dialog parent message (min, max) = 
   let value = ref None in
   let troop_dialog_accept_handler scale dialog () = 
     let num = int_of_float scale#adjustment#value in
+    value := Some num;
     let res = dialog#event#send (GdkEvent.create `DELETE) in
     dialog#destroy ();
-    value := Some num;
     ()
   in
   let fmin = float_of_int min in
@@ -328,6 +323,98 @@ let run_troop_dialog parent message (min, max) =
       ~callback:(fun _ -> troop_dialog#destroy (); true) in
   let init_dialog_delete_event = troop_dialog#run () in
   !value
+
+let confirm_button_handler parent () = 
+  Mutex.lock mutex;
+  print_endline "confirm button";
+  (*let index = !actions_cbox_global#active in
+  (*Deploy: 0*)
+  let action = (if index = 0 then begin
+    ADeployment ""
+  end
+  (*Attack: 1*)
+  else if index = 1 then begin
+    (*let origin = "" in (*TODO: get source and dest*)
+    let destination = "" in
+    let troops_in_origin = 50 in (*TODO: actually get this data*)
+    let count = run_troop_dialog parent "ATTACK" (1, troops_in_origin) in*)
+    AAttack ("","") 0
+  end
+  (*Reinforce: 2*)
+  else if index = 2 then begin
+    AReinforcement "" 0
+  end
+  (*Move: 3*)
+  else if index = 3 then begin
+    AMovement ("", ""), 0)
+  end
+  (*Trade Cards Same: 4*)
+  else if index = 4 then begin
+    TradeSameArt (*todo: cases*)
+  end
+  (*Trade Cards Different: 5*)
+  else if index = 5 then begin
+    TradeDiff
+  end
+  (*End Turn: 6*)
+  else if index = 6 then begin
+    EndTurn
+  end) in*)
+  (*Cases over*)
+  Mutex.unlock mutex;
+  ()
+
+let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () = 
+  Mutex.lock mutex;
+  let index = (fst box)#active in
+  (*disallow illegal arguments*)
+  if index >= 0 || index >= List.length actions_strings then begin
+    let sel = List.nth actions_strings index in
+    write_log ("Selected Action: " ^ sel);
+    clear_selections ();
+    !confirm_button_global#misc#set_sensitive true;
+    if index = 0 then begin
+      set_selection_mode Single
+    end
+    else if index = 1 then begin
+      set_selection_mode Double
+    end
+    else if index = 2 then begin
+      set_selection_mode Single
+    end
+    else if index = 3 then begin
+      set_selection_mode Double
+    end
+    else begin
+      set_selection_mode No_selection
+    end;
+    (*card trading in separate if-clause because all others should lock it*)
+    if index = 4 then begin
+      !cards_cbox_global#misc#set_sensitive true
+    end
+    else begin
+      !cards_cbox_global#misc#set_sensitive false
+    end
+  end
+  else ();
+  Mutex.unlock mutex;
+  ()
+
+let territory_button_handler name (button: GButton.button) () =
+  Mutex.lock mutex;
+  set_color button "Blue";
+  set_territory_troops name (lookup_troop_count name |> succ);
+  write_log ("Region: " ^ name);
+  let sel_result = make_selection name in
+  Mutex.unlock mutex;
+  ()
+
+let cancel_button_handler () = 
+  Mutex.lock mutex;
+  clear_selections ();
+  set_territory_buttons_sensitivity true;
+  Mutex.unlock mutex;
+  ()
 
 let add_territory (pack:GPack.fixed) x y name extra = 
   let button = GButton.button ~label:"0"
@@ -452,15 +539,16 @@ let main () =
   let cards_cbox_frame = GBin.frame ~label:"Card Selection" ~border_width:3
                   ~packing:actions_pack#add () in
   let cards_cbox = GEdit.combo_box_text 
-              ~strings:["Infantry";"Calvalry";"Artillery"]
+              ~strings:cards_strings
               ~width:100 ~height:20 
               ~packing:cards_cbox_frame#add () in
+  (fst cards_cbox)#set_active 0;
   cards_cbox_global := fst cards_cbox;
 
   let confirm_button = GButton.button ~label:"Confirm"
                                       ~packing:actions_pack#add () in
   let confirm_button_signal = confirm_button#connect#clicked 
-                                      (confirm_button_handler) in
+                                      (confirm_button_handler window) in
   confirm_button_global := confirm_button;
 
   let cancel_button = GButton.button ~label:"Cancel"
