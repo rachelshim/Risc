@@ -41,9 +41,6 @@ val valid_mode : action -> state -> bool
 (** [current_player st] returns the current player for a given state *)
 val current_player : state -> player
 
-(** [current_player st] returns the current player for a given state *)
-val current_player : state -> player
-
 (** [num_inf pl] returns the number of infantry cards pl has *)
 val num_inf : player -> int
 

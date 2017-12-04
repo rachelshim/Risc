@@ -16,7 +16,7 @@ let update_gui (st : state) (act : action) =
   | ANextTurn -> update_current_player (player_id pl)
   | _ -> ()
 
-let controller_update (st : state) (act : action) =
+let controller_update (st : state) funcs (act : action) =
   let st' = update st act in
   let gui' = update_gui st' act in
   st'
@@ -24,8 +24,8 @@ let controller_update (st : state) (act : action) =
 let init_game num =
   init_state num
 
-let get_available_reinforcement id =
+let get_available_reinforcement st id =
   failwith "unimplemented"
 
-let get_troops_in_territory id t =
+let get_troops_in_territory st t =
   failwith "unimplemented"

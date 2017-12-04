@@ -496,3 +496,9 @@ let num_wild pl =
 
 let player_id pl =
   pl.id
+
+(* let player_of_id st id =
+  List.mem_assoc st. *)
+
+(* let troops_in t =
+  List. *)
