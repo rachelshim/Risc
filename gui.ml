@@ -18,6 +18,7 @@ let actions_strings =   ["Deploy"; "Attack"; "Reinforce"; "Move";
 let cards_strings = ["Infantry";"Cavalry";"Artillery";"Wildcard"]
 let locale = GtkMain.Main.init ()
 let controller = ref (Controller.init_game 2)
+let window_global = ref (GWindow.window ())
 let continent_labels_list = ref []
 let buttons_list = ref []
 let territory_troop_list = ref []
@@ -211,10 +212,25 @@ let set_game_over over =
   end
   else ()
 
+let run_blocking_popup () = 
+  let block_dialog = GWindow.message_dialog ~parent:!window_global 
+      ~message_type:`QUESTION ~resizable:false 
+      ~title:"Next Turn Delay" 
+      ~buttons:GWindow.Buttons.ok 
+      ~message:"Please click OK when the next player\nis ready to begin their turn." () in
+  let block_delete_event = block_dialog#run () in
+  block_dialog#destroy();
+  ()
+
+(*
+ * This function roll is needed for the Controller to be able to set gui values
+ * without creating a situation in which the project cannot compile due to 
+ * circular dependencies (which occurs when Controller opens Gui).
+ *)
 let setters = (write_log, update_territories, update_continent_owners, 
               update_current_player, update_available_reinforcements, 
               update_cards, update_territories_count, update_troop_count, 
-              set_game_over)
+              set_game_over, run_blocking_popup)
 
 (* EXPOSED SETTER METHODS END *)
 
@@ -515,6 +531,7 @@ let add_label (pack:GPack.fixed) x y width height name =
 let main () =
   let window = GWindow.window ~width:1450 ~height:860
                               ~title:"Risc" ~resizable:false () in
+  window_global := window;
   let window_exit_signal = window#connect#destroy ~callback:Main.quit in
 
   let top_pane_pack = GPack.paned ~width:1450 ~height:860 

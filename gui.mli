@@ -62,3 +62,10 @@ val update_troop_count : int -> unit
  * GUI that the game is over.
  *)
 val set_game_over : bool -> unit
+
+(*
+ * [run_blocking_popup] is a function with the side effect that it displays a 
+ * message dialog that blocks the current thread and GUI prompting the user
+ * to click OK when the next player is ready to allow execution to resume.
+ *)
+val run_blocking_popup : unit -> unit
