@@ -9,7 +9,7 @@ let update_gui (st : state)
      run_blocking_popup) (act : action) =
   let pl = current_player st in
   match act with
-  | ADeployment reg -> () (* places one troop on region s *)
+  | ADeployment reg -> update_territories (reg, player_id pl, troops_in st reg)
   | APlayCards (c1, c2, c3) ->
     update_cards (num_inf pl, num_cav pl, num_art pl, num_wild pl)
 (** TODO update troops available based on state  *)
@@ -18,7 +18,8 @@ let update_gui (st : state)
   | AMovement ((reg1, reg2), num) -> ()
       (* move n troops from region s1 to region s2 *)
   | ANextTurn -> update_current_player (player_id pl);
-                   update_cards (num_inf pl, num_cav pl, num_art pl, num_wild pl)
+    update_cards (num_inf pl, num_cav pl, num_art pl,
+                  num_wild pl)
 
   | _ -> ()
 
