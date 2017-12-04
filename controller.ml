@@ -2,10 +2,14 @@
 open State
 open Action
 
-let update_gui (st : state) (write_log, update_territories, update_continent_owners, update_current_player, update_available_reinforcements, update_cards, update_territories_count, update_troop_count, set_game_over, run_blocking_popup) (act : action) =
+let update_gui (st : state)
+    (write_log, update_territories, update_continent_owners,
+     update_current_player, update_available_reinforcements, update_cards,
+     update_territories_count, update_troop_count, set_game_over,
+     run_blocking_popup) (act : action) =
   let pl = current_player st in
   match act with
-  | ADeployment reg -> () (* places one troop on region s *)
+  | ADeployment reg -> update_territories (reg, player_id pl, troops_in st reg)
   | APlayCards (c1, c2, c3) ->
     update_cards (num_inf pl, num_cav pl, num_art pl, num_wild pl)
 (** TODO update troops available based on state  *)
@@ -13,7 +17,10 @@ let update_gui (st : state) (write_log, update_territories, update_continent_own
   | AAttack (reg1, reg2) -> () (* attack from region s1 to region s2 *)
   | AMovement ((reg1, reg2), num) -> ()
       (* move n troops from region s1 to region s2 *)
-  | ANextTurn -> update_current_player (player_id pl)
+  | ANextTurn -> update_current_player (player_id pl);
+    update_cards (num_inf pl, num_cav pl, num_art pl,
+                  num_wild pl)
+
   | _ -> ()
 
 let controller_update (st : state) funcs (act : action) =

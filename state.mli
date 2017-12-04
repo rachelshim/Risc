@@ -55,3 +55,13 @@ val num_wild : player -> int
 
 (** [player_id pl] returns pl's id.  *)
 val player_id : player -> string
+
+(** [region_of_name r] returns the region with name r  *)
+val region_of_name : string -> region
+
+(** [avail_troops st pl] returns the number of troops available for reinforce-
+    ment for player pl in st. *)
+val avail_troops : player -> state -> int
+
+(** [troops_in st r] returns the number of troops currently in region r *)
+val troops_in : state -> string -> int
