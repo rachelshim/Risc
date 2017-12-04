@@ -16,13 +16,13 @@ type region
  * in the continent, as well as an option for the id of the player who controls
  * it.
  *)
-type continent
+(* type continent *)
 
 (* [gamelog] keeps track of every action that has been taken in the game. *)
-type gamelog
+(* type gamelog *)
 
 (* [create_player str] creates a new player with id [str]. *)
-val create_player : string -> player
+(* val create_player : string -> player *)
 
 (* [init_state n] creates a new game with [n] the players.
  *)
@@ -40,3 +40,18 @@ val valid_mode : action -> state -> bool
 
 (** [current_player st] returns the current player for a given state *)
 val current_player : state -> player
+
+(** [num_inf pl] returns the number of infantry cards pl has *)
+val num_inf : player -> int
+
+(** [num_cav pl] returns the number of cavalry cards pl has *)
+val num_cav : player -> int
+
+(** [num_art pl] returns the number of artillery cards pl has *)
+val num_art : player -> int
+
+(** [num_wild pl] returns the number of wildcards pl has *)
+val num_wild : player -> int
+
+(** [player_id pl] returns pl's id.  *)
+val player_id : player -> string

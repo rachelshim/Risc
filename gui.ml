@@ -14,10 +14,10 @@ type selection_mode =
 (*Globals setup*)
 let color_options = ["Red"; "Blue"; "Green"; "Yellow"; "Purple"; "Orange"]
 let actions_strings =   ["Deploy"; "Attack"; "Reinforce"; "Move"; 
-                         "Trade Cards - 3 Same"; "Trade Cards - 3 Different"; 
-                         "End turn"]
-let cards_strings = ["Infantry";"Calvalry";"Artillery"]
+                         "Trade Cards"; "End turn"]
+let cards_strings = ["Infantry";"Cavalry";"Artillery";"Wildcard"]
 let locale = GtkMain.Main.init ()
+let controller = ref (Controller.init_game 2)
 let continent_labels_list = ref []
 let buttons_list = ref []
 let territory_troop_list = ref []
@@ -27,7 +27,7 @@ let log_window_global = ref (GBin.scrolled_window ())
 let player_label_global = ref (GMisc.label ())
 let reinforcement_label_global = ref (GMisc.label ())
 let infantry_label_global = ref (GMisc.label ())
-let calvalry_label_global = ref (GMisc.label ())
+let cavalry_label_global = ref (GMisc.label ())
 let artillery_label_global = ref (GMisc.label ())
 let wildcard_label_global = ref (GMisc.label ())
 let territories_label_global = ref (GMisc.label ())
@@ -35,14 +35,26 @@ let troops_label_global = ref (GMisc.label ())
 let selection1_label_global = ref (GMisc.label ())
 let selection2_label_global = ref (GMisc.label ())
 let confirm_button_global = ref (GButton.button ())
-let cards_cbox_global = ref (fst (GEdit.combo_box_text ()))
 let actions_cbox_global = ref (fst (GEdit.combo_box_text ()))
-
 let current_selection_mode = ref No_selection
 let selection1 = ref None
 let selection2 = ref None
 
 let mutex = Core.Mutex.create ()
+
+let card_of_int num = 
+  if num = 0 then Some Infantry
+  else if num = 1 then Some Cavalry
+  else if num = 2 then Some Artillery
+  else if num = 3 then Some Wild
+  else None
+
+let string_of_card card = 
+  match card with
+  | Infantry -> "Infantry"
+  | Cavalry -> "Cavalry"
+  | Artillery -> "Artillery"
+  | Wild -> "Wildcard"
 
 let set_color wid col_str = 
   let sty = wid#misc#style#copy in
@@ -159,33 +171,26 @@ let rec update_continent_owners (data:(string * string) list) =
   end
 
 let update_current_player player = 
-  !player_label_global#set_text ("Current Player: " ^ player);
+  !player_label_global#set_text player;
   ()
 
 let update_available_reinforcements num = 
-  !reinforcement_label_global#set_text 
-    ("Reinforcements Available: " ^ (string_of_int num));
+  !reinforcement_label_global#set_text (string_of_int num);
   ()
 
 let update_cards (inf, cav, art, wild) = 
-  !infantry_label_global#set_text 
-    ("Infantry Cards: " ^ (string_of_int inf));
-  !calvalry_label_global#set_text 
-    ("Calvalry Cards: " ^ (string_of_int cav));
-  !artillery_label_global#set_text 
-    ("Artillery Cards: " ^ (string_of_int art));
-  !wildcard_label_global#set_text 
-    ("Wildcards: " ^ (string_of_int wild));
+  !infantry_label_global#set_text (string_of_int inf);
+  !cavalry_label_global#set_text (string_of_int cav);
+  !artillery_label_global#set_text (string_of_int art);
+  !wildcard_label_global#set_text (string_of_int wild);
   ()
 
 let update_territories_count count = 
-  !territories_label_global#set_text 
-    ("Territories Controlled: " ^ (string_of_int count));
+  !territories_label_global#set_text (string_of_int count);
   ()
 
 let update_troop_count count = 
-  !troops_label_global#set_text 
-    ("Troops Deployed: " ^ (string_of_int count));
+  !troops_label_global#set_text (string_of_int count);
   ()
 
 let write_log (message : string) = 
@@ -201,10 +206,15 @@ let set_game_over over =
   if over then begin
     lock_all ();
     write_log "Game ended.";
-    (*TODO: other things*)
+    (*Possible TODO: other things*)
     ()
   end
   else ()
+
+let setters = (write_log, update_territories, update_continent_owners, 
+              update_current_player, update_available_reinforcements, 
+              update_cards, update_territories_count, update_troop_count, 
+              set_game_over)
 
 (* EXPOSED SETTER METHODS END *)
 
@@ -230,6 +240,7 @@ let run_init_dialog parent =
                   ~strings:init_dialog_options
                   (* ~width:100 ~height:20 *)
                   ~packing:init_dialog#vbox#add () in
+  (fst init_dialog_combobox)#set_active 0;
   let init_dialog_accept_button = GButton.button ~label:"Accept"
                   ~packing:init_dialog#vbox#add () in
   let accept_signal = 
@@ -243,7 +254,7 @@ let run_init_dialog parent =
 let run_cards_dialog parent = 
   let cards_selected = ref None in
   let cards_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true 
-                  ~title:"Initialization Dialog" ~deletable:true 
+                  ~title:"Card Selection Dialog" ~deletable:true 
                   ~resizable:false () in
   let cards_dialog_label = GMisc.label 
                   ~text:"Please select the cards to exchange."
@@ -299,7 +310,8 @@ let run_troop_dialog parent message (min, max) =
     ()
   in
   let fmin = float_of_int min in
-  let fmax = float_of_int max in
+  (*Have to add 10 because for some reason adjustent likes to subtract 10*)
+  let fmax = float_of_int (max + 10) in 
   let troop_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true 
                   ~title:"Troop Selection" ~deletable:true 
                   ~resizable:false () in
@@ -307,7 +319,8 @@ let run_troop_dialog parent message (min, max) =
                   ~text:message
                   ~packing:troop_dialog#vbox#add () in
   let troop_dialog_adjustment = GData.adjustment ~value:fmin
-                  ~lower:fmin ~upper:fmax () in
+                  ~lower:fmin ~upper:fmax ~step_incr:1. (*~page_incr:1.*) () in
+  troop_dialog_adjustment#clamp_page ~lower:fmin ~upper:fmax;
   let scale_frame = GBin.frame ~width:200 ~height:50 ~border_width:3
                   ~packing:troop_dialog#vbox#add () in
   let troop_dialog_scale = GRange.scale `HORIZONTAL 
@@ -327,40 +340,110 @@ let run_troop_dialog parent message (min, max) =
 let confirm_button_handler parent () = 
   Mutex.lock mutex;
   print_endline "confirm button";
-  (*let index = !actions_cbox_global#active in
-  (*Deploy: 0*)
-  let action = (if index = 0 then begin
-    ADeployment ""
-  end
-  (*Attack: 1*)
-  else if index = 1 then begin
-    (*let origin = "" in (*TODO: get source and dest*)
-    let destination = "" in
-    let troops_in_origin = 50 in (*TODO: actually get this data*)
-    let count = run_troop_dialog parent "ATTACK" (1, troops_in_origin) in*)
-    AAttack ("","") 0
-  end
-  (*Reinforce: 2*)
-  else if index = 2 then begin
-    AReinforcement "" 0
-  end
-  (*Move: 3*)
-  else if index = 3 then begin
-    AMovement ("", ""), 0)
-  end
-  (*Trade Cards Same: 4*)
-  else if index = 4 then begin
-    TradeSameArt (*todo: cases*)
-  end
-  (*Trade Cards Different: 5*)
-  else if index = 5 then begin
-    TradeDiff
-  end
-  (*End Turn: 6*)
-  else if index = 6 then begin
-    EndTurn
-  end) in*)
-  (*Cases over*)
+  let index = !actions_cbox_global#active in
+  let action = (
+    (*Deploy: 0*)
+    if index = 0 then begin
+        let loc = !selection1 in
+        match loc with
+        | None -> None
+        | Some dep -> Some (ADeployment dep)
+    end
+    (*Attack: 1*)
+    else if index = 1 then begin
+      let src = !selection1 in
+      let dest = !selection2 in
+      let src_troops = match src with
+      | None -> 0
+      | Some loc -> (Controller.get_troops_in_territory !controller loc) - 1 in 
+      if src_troops = 0 then begin
+        write_log "Unable to comply. Insufficient troops in source territory.";
+        None
+      end
+      else begin
+        let num = run_troop_dialog parent 
+          "Select the number of troops to attack with." (1, src_troops) in
+        match (src, dest, num) with
+        | (Some s, Some d, Some n) -> write_log ("Attacking " ^ d ^ " from " 
+                                                ^ s ^ " with " ^ 
+                                                (string_of_int n) ^ " unit(s).");
+                                      Some (AAttack ((s, d), n))
+        | _ -> None
+      end
+    end
+    (*Reinforce: 2*)
+    else if index = 2 then begin
+      let loc = !selection1 in
+        match loc with
+        | None -> None
+        | Some dep -> begin
+          let aval_troops = (Controller.get_available_reinforcement 
+                              !controller dep) in
+          let num = run_troop_dialog parent 
+            "Select the number of troops to reinforce with." 
+            (1, aval_troops) in
+          match num with
+          | None -> None
+          | Some x -> write_log ("Reinforcing " ^ dep ^ " with " ^ 
+                        (string_of_int x) ^ " troops.");
+                      Some (AReinforcement (dep, x))
+        end
+    end
+    (*Move: 3*)
+    else if index = 3 then begin
+      let src = !selection1 in
+      let dest = !selection2 in
+      let src_troops = match src with
+      | None -> 0
+      | Some loc -> (Controller.get_troops_in_territory !controller loc) - 1 in 
+      if src_troops = 0 then begin
+        write_log "Unable to comply. Insufficient troops in source territory.";
+        None
+      end
+      else begin
+        let num = run_troop_dialog parent 
+          "Select the number of troops to move." (1, src_troops) in
+        match (src, dest, num) with
+        | (Some s, Some d, Some n) -> write_log ("Moving " ^ (string_of_int n) ^  
+                                        " unit(s) from " ^ s ^ " to " ^ d ^ ".");
+                                      Some (AMovement ((s, d), n))
+        | _ -> None
+      end
+    end
+    (*Trade Cards: 4*)
+    else if index = 4 then begin
+      let cards = run_cards_dialog parent in
+      match cards with
+      | None -> None
+      | Some (c_int1, c_int2, c_int3) -> begin
+        let card1 = card_of_int c_int1 in
+        let card2 = card_of_int c_int2 in
+        let card3 = card_of_int c_int3 in
+        match (card1, card2, card3) with
+        | (Some c1, Some c2, Some c3) ->
+                                      let st1 = string_of_card c1 in
+                                      let st2 = string_of_card c2 in
+                                      let st3 = string_of_card c3 in
+                                      write_log ("Playing " ^ st1 ^ ", " ^ st2 
+                                                  ^ ", and " ^ st3 ^ ".");
+                                      Some (APlayCards (c1, c2, c3))
+        | _ -> None
+      end
+    end
+    (*End Turn: 5*)
+    else if index = 5 then begin
+      Some ANextTurn
+    end
+    else begin
+      None
+    end) 
+  in
+  (*Cases over - apply action*)
+  match action with
+  | None -> ()
+  | Some act -> controller := Controller.controller_update 
+                                !controller setters act;
+                ();
   Mutex.unlock mutex;
   ()
 
@@ -388,13 +471,6 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
     else begin
       set_selection_mode No_selection
     end;
-    (*card trading in separate if-clause because all others should lock it*)
-    if index = 4 then begin
-      !cards_cbox_global#misc#set_sensitive true
-    end
-    else begin
-      !cards_cbox_global#misc#set_sensitive false
-    end
   end
   else ();
   Mutex.unlock mutex;
@@ -402,7 +478,6 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
 
 let territory_button_handler name (button: GButton.button) () =
   Mutex.lock mutex;
-  set_color button "Blue";
   set_territory_troops name (lookup_troop_count name |> succ);
   write_log ("Region: " ^ name);
   let sel_result = make_selection name in
@@ -438,11 +513,11 @@ let add_label (pack:GPack.fixed) x y width height name =
   ()
 
 let main () =
-  let window = GWindow.window ~width:1500 ~height:860
+  let window = GWindow.window ~width:1450 ~height:860
                               ~title:"Risc" ~resizable:false () in
   let window_exit_signal = window#connect#destroy ~callback:Main.quit in
 
-  let top_pane_pack = GPack.paned ~width:1500 ~height:860 
+  let top_pane_pack = GPack.paned ~width:1450 ~height:860 
                               ~packing:window#add ~border_width:5 
                               `HORIZONTAL () in
 
@@ -450,7 +525,7 @@ let main () =
                   ~packing:(top_pane_pack#pack1 ~resize:false ~shrink:false) 
                   ~border_width:5 `VERTICAL () in
   
-  let sidebar_pack = GPack.paned ~width:270 ~height:850 ~border_width:5 
+  let sidebar_pack = GPack.paned ~width:220 ~height:850 ~border_width:5 
                   ~packing:(top_pane_pack#pack2 ~resize:false ~shrink:false)
                   `VERTICAL () in
 
@@ -469,7 +544,7 @@ let main () =
                   ~packing:(sidebar_pack#pack1 ~resize:false ~shrink:false)
                   () in
 
-  let info_pack = GPack.vbox ~width:260 ~height:240 
+  let info_pack = GPack.vbox ~width:210 ~height:340 
                   ~packing:info_frame#add
                   () in
   
@@ -477,7 +552,7 @@ let main () =
                   ~packing:(sidebar_pack#pack2 ~resize:false ~shrink:false)
                   () in
 
-  let actions_pack = GPack.vbox ~width:260 ~height:400 
+  let actions_pack = GPack.vbox ~width:210 ~height:300 ~spacing:3
                   ~packing:actions_frame#add () in
 
   (*Get number of players via dialog box*)
@@ -491,59 +566,68 @@ let main () =
     | _ -> ()
   done;
 
+  (*Initialize game*)
+  controller := Controller.init_game !player_num;
+
   (*Info pack setup*)
-  let player_label = GMisc.label ~text:"Current Player: N/A"
-                                 ~packing:info_pack#add () in
+  let player_frame = GBin.frame ~label:"Current Player" ~border_width:3
+                                ~packing:info_pack#add () in
+  let player_label = GMisc.label ~text:"N/A" ~packing:player_frame#add () in
   player_label_global := player_label;
 
-  let reinforcement_label = GMisc.label ~text:"Reinforcements Available: 0"
-                                 ~packing:info_pack#add () in
+  let reinforcement_frame = GBin.frame ~label:"Reinforcements Available" 
+                                ~border_width:3 ~packing:info_pack#add () in
+  let reinforcement_label = GMisc.label ~text:"0"
+                                        ~packing:reinforcement_frame#add () in
   reinforcement_label_global := reinforcement_label;
-
-  let infantry_label = GMisc.label ~text:"Infantry Cards: 0"
-                                 ~packing:info_pack#add () in
-  infantry_label_global := infantry_label;
-
-  let calvalry_label = GMisc.label ~text:"Calvalry Cards: 0"
-                                 ~packing:info_pack#add () in
-  calvalry_label_global := calvalry_label;
-
-  let artillery_label = GMisc.label ~text:"Artillery Cards: 0"
-                                 ~packing:info_pack#add () in
-  artillery_label_global := artillery_label;
-
-  let wildcard_label = GMisc.label ~text:"Wildcards: 0"
-                                 ~packing:info_pack#add () in
-  wildcard_label_global := wildcard_label;
-
-  let territories_label = GMisc.label ~text:"Territories Controlled: 0"
-                                 ~packing:info_pack#add () in
+  
+  let territories_frame = GBin.frame ~label:"Territories Controlled" 
+                                    ~border_width:3 ~packing:info_pack#add () in
+  let territories_label = GMisc.label ~text:"0"
+                                      ~packing:territories_frame#add () in
   territories_label_global := territories_label;
 
-  let troops_label = GMisc.label ~text:"Troops Deployed: 0"
-                                 ~packing:info_pack#add () in
+  let troops_frame = GBin.frame ~label:"Troops Deployed" 
+                                    ~border_width:3 ~packing:info_pack#add () in
+  let troops_label = GMisc.label ~text:"0"
+                                 ~packing:troops_frame#add () in
   troops_label_global := troops_label;
 
+  (*Cards in inforpack *)
+  let cards_frame = GBin.frame  ~label:"Cards" ~border_width:3
+                                ~packing:info_pack#add () in
+  let cards_pack = GPack.vbox ~spacing:2 ~border_width:2 
+                              ~packing:cards_frame#add () in
+
+  let infantry_frame = GBin.frame ~label:"Infantry" ~border_width:3
+                                  ~packing:cards_pack#add () in
+  let infantry_label = GMisc.label ~text:"0" ~packing:infantry_frame#add () in
+  infantry_label_global := infantry_label;
+
+  let cavalry_frame = GBin.frame  ~label:"Cavalry" ~border_width:3
+                                  ~packing:cards_pack#add () in
+  let cavalry_label = GMisc.label ~text:"0" ~packing:cavalry_frame#add () in
+  cavalry_label_global := cavalry_label;
+
+  let artillery_frame = GBin.frame  ~label:"Artillery" ~border_width:3
+                                    ~packing:cards_pack#add () in
+  let artillery_label = GMisc.label ~text:"0" ~packing:artillery_frame#add () in
+  artillery_label_global := artillery_label;
+
+  let wildcard_frame = GBin.frame ~label:"Wildcards" ~border_width:3
+                                  ~packing:cards_pack#add () in
+  let wildcard_label = GMisc.label ~text:"0" ~packing:wildcard_frame#add () in
+  wildcard_label_global := wildcard_label;
+
   (*Action pack setup*)
-  
   let actions_cbox_frame = GBin.frame ~label:"Move Selection" ~border_width:3
                   ~packing:actions_pack#add () in
   let actions_cbox = GEdit.combo_box_text 
               ~strings:actions_strings
-              ~width:100 ~height:20 
               ~packing:actions_cbox_frame#add () in
   let actions_signal = (fst actions_cbox)#connect#changed 
                         (actions_cbox_handler actions_cbox) in
   actions_cbox_global := fst actions_cbox;
-
-  let cards_cbox_frame = GBin.frame ~label:"Card Selection" ~border_width:3
-                  ~packing:actions_pack#add () in
-  let cards_cbox = GEdit.combo_box_text 
-              ~strings:cards_strings
-              ~width:100 ~height:20 
-              ~packing:cards_cbox_frame#add () in
-  (fst cards_cbox)#set_active 0;
-  cards_cbox_global := fst cards_cbox;
 
   let confirm_button = GButton.button ~label:"Confirm"
                                       ~packing:actions_pack#add () in
@@ -662,7 +746,6 @@ let main () =
 
   (*Set some sensitivities before game starts*)
   set_territory_buttons_sensitivity false;
-  (fst cards_cbox)#misc#set_sensitive false;
   confirm_button#misc#set_sensitive false;
 
   (*Final window configuration and display*)

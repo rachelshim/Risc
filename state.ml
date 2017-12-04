@@ -388,7 +388,7 @@ let rec remove_cards c l =
   match l with
   | [] -> l
   | h::t -> if h = c then t
-            else remove_cards c t
+    else remove_cards c t
 
 let update st = function
   | ADeployment r ->
@@ -422,26 +422,35 @@ let update st = function
       | _ -> {st with log= "Invalid move: cannot deploy at this time."}
     end
   | APlay_Cards (c1, c2, c3) ->
-    (match st.current_move with
-    | CReinforcement n ->
-      let p = List.hd st.players in
-    (* pretend there's some code to make sure l is a subset of head player's cards *)
-    (* also force players with 5+ cards to trade in their cards *)
-      if (c1 = c2 && c2 = c3) || (c1 <> c2 && c2 <> c3 && c1 <> c3) then
-        let bonus_n = st.bonus_troops + n in
-        let new_cards = remove_cards c1 p.cards
-                        |> remove_cards c2 |> remove_cards c3 in
-        let p' = { p with cards = new_cards } in
-        let p_list = prepend_player p' st.players in
-        { st with current_move = CReinforcement bonus_n;
-                  players = p_list;
-                  bonus_troops = increment_bonus bonus_n;
-                  log = "Successfully traded in cards for " ^
-                        (string_of_int bonus_n) ^ " extra troops"; }
-      else
-        { st with log = "Invalid card trade-in" }
-    | _ -> { st with log = "Invalid move" })
-  | AWait_Reinforcement ->
+    begin
+      match st.current_move with
+      | CReinforcement n ->
+        let p = List.hd st.players in
+      (* TODO add some code to make sure l is a subset of head player's cards *)
+      (* also force players with 5+ cards to trade in their cards *)
+        if (c1 <> c2 && c2 <> c3 && c1 <> c3) ||
+            (c1 = Wild && c2 = Wild) ||
+            (c1 = Wild && c3 = Wild) ||
+            (c2 = Wild && c3 = Wild) ||
+            (c1 = c2 && c3 = Wild) ||
+            (c1 = c3 && c2 = Wild) ||
+            (c2 = c3 && c1 = Wild)
+            then
+          let bonus_n = st.bonus_troops + n in
+          let new_cards = remove_cards c1 p.cards
+                          |> remove_cards c2 |> remove_cards c3 in
+          let p' = { p with cards = new_cards } in
+          let p_list = prepend_player p' st.players in
+          { st with current_move = CReinforcement bonus_n;
+                    players = p_list;
+                    bonus_troops = increment_bonus bonus_n;
+                    log = "Successfully traded in cards for " ^
+                          (string_of_int bonus_n) ^ " extra troops"; }
+        else
+          { st with log = "Invalid card trade-in" }
+      | _ -> { st with log = "Invalid move" }
+    end
+  (* | AWaitReinforcement ->
     (match st.current_move with
     | CReinforcement n ->
       let p = List.hd st.players in
@@ -452,7 +461,7 @@ let update st = function
       let troops = n_continents 0 p.controls_cont + n_controls + n in
       { st with current_move = CReinforcement troops;
                 log = "You have " ^ (string_of_int troops) ^ " to deploy."; }
-    | _ -> { st with log = "Invalid move" })
+    | _ -> { st with log = "Invalid move" }) *)
   | AReinforcement (r, i) ->
     (match st.current_move with
     | CReinforcement n ->
@@ -472,3 +481,40 @@ let update st = function
       else { st with log = "You don't have enough troops. Try again." }
     | _ -> { st with log = "Invalid move"; })
   | _ -> failwith "TODO"
+
+let is_over st =
+  failwith "unimplemented"
+
+let valid_mode a st =
+  failwith "unimplemented"
+
+
+(* ############################################################################
+
+   Helpful functions for outside use
+
+   ##############################################################################*)
+
+let current_player st =
+  List.hd st.players
+
+let num_inf pl =
+  List.length (List.find_all (fun x -> x = Infantry) pl.cards)
+
+let num_cav pl =
+  List.length (List.find_all (fun x -> x = Cavalry) pl.cards)
+
+let num_art pl =
+  List.length (List.find_all (fun x -> x = Artillery) pl.cards)
+
+let num_wild pl =
+  List.length (List.find_all (fun x -> x = Wild) pl.cards)
+
+let player_id pl =
+  pl.id
+
+(* let player_of_id st id =
+  List.mem_assoc st. *)
+
+(* let troops_in t =
+  List. *)
