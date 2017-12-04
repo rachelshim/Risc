@@ -1,26 +1,17 @@
 open Action
+open Map
 (* ############################################################################
 
   DEFINING TYPES
 
 ##############################################################################*)
 
-(**
- * List of continents. Structured as (String name, (int num territories in
- * continent, int troops given for continent control))
- *)
-let continents =
-  [("North America", (9, 5));
-   ("South America", (4, 2));
-   ("Europe", (7, 5));
-   ("Africa", (6, 3));
-   ("Asia", (12, 7));
-   ("Australia", (4, 2))]
 
 (** [region] represents a region in Risk. *)
 type region =
   {
     name: string;
+    controller: string;
     routes: string list;
     continent: string;
   }
@@ -44,6 +35,9 @@ type curr_move =
   | CNext_Turn
   | CGame_Won of string (* player s won the game *)
 
+(** Map representing region, with key region name and value [region] *)
+module Regions = Map.Make(String)
+
 (** Represents the current game state. The head of the [players] list is the
     current player whose turn it is. *)
 type state =
@@ -53,11 +47,222 @@ type state =
     turns: int;
     continents: (string * string option) list;
         (* continent s is controlled by player s_opt *)
+    regions: region Regions.t;
     bonus_troops: int;
     log: string;
   }
 
 
+(* ############################################################################
+
+   Constants
+
+##############################################################################*)
+
+
+(**
+ * List of continents. Structured as (String name, (int num territories in
+ * continent, int troops given for continent control))
+*)
+let continents =
+  [("North America", (9, 5));
+   ("South America", (4, 2));
+   ("Europe", (7, 5));
+   ("Africa", (6, 3));
+   ("Asia", (12, 7));
+   ("Australia", (4, 2))]
+
+(**
+ * List of all regions in the game. Should not be used except to assign
+ * regions or create map [regions]*)
+let init_regions =
+  [{name = "Alaska";
+    routes = ["Northwest Territory"; "Alberta"; "Kamchatka"];
+    continent = "North America";
+    controller = "None"};
+   {name = "Northwest Territory";
+    routes = ["Alaska"; "Alberta"; "Ontario"; "Greenland"];
+    continent = "North America";
+    controller = "None"};
+   {name = "Alberta";
+    routes =
+      ["Alaska"; "Northwest Territory"; "Ontario"; "Western United States"];
+    continent = "North America";
+    controller = "None"};
+   {name = "Greenland";
+    routes = ["Northwest Territory"; "Ontario"; "Quebec"; "Iceland"];
+    continent = "North America";
+    controller = "None"};
+   {name = "Ontario";
+    routes =
+      ["Alberta"; "Northwest Territory"; "Greenland"; "Quebec";
+       "Eastern United States"; "Western US"];
+    continent = "North America";
+    controller = "None"};
+   {name = "Quebec";
+    routes = ["Ontario"; "Greenland"; "Eastern United States"];
+    continent = "North America";
+    controller = "None"};
+   {name = "Western United States";
+    routes = ["Alberta"; "Ontario"; "Eastern United States"; "Central America"];
+    continent = "North America";
+    controller = "None"};
+   {name = "Eastern United States";
+    routes = ["Western United States"; "Ontario"; "Quebec"; "Central America"];
+    continent = "North America";
+    controller = "None"};
+   {name = "Central America";
+    routes = ["Western United States"; "Eastern United States"; "Venezuela"];
+    continent = "North America";
+    controller = "None"};
+   {name = "Venezuela";
+    routes = ["Peru"; "Brazil"];
+    continent = "South America";
+    controller = "None"};
+   {name = "Peru";
+    routes = ["Venezuela"; "Brazil"; "Argentina"];
+    continent = "South America";
+    controller = "None"};
+   {name = "Argentina";
+    routes = ["Peru"; "Brazil"];
+    continent = "South America";
+    controller = "None"};
+   {name = "Brazil";
+    routes = ["Venezuela"; "Peru"; "Argentina"; "North Africa"];
+    continent = "South America";
+    controller = "None"};
+   {name = "Iceland";
+    routes = ["Greenland"; "Great Britain"; "Scandinavia"];
+    continent = "Europe";
+    controller = "None"};
+   {name = "Great Britain";
+    routes = ["Iceland"; "Western Europe"; "Scandinavia"; "Northern Europe"];
+    continent = "Europe";
+    controller = "None"};
+   {name = "Western Europe";
+    routes =
+      ["Great Britain"; "Northern Europe"; "Southern Europe"; "North Africa"];
+    continent = "Europe";
+    controller = "None"};
+   {name = "Scandinavia";
+    routes = ["Iceland"; "Great Britain"; "Northern Europe"; "Ukraine"];
+    continent = "Europe";
+    controller = "None"};
+   {name = "Northern Europe";
+    routes =
+      ["Great Britain"; "Southern Europe"; "Western Europe"; "Scandinavia";
+       "Ukraine"];
+    continent = "Europe";
+    controller = "None"};
+   {name = "Southern Europe";
+    routes =
+      ["Western Europe"; "North Africa"; "Egypt"; "Middle East"; "Ukraine"];
+    continent = "Europe";
+    controller = "None"};
+   {name = "Ukraine";
+    routes =
+      ["Scandinavia"; "Northern Europe"; "Southern Europe"; "Ural";
+       "Afghanistan"; "Middle East"];
+    continent = "Europe";
+    controller = "None"};
+   {name = "North Africa";
+    routes =
+      ["Brazil"; "Western Europe"; "Southern Europe"; "Egypt"; "East Africa";
+       "Congo"];
+    continent = "Africa";
+    controller = "None"};
+   {name = "Egypt";
+    routes = ["North Africa"; "Southern Europe"; "Middle East"; "East Africa"];
+    continent = "Africa";
+    controller = "None"};
+   {name = "Congo";
+    routes = ["North Africa"; "East Africa"; "South Africa"];
+    continent = "Africa";
+    controller = "None"};
+   {name = "East Africa";
+    routes =
+      ["North Africa"; "Egypt"; "Middle East"; "Madagascar"; "South Africa";
+       "Congo"];
+    continent = "Africa";
+    controller = "None"};
+   {name = "South Africa";
+    routes = ["Congo"; "East Africa"; "Madagascar"];
+    continent = "Africa";
+    controller = "None"};
+   {name = "Madagascar";
+    routes = ["South Africa"; "East Africa"];
+    continent = "Africa";
+    controller = "None"};
+   {name = "Middle East";
+    routes = ["East Africa"; "Egypt"; "Ukraine"; "Afghanistan"; "India"];
+    continent = "Asia";
+    controller = "None"};
+   {name = "Afghanistan";
+    routes = ["Middle East"; "Ukraine"; "Ural"; "China"; "India"];
+    continent = "Asia";
+    controller = "None"};
+   {name = "Ural";
+    routes = ["Siberia"; "China"; "Afghanistan"; "Ukraine"];
+    continent = "Asia";
+    controller = "None"};
+   {name = "Siberia";
+    routes = ["Yakutsk"; "Irkutsk"; "Mongolia"; "China"; "Ural"];
+    continent = "Asia";
+    controller = "None"};
+   {name = "India";
+    routes = ["Middle East"; "Afghanistan"; "China"; "Siam"];
+    continent = "Asia";
+    controller = "None"};
+   {name = "Siam";
+    routes = ["India"; "China"; "Indonesia"];
+    continent = "Asia";
+    controller = "None"};
+   {name = "China";
+    routes = ["Siam"; "India"; "Afghanistan"; "Ural"; "Siberia"; "Mongolia"];
+    continent = "Asia";
+    controller = "None"};
+   {name = "Mongolia";
+    routes = ["China"; "Siberia"; "Irkutsk"; "Kamchatka"; "Japan"];
+    continent = "Asia";
+    controller = "None"};
+   {name = "Japan";
+    routes = ["Mongolia"; "Kamchatka"];
+    continent = "Asia";
+    controller = "None"};
+   {name = "Kamchatka";
+    routes = ["Mongolia"; "Japan"; "Alaska"; "Irkutsk"; "Yakutsk"];
+    continent = "Asia";
+    controller = "None"};
+   {name = "Irkutsk";
+    routes = ["Ural"; "Yakutsk"; "Kamchatka"; "Mongolia"];
+    continent = "Asia";
+    controller = "None"};
+   {name = "Yakutsk";
+    routes = ["Ural"; "Irkutsk"; "Kamchatka"];
+    continent = "Asia";
+    controller = "None"};
+   {name = "Indonesia";
+    routes = ["Siam"; "New Guinea"; "Western Australia"];
+    continent = "Australia";
+    controller = "None"};
+   {name = "New Guinea";
+    routes = ["Indonesia"; "Eastern Australia"; "Western Australia"];
+    continent = "Australia";
+    controller = "None"};
+   {name = "Western Australia";
+    routes = ["Indonesia"; "New Guinea"; "Eastern Australia"];
+    continent = "Australia";
+    controller = "None"};
+   {name = "Eastern Australia";
+    routes = ["Indonesia"; "New Guinea"; "Western Australia"];
+    continent = "Australia";
+    controller = "None"}
+  ]
+
+(** [Regions] with all regions in game stored*)
+let init_regions_map =
+  List.fold_left
+    (fun map r -> Regions.add r.name r map) Regions.empty init_regions
 
 
 (* ############################################################################
@@ -66,149 +271,10 @@ type state =
 
 ##############################################################################*)
 
-
-let init_regions =
-  [{name = "Alaska";
-    routes = ["Northwest Territory"; "Alberta"; "Kamchatka"];
-    continent = "North America"; };
-   {name = "Northwest Territory";
-    routes = ["Alaska"; "Alberta"; "Ontario"; "Greenland"];
-    continent = "North America"; };
-   {name = "Alberta";
-    routes =
-      ["Alaska"; "Northwest Territory"; "Ontario"; "Western United States"];
-    continent = "North America"; };
-   {name = "Greenland";
-    routes = ["Northwest Territory"; "Ontario"; "Quebec"; "Iceland"];
-    continent = "North America"; };
-   {name = "Ontario";
-    routes =
-      ["Alberta"; "Northwest Territory"; "Greenland"; "Quebec";
-       "Eastern United States"; "Western US"];
-    continent = "North America"; };
-   {name = "Quebec";
-    routes = ["Ontario"; "Greenland"; "Eastern United States"];
-    continent = "North America"; };
-   {name = "Western United States";
-    routes = ["Alberta"; "Ontario"; "Eastern United States"; "Central America"];
-    continent = "North America"; };
-   {name = "Eastern United States";
-    routes = ["Western United States"; "Ontario"; "Quebec"; "Central America"];
-    continent = "North America"; };
-   {name = "Central America";
-    routes = ["Western United States"; "Eastern United States"; "Venezuela"];
-    continent = "North America"; };
-   {name = "Venezuela";
-    routes = ["Peru"; "Brazil"];
-    continent = "South America"; };
-   {name = "Peru";
-    routes = ["Venezuela"; "Brazil"; "Argentina"];
-    continent = "South America"; };
-   {name = "Argentina";
-    routes = ["Peru"; "Brazil"];
-    continent = "South America"; };
-   {name = "Brazil";
-    routes = ["Venezuela"; "Peru"; "Argentina"; "North Africa"];
-    continent = "South America"; };
-   {name = "Iceland";
-    routes = ["Greenland"; "Great Britain"; "Scandinavia"];
-    continent = "Europe"; };
-   {name = "Great Britain";
-    routes = ["Iceland"; "Western Europe"; "Scandinavia"; "Northern Europe"];
-    continent = "Europe"; };
-   {name = "Western Europe";
-    routes =
-      ["Great Britain"; "Northern Europe"; "Southern Europe"; "North Africa"];
-    continent = "Europe"; };
-   {name = "Scandinavia";
-    routes = ["Iceland"; "Great Britain"; "Northern Europe"; "Ukraine"];
-    continent = "Europe"; };
-   {name = "Northern Europe";
-    routes =
-      ["Great Britain"; "Southern Europe"; "Western Europe"; "Scandinavia";
-       "Ukraine"];
-    continent = "Europe"; };
-   {name = "Southern Europe";
-    routes =
-      ["Western Europe"; "North Africa"; "Egypt"; "Middle East"; "Ukraine"];
-    continent = "Europe"; };
-   {name = "Ukraine";
-    routes =
-      ["Scandinavia"; "Northern Europe"; "Southern Europe"; "Ural";
-       "Afghanistan"; "Middle East"];
-    continent = "Europe"; };
-   {name = "North Africa";
-    routes =
-      ["Brazil"; "Western Europe"; "Southern Europe"; "Egypt"; "East Africa";
-       "Congo"];
-    continent = "Africa"; };
-   {name = "Egypt";
-    routes = ["North Africa"; "Southern Europe"; "Middle East"; "East Africa"];
-    continent = "Africa"; };
-   {name = "Congo";
-    routes = ["North Africa"; "East Africa"; "South Africa"];
-    continent = "Africa"; };
-   {name = "East Africa";
-    routes =
-      ["North Africa"; "Egypt"; "Middle East"; "Madagascar"; "South Africa";
-       "Congo"];
-    continent = "Africa"; };
-   {name = "South Africa";
-    routes = ["Congo"; "East Africa"; "Madagascar"];
-    continent = "Africa"; };
-   {name = "Madagascar";
-    routes = ["South Africa"; "East Africa"];
-    continent = "Africa"; };
-   {name = "Middle East";
-    routes = ["East Africa"; "Egypt"; "Ukraine"; "Afghanistan"; "India"];
-    continent = "Asia"; };
-   {name = "Afghanistan";
-    routes = ["Middle East"; "Ukraine"; "Ural"; "China"; "India"];
-    continent = "Asia"; };
-   {name = "Ural";
-    routes = ["Siberia"; "China"; "Afghanistan"; "Ukraine"];
-    continent = "Asia"; };
-   {name = "Siberia";
-    routes = ["Yakutsk"; "Irkutsk"; "Mongolia"; "China"; "Ural"];
-    continent = "Asia"; };
-   {name = "India";
-    routes = ["Middle East"; "Afghanistan"; "China"; "Siam"];
-    continent = "Asia"; };
-   {name = "Siam";
-    routes = ["India"; "China"; "Indonesia"];
-    continent = "Asia"; };
-   {name = "China";
-    routes = ["Siam"; "India"; "Afghanistan"; "Ural"; "Siberia"; "Mongolia"];
-    continent = "Asia"; };
-   {name = "Mongolia";
-    routes = ["China"; "Siberia"; "Irkutsk"; "Kamchatka"; "Japan"];
-    continent = "Asia"; };
-   {name = "Japan";
-    routes = ["Mongolia"; "Kamchatka"];
-    continent = "Asia"; };
-   {name = "Kamchatka";
-    routes = ["Mongolia"; "Japan"; "Alaska"; "Irkutsk"; "Yakutsk"];
-    continent = "Asia"; };
-   {name = "Irkutsk";
-    routes = ["Ural"; "Yakutsk"; "Kamchatka"; "Mongolia"];
-    continent = "Asia"; };
-   {name = "Yakutsk";
-    routes = ["Ural"; "Irkutsk"; "Kamchatka"];
-    continent = "Asia"; };
-   {name = "Indonesia";
-    routes = ["Siam"; "New Guinea"; "Western Australia"];
-    continent = "Australia"; };
-   {name = "New Guinea";
-    routes = ["Indonesia"; "Eastern Australia"; "Western Australia"];
-    continent = "Australia"; };
-   {name = "Western Australia";
-    routes = ["Indonesia"; "New Guinea"; "Eastern Australia"];
-    continent = "Australia"; };
-   {name = "Eastern Australia";
-    routes = ["Indonesia"; "New Guinea"; "Western Australia"];
-    continent = "Australia"; }
-  ]
-
+(**
+ * [first_n lst n] is [lst] truncated to have maximum length [n]
+ * requires: [n] >= 0.
+*)
 let rec first_n lst n =
   if n = 0 then []
   else
@@ -216,21 +282,30 @@ let rec first_n lst n =
     | [] -> []
     | h::t -> h::(first_n t (n-1))
 
-let rec add_regions ps rs =
+(**
+ * [add_regions ps map rs] is a tuple of [ps] with the regions from [rs]
+ * distributed to each player (with other fields in player excluding
+ * [controls_cont] updated accordingly). If some players have one more region
+ * than other players, the result is rotated so the head is the first player
+ * with one less region. The second element is [map] updated with each region
+ * given its new controller.
+ *)
+let rec add_regions ps map rs =
   match rs with
-  | [] -> ps
+  | [] -> (ps, map)
   | (_, h)::t ->
     let p = List.hd ps in
     let new_p =
       {p with
        total_troops = p.total_troops + 1;
-       controls = h::p.controls;
+       controls = (h.name, 1)::p.controls;
        continent_troops =
          let in_cont = List.assoc h.continent p.continent_troops + 1 in
          List.remove_assoc h.continent p.continent_troops |>
          List.cons (h.continent, in_cont)
       } in
-    add_regions ((List.tl ps) @ [new_p]) t
+    let new_map = Regions.add h.name {h with controller = p.id} map in
+    add_regions ((List.tl ps) @ [new_p]) new_map t
 
 let rec add_conts c_ts =
   match c_ts with
@@ -254,11 +329,11 @@ let init_state n =
                          ("South America", 0); ("Europe", 0); ("Australia", 0)];
            controls_cont = [];
          }) in
-  let players_w_regions =
+  let (players_w_regions, regions_map) =
     Random.self_init ();
     List.map (fun r -> (Random.float 5.0, r)) init_regions |>
     List.sort (fun c1 c2 -> compare (fst c1) (fst c2)) |>
-    add_regions players in
+    add_regions players init_regions_map in
   let players_w_continents =
     List.map
       (fun p -> {p with controls_cont = add_conts p.continent_troops}) players_w_regions in
@@ -278,8 +353,10 @@ let init_state n =
     current_move = CDeployment;
     turns = 0;
     continents = total_conts;
+    regions = regions_map;
     bonus_troops = 4;
-    log = "Game started!" (*TODO: Make more rich*)
+    log = "Game started! It is now " ^
+          (List.hd players_w_continents).id ^ "'s turn to deploy troops."
   }
 
 
