@@ -18,7 +18,6 @@ val write_log : string -> unit
  *)
 val update_territories : (string * string * int) list -> unit
 
-(*continent * color/player*)
 (*
  * [update_continent_owners data] is a funcion with the side effect that the
  * list of continent name, continent owner tuples described by [data] are 
