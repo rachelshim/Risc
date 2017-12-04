@@ -360,7 +360,7 @@ let confirm_button_handler parent () =
       (*TODO: a better way to get this data (looking up from gui is bad style)*)
       | Some loc -> (lookup_troop_count loc) - 1 in 
       if src_troops = 0 then begin
-        write_log "Insufficient troops in source territory.";
+        write_log "Unable to comply. Insufficient troops in source territory.";
         None
       end
       else begin
@@ -386,12 +386,32 @@ let confirm_button_handler parent () =
             (1, aval_troops) in
           match num with
           | None -> None
-          | Some x -> Some (AReinforcement (dep, x))
+          | Some x -> write_log ("Reinforcing " ^ dep ^ " with " ^ 
+                        (string_of_int x) ^ " troops.");
+                      Some (AReinforcement (dep, x))
         end
     end
     (*Move: 3*)
     else if index = 3 then begin
-      Some (AMovement (("", ""), 0))
+      let src = !selection1 in
+      let dest = !selection2 in
+      let src_troops = match src with
+      | None -> 0
+      (*TODO: a better way to get this data (looking up from gui is bad style)*)
+      | Some loc -> (lookup_troop_count loc) - 1 in 
+      if src_troops = 0 then begin
+        write_log "Unable to comply. Insufficient troops in source territory.";
+        None
+      end
+      else begin
+        let num = run_troop_dialog parent 
+          "Select the number of troops to move." (1, src_troops) in
+        match (src, dest, num) with
+        | (Some s, Some d, Some n) -> write_log ("Moving " ^ (string_of_int n) ^  
+                                        " troops from " ^ s ^ " to " ^ d ^ ".");
+                                      Some (AMovement ((s, d), n))
+        | _ -> None
+      end
     end
     (*Trade Cards: 4*)
     else if index = 4 then begin
