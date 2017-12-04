@@ -172,33 +172,26 @@ let rec update_continent_owners (data:(string * string) list) =
   end
 
 let update_current_player player = 
-  !player_label_global#set_text ("Current Player: " ^ player);
+  !player_label_global#set_text player;
   ()
 
 let update_available_reinforcements num = 
-  !reinforcement_label_global#set_text 
-    ("Reinforcements Available: " ^ (string_of_int num));
+  !reinforcement_label_global#set_text (string_of_int num);
   ()
 
 let update_cards (inf, cav, art, wild) = 
-  !infantry_label_global#set_text 
-    ("Infantry Cards: " ^ (string_of_int inf));
-  !cavalry_label_global#set_text 
-    ("cavalry Cards: " ^ (string_of_int cav));
-  !artillery_label_global#set_text 
-    ("Artillery Cards: " ^ (string_of_int art));
-  !wildcard_label_global#set_text 
-    ("Wildcards: " ^ (string_of_int wild));
+  !infantry_label_global#set_text (string_of_int inf);
+  !cavalry_label_global#set_text (string_of_int cav);
+  !artillery_label_global#set_text (string_of_int art);
+  !wildcard_label_global#set_text (string_of_int wild);
   ()
 
 let update_territories_count count = 
-  !territories_label_global#set_text 
-    ("Territories Controlled: " ^ (string_of_int count));
+  !territories_label_global#set_text (string_of_int count);
   ()
 
 let update_troop_count count = 
-  !troops_label_global#set_text 
-    ("Troops Deployed: " ^ (string_of_int count));
+  !troops_label_global#set_text (string_of_int count);
   ()
 
 let write_log (message : string) = 
