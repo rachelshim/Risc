@@ -27,7 +27,7 @@ type player =
   }
 
 type curr_move =
-  | CDeployment
+  | CDeployment of int (* final player has n troops left to place *)
   | CReinforcement of int (* reinforce with n total troops *)
   | CAttack
   | CMovement
@@ -311,9 +311,9 @@ let rec add_conts c_ts =
   match c_ts with
   | [] -> []
   | h::t ->
-      if fst (List.assoc (fst h) continents) = snd h
-      then (fst h)::(add_conts t)
-      else add_conts t
+    if fst (List.assoc (fst h) continents) = snd h
+    then (fst h)::(add_conts t)
+    else add_conts t
 
 let init_state n =
   let players =
@@ -336,7 +336,8 @@ let init_state n =
     add_regions players init_regions_map in
   let players_w_continents =
     List.map
-      (fun p -> {p with controls_cont = add_conts p.continent_troops}) players_w_regions in
+      (fun p -> {p with controls_cont = add_conts p.continent_troops})
+      players_w_regions in
   let total_conts =
     List.fold_left
       (fun cs p ->
@@ -350,7 +351,7 @@ let init_state n =
       players_w_continents in
   {
     players = players_w_continents;
-    current_move = CDeployment;
+    current_move = CDeployment (50 - 5 * n - (42 / n));
     turns = 0;
     continents = total_conts;
     regions = regions_map;
@@ -358,9 +359,6 @@ let init_state n =
     log = "Game started! It is now " ^
           (List.hd players_w_continents).id ^ "'s turn to deploy troops."
   }
-
-
-
 
 
 
@@ -394,18 +392,35 @@ let rec remove_cards c l =
 
 let update st = function
   | ADeployment r ->
-    if st.current_move = CDeployment then
-      let p = List.hd st.players in
-        (try
-          let n = List.assoc r p.controls in
-          let new_controls = List.remove_assoc r p.controls in
-          let p' = { p with controls = (r, n + 1)::new_controls } in
-          let p_list = prepend_player p' st.players in
-          { st with players = p_list;
-                    log = "Successfuly reinforced " ^ r }
-        with
-        | Not_found -> { st with log = "You don't control that territory." })
-    else { st with log = "Invalid move" } (* make more descriptive *)
+    begin
+      match st.current_move with
+      | CDeployment n ->
+        let p = List.hd st.players in
+        begin
+          try
+            let num_troops = List.assoc r p.controls in
+            let new_controls = List.remove_assoc r p.controls in
+            let p' = {p with
+                      controls = (r, num_troops + 1)::new_controls;
+                      total_troops = p.total_troops + 1} in
+            let p_list = append_player p' st.players in
+            {st with
+             players = p_list;
+             current_move =
+               if (List.hd p_list).id = "Red"
+               then
+                 if n = 1
+                 then CNext_Turn
+                 else CDeployment (n - 1)
+               else CDeployment n;
+             log = "Successfuly deployed to " ^ r ^ ".";
+             }
+          with
+          | Not_found ->
+            {st with log = "Invalid move: You don't control " ^ r ^ "." }
+        end
+      | _ -> {st with log= "Invalid move: cannot deploy at this time."}
+    end
   | APlay_Cards (c1, c2, c3) ->
     (match st.current_move with
     | CReinforcement n ->
