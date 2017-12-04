@@ -9,7 +9,7 @@ type action =
   | APlayCardsDiff of (card * card * card) (* trade in 3 cards of diff types  *)
   | AWaitReinforcement
   | AReinforcement of string * int (* reinforce region s with n troops *)
-  | AAttack of string * string * int (* attack from region s1 to region s2 *)
+  | AAttack of (string * string) * int (* attack from region s1 to region s2 *)
   | AMovement of (string * string) * int
       (* move n troops from region s1 to region s2 *)
   | ANextTurn
