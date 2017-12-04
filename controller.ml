@@ -4,8 +4,9 @@ open Action
 let update_gui (st : state) (act : action) =
   match act with
   | ADeployment reg -> () (* places one troop on region s *)
-  | APlayCards (c1, c2, c3) -> ()
-    (* update_cards (inf, cav, art, wild) (* the cards to trade in *) *)
+  | APlayCardsDiff (c1, c2, c3) -> ()
+(* update_cards (inf, cav, art, wild) (* the cards to trade in *) *)
+  | APlayCardsSame c -> ()
   | AWaitReinforcement -> ()
   | AReinforcement (reg, num) -> () (* reinforce region s with n troops *)
   | AAttack (reg1, reg2) -> () (* attack from region s1 to region s2 *)
@@ -16,7 +17,7 @@ let update_gui (st : state) (act : action) =
 
 let controller_update (st : state) (act : action) =
   let st' = update st act in
-  (* let gui' = update_gui st' act in *)
+  let gui' = update_gui st' act in
   st'
 
 let init_game num =
