@@ -355,8 +355,7 @@ let confirm_button_handler parent () =
       let dest = !selection2 in
       let src_troops = match src with
       | None -> 0
-      (*TODO: a better way to get this data (looking up from gui is bad style)*)
-      | Some loc -> (lookup_troop_count loc) - 1 in 
+      | Some loc -> (Controller.get_troops_in_territory !controller loc) - 1 in 
       if src_troops = 0 then begin
         write_log "Unable to comply. Insufficient troops in source territory.";
         None
@@ -378,7 +377,8 @@ let confirm_button_handler parent () =
         match loc with
         | None -> None
         | Some dep -> begin
-          let aval_troops = 5 in (*TODO: get this data*)
+          let aval_troops = (Controller.get_available_reinforcement 
+                              !controller dep) in
           let num = run_troop_dialog parent 
             "Select the number of troops to reinforce with." 
             (1, aval_troops) in
@@ -395,8 +395,7 @@ let confirm_button_handler parent () =
       let dest = !selection2 in
       let src_troops = match src with
       | None -> 0
-      (*TODO: a better way to get this data (looking up from gui is bad style)*)
-      | Some loc -> (lookup_troop_count loc) - 1 in 
+      | Some loc -> (Controller.get_troops_in_territory !controller loc) - 1 in 
       if src_troops = 0 then begin
         write_log "Unable to comply. Insufficient troops in source territory.";
         None
@@ -442,7 +441,8 @@ let confirm_button_handler parent () =
   (*Cases over - apply action*)
   match action with
   | None -> ()
-  | Some act -> controller := Controller.controller_update !controller setters act;
+  | Some act -> controller := Controller.controller_update 
+                                !controller setters act;
                 ();
   Mutex.unlock mutex;
   ()
