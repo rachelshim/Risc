@@ -12,7 +12,7 @@ val controller_update : state ->
   (string -> unit) * ((string * string * int) list -> unit) *
   ((string * string) list -> unit) * (string -> unit) * (int -> unit) *
   (int * int * int * int -> unit) * (int -> unit) * (int -> unit) *
-  (bool -> unit) * (unit -> unit) ->
+  (bool -> unit) * (string -> unit) ->
   action -> state
 
 (* [init_game i] returns a new game state with the specified number of players.
