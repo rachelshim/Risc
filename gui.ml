@@ -4,6 +4,7 @@ open Gtk
 open Unix
 open Thread
 open Action
+(*open Controller*)
 
 (*Selection modes*)
 type selection_mode = 
@@ -345,10 +346,10 @@ let confirm_button_handler parent () =
   let action = (
     (*Deploy: 0*)
     if index = 0 then begin
-        let dest = !selection1 in
-        match dest with
+        let loc = !selection1 in
+        match loc with
         | None -> None
-        | Some loc -> Some (ADeployment loc)
+        | Some dep -> Some (ADeployment dep)
     end
     (*Attack: 1*)
     else if index = 1 then begin
@@ -375,7 +376,18 @@ let confirm_button_handler parent () =
     end
     (*Reinforce: 2*)
     else if index = 2 then begin
-      Some (AReinforcement ("", 0))
+      let loc = !selection1 in
+        match loc with
+        | None -> None
+        | Some dep -> begin
+          let aval_troops = 5 in (*TODO: get this data*)
+          let num = run_troop_dialog parent 
+            "Select the number of troops to reinforce with." 
+            (1, aval_troops) in
+          match num with
+          | None -> None
+          | Some x -> Some (AReinforcement (dep, x))
+        end
     end
     (*Move: 3*)
     else if index = 3 then begin
@@ -532,6 +544,9 @@ let main () =
                 got_player_num := true;
     | _ -> ()
   done;
+
+  (*TODO: initialize game*)
+  (*let controller = Controller.init_game !player_num in*)
 
   (*Info pack setup*)
   let player_label = GMisc.label ~text:"Current Player: N/A"
