@@ -1,8 +1,8 @@
-open Gui
+(*open Gui*)
 open State
 open Action
 
-let update_gui (st : state) (act : action) =
+let update_gui (st : state) (write_log, update_territories, update_continent_owners, update_current_player, update_available_reinforcements, update_cards, update_territories_count, update_troop_count, set_game_over) (act : action) =
   let pl = current_player st in
   match act with
   | ADeployment reg -> () (* places one troop on region s *)
@@ -18,7 +18,7 @@ let update_gui (st : state) (act : action) =
 
 let controller_update (st : state) funcs (act : action) =
   let st' = update st act in
-  let gui' = update_gui st' act in
+  let gui' = update_gui st' funcs act in
   st'
 
 let init_game num =

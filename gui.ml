@@ -442,7 +442,7 @@ let confirm_button_handler parent () =
   (*Cases over - apply action*)
   match action with
   | None -> ()
-  | Some act -> controller := Controller.controller_update !controller act;
+  | Some act -> controller := Controller.controller_update !controller setters act;
                 ();
   Mutex.unlock mutex;
   ()
