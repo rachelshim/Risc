@@ -4,7 +4,6 @@ open Gtk
 open Unix
 open Thread
 open Action
-open Controller
 
 (*Selection modes*)
 type selection_mode = 
@@ -207,10 +206,15 @@ let set_game_over over =
   if over then begin
     lock_all ();
     write_log "Game ended.";
-    (*TODO: other things*)
+    (*Possible TODO: other things*)
     ()
   end
   else ()
+
+let setters = (write_log, update_territories, update_continent_owners, 
+              update_current_player, update_available_reinforcements, 
+              update_cards, update_territories_count, update_troop_count, 
+              set_game_over)
 
 (* EXPOSED SETTER METHODS END *)
 
