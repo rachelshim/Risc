@@ -23,3 +23,9 @@ let controller_update (st : state) (act : action) =
 
 let init_game num =
   init_state num
+
+let get_available_reinforcement id =
+  failwith "unimplemented"
+
+let get_troops_in_territory id t =
+  failwith "unimplemented"

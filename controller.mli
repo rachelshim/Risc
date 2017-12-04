@@ -15,3 +15,11 @@ val init_game : int -> state
 
 (* GUI calls controller method with an update and state ref, and controller
    calls update method in the state, and returns an updated state. *)
+
+(** [get_available_reinforcement id] returns the number of troops a player with
+    the specified id has available for reinforcement. *)
+val get_available_reinforcement : string -> int
+
+(** [get_troops_in_territory id t] returns the number of troops a player with
+    the specified id has in territory t. *)
+val get_troops_in_territory : string -> string -> int
