@@ -390,7 +390,7 @@ let rec remove_cards c l =
   match l with
   | [] -> l
   | h::t -> if h = c then t
-            else remove_cards c t
+    else remove_cards c t
 
 let update st = function
   | ADeployment r ->
@@ -410,7 +410,7 @@ let update st = function
     match st.current_move with
     | CReinforcement n ->
       let p = List.hd st.players in
-    (* pretend there's some code to make sure l is a subset of head player's cards *)
+    (* TODO add some code to make sure l is a subset of head player's cards *)
     (* also force players with 5+ cards to trade in their cards *)
       if (c1 <> c2 && c2 <> c3 && c1 <> c3) ||
           (c1 = Wild && c2 = Wild) ||
@@ -434,7 +434,7 @@ let update st = function
         { st with log = "Invalid card trade-in" }
     | _ -> { st with log = "Invalid move" }
   end
-  | AWaitReinforcement ->
+  (* | AWaitReinforcement ->
     (match st.current_move with
     | CReinforcement n ->
       let p = List.hd st.players in
@@ -445,7 +445,7 @@ let update st = function
       let troops = n_continents 0 p.controls_cont + n_controls + n in
       { st with current_move = CReinforcement troops;
                 log = "You have " ^ (string_of_int troops) ^ " to deploy."; }
-    | _ -> { st with log = "Invalid move" })
+    | _ -> { st with log = "Invalid move" }) *)
   | AReinforcement (r, i) ->
     (match st.current_move with
     | CReinforcement n ->
@@ -465,3 +465,34 @@ let update st = function
       else { st with log = "You don't have enough troops. Try again." }
     | _ -> { st with log = "Invalid move"; })
   | _ -> failwith "TODO"
+
+let is_over st =
+  failwith "unimplemented"
+
+let valid_mode a st =
+  failwith "unimplemented"
+
+
+(* ############################################################################
+
+   Helpful functions for outside use
+
+   ##############################################################################*)
+
+let current_player st =
+  List.hd st.players
+
+let num_inf pl =
+  List.length (List.find_all (fun x -> x = Infantry) pl.cards)
+
+let num_cav pl =
+  List.length (List.find_all (fun x -> x = Cavalry) pl.cards)
+
+let num_art pl =
+  List.length (List.find_all (fun x -> x = Artillery) pl.cards)
+
+let num_wild pl =
+  List.length (List.find_all (fun x -> x = Wild) pl.cards)
+
+let player_id pl =
+  pl.id
