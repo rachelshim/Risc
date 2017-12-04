@@ -14,7 +14,15 @@ let update_gui (st : state)
     ((write_log, update_territories, update_continent_owners,
      update_current_player, update_available_reinforcements, update_cards,
      update_territories_count, update_troop_count, set_game_over,
+<<<<<<< Updated upstream
      run_blocking_popup):((string -> unit) * ((string * string * int) list -> unit) * ((string * string) list -> unit) * (string -> unit) * (int -> unit) * (int * int * int * int -> unit) * (int -> unit) * (int -> unit) * (bool -> unit) * (string -> unit))) (act : action) =
+=======
+      run_blocking_popup):
+       ((string -> unit) * ((string * string * int) list -> unit) *
+        ((string * string) list -> unit) * (string -> unit) * (int -> unit) *
+        (int * int * int * int -> unit) * (int -> unit) * (int -> unit) *
+        (bool -> unit) * (unit -> unit))) (act : action) =
+>>>>>>> Stashed changes
   let pl = current_player st in
   match act with
   | ADeployment reg -> update_territories
@@ -26,10 +34,15 @@ let update_gui (st : state)
     update_cards (num_inf pl, num_cav pl, num_art pl, num_wild pl);
     update_available_reinforcements (avail_troops pl st)
 (** TODO update troops available based on state  *)
-  | AReinforcement (reg, num) -> ()
-  | AAttack (reg1, reg2) -> () (* attack from region s1 to region s2 *)
-  | AMovement ((reg1, reg2), num) -> ()
-      (* move n troops from region s1 to region s2 *)
+  | AReinforcement (reg, num) -> update_territories
+                                   [(reg, player_id pl, troops_in st reg)];
+    update_available_reinforcements (avail_troops pl st)
+(* TODO update_troop_count when implemented in state *)
+  | AAttack (reg1, reg2) -> ()
+  | AMovement ((r1, r2), num) -> update_territories
+                                   [(r1, player_id pl, troops_in st r1)];
+    update_territories [(r2, player_id pl, troops_in st r2)];
+    update_available_reinforcements (avail_troops pl st)
   | ANextTurn -> update_current_player (player_id pl);
     update_cards (num_inf pl, num_cav pl, num_art pl,
                   num_wild pl)
