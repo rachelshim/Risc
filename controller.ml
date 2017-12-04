@@ -2,6 +2,13 @@
 open State
 open Action
 
+let rec update_all_regions st lst =
+  match lst with
+  | [] -> ()
+  | r::t -> update_territories
+              [(r, player_id (current_player st), troops_in st r)];
+              (update_all_regions st t)
+
 let update_gui (st : state)
     ((write_log, update_territories, update_continent_owners,
      update_current_player, update_available_reinforcements, update_cards,
@@ -9,7 +16,8 @@ let update_gui (st : state)
      run_blocking_popup):((string -> unit) * ((string * string * int) list -> unit) * ((string * string) list -> unit) * (string -> unit) * (int -> unit) * (int * int * int * int -> unit) * (int -> unit) * (int -> unit) * (bool -> unit) * (unit -> unit))) (act : action) =
   let pl = current_player st in
   match act with
-  | ADeployment reg -> update_territories (reg, player_id pl, troops_in st reg)
+  | ADeployment reg -> update_territories
+                         [(reg, player_id pl, troops_in st reg)]
   | APlayCards (c1, c2, c3) ->
     update_cards (num_inf pl, num_cav pl, num_art pl, num_wild pl)
 (** TODO update troops available based on state  *)
