@@ -30,17 +30,20 @@ let update_gui (st : state)
                                    [(reg, player_id pl, troops_in st reg)];
     update_available_reinforcements (avail_troops pl st)
 (* TODO update_troop_count when implemented in state *)
-  | AAttack (reg1, reg2) -> ()
+  | AAttack ((r1, r2), num) -> update_territories
+                                   [(r1, player_id pl, troops_in st r1)];
+    update_territories [(r2, player_id pl, troops_in st r2)];
+    update_available_reinforcements (avail_troops pl st);
+    (* update_continent_owners *)
   | AMovement ((r1, r2), num) -> update_territories
                                    [(r1, player_id pl, troops_in st r1)];
     update_territories [(r2, player_id pl, troops_in st r2)];
     update_available_reinforcements (avail_troops pl st);
     run_blocking_popup "You have been awarded a card." (** TODO specify which card *)
-  | ANextTurn -> update_current_player (player_id pl);
-    update_cards (num_inf pl, num_cav pl, num_art pl,
-                  num_wild pl);
-    run_blocking_popup "Your turn is over- please pass the computer to the next
-      player. Huzzah!"
+  | ANextTurn -> update_cards (num_inf pl, num_cav pl, num_art pl, num_wild pl);
+    run_blocking_popup
+      "Your turn is over- please pass the computer to the next player. Huzzah!";
+    update_current_player (player_id pl)
   | _ -> ()
 
 let controller_update (st : state) (funcs:((string -> unit) * ((string * string * int) list -> unit) * ((string * string) list -> unit) * (string -> unit) * (int -> unit) * (int * int * int * int -> unit) * (int -> unit) * (int -> unit) * (bool -> unit) * (string -> unit))) (act : action) =
