@@ -299,7 +299,8 @@ let run_troop_dialog parent message (min, max) =
     ()
   in
   let fmin = float_of_int min in
-  let fmax = float_of_int max in
+  (*Have to add 10 because for some reason adjustent likes to subtract 10*)
+  let fmax = float_of_int (max + 10) in 
   let troop_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true 
                   ~title:"Troop Selection" ~deletable:true 
                   ~resizable:false () in
@@ -307,7 +308,8 @@ let run_troop_dialog parent message (min, max) =
                   ~text:message
                   ~packing:troop_dialog#vbox#add () in
   let troop_dialog_adjustment = GData.adjustment ~value:fmin
-                  ~lower:fmin ~upper:fmax () in
+                  ~lower:fmin ~upper:fmax ~step_incr:1. (*~page_incr:1.*) () in
+  troop_dialog_adjustment#clamp_page ~lower:fmin ~upper:fmax;
   let scale_frame = GBin.frame ~width:200 ~height:50 ~border_width:3
                   ~packing:troop_dialog#vbox#add () in
   let troop_dialog_scale = GRange.scale `HORIZONTAL 
@@ -327,39 +329,62 @@ let run_troop_dialog parent message (min, max) =
 let confirm_button_handler parent () = 
   Mutex.lock mutex;
   print_endline "confirm button";
-  (*let index = !actions_cbox_global#active in
-  (*Deploy: 0*)
-  let action = (if index = 0 then begin
-    ADeployment ""
-  end
-  (*Attack: 1*)
-  else if index = 1 then begin
-    (*let origin = "" in (*TODO: get source and dest*)
-    let destination = "" in
-    let troops_in_origin = 50 in (*TODO: actually get this data*)
-    let count = run_troop_dialog parent "ATTACK" (1, troops_in_origin) in*)
-    AAttack ("","") 0
-  end
-  (*Reinforce: 2*)
-  else if index = 2 then begin
-    AReinforcement "" 0
-  end
-  (*Move: 3*)
-  else if index = 3 then begin
-    AMovement ("", ""), 0)
-  end
-  (*Trade Cards Same: 4*)
-  else if index = 4 then begin
-    TradeSameArt (*todo: cases*)
-  end
-  (*Trade Cards Different: 5*)
-  else if index = 5 then begin
-    TradeDiff
-  end
-  (*End Turn: 6*)
-  else if index = 6 then begin
-    EndTurn
-  end) in*)
+  let index = !actions_cbox_global#active in
+  let action = (
+    (*Deploy: 0*)
+    if index = 0 then begin
+        let dest = !selection1 in
+        match dest with
+        | None -> None
+        | Some loc -> Some (ADeployment loc)
+    end
+    (*Attack: 1*)
+    else if index = 1 then begin
+      let src = !selection1 in
+      let dest = !selection2 in
+      let src_troops = match src with
+      | None -> 0
+      (*TODO: a better way to get this data (looking up from gui is bad style)*)
+      | Some loc -> (lookup_troop_count loc) - 1 in 
+      if src_troops = 0 then begin
+        write_log "Insufficient troops in source territory.";
+        None
+      end
+      else begin
+        let num = run_troop_dialog parent 
+          "Select the number of troops to attack with." (1, src_troops) in
+        match (src, dest, num) with
+        | (Some s, Some d, Some n) -> write_log ("Attacking from " ^ s ^ " to " 
+                                                ^ d ^ " with " ^ 
+                                                (string_of_int n) ^ " troops.");
+                                      Some (AAttack ((s, d), n))
+        | _ -> None
+      end
+    end
+    (*Reinforce: 2*)
+    else if index = 2 then begin
+      Some (AReinforcement ("", 0))
+    end
+    (*Move: 3*)
+    else if index = 3 then begin
+      Some (AMovement (("", ""), 0))
+    end
+    (*Trade Cards Same: 4*)
+    else if index = 4 then begin
+      Some ANextTurn (*todo: cases*)
+    end
+    (*Trade Cards Different: 5*)
+    else if index = 5 then begin
+      Some ANextTurn
+    end
+    (*End Turn: 6*)
+    else if index = 6 then begin
+      Some ANextTurn
+    end
+    else begin
+      None
+    end) 
+  in
   (*Cases over*)
   Mutex.unlock mutex;
   ()
