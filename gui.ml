@@ -4,7 +4,7 @@ open Gtk
 open Unix
 open Thread
 open Action
-(*open Controller*)
+open Controller
 
 (*Selection modes*)
 type selection_mode = 
@@ -18,6 +18,7 @@ let actions_strings =   ["Deploy"; "Attack"; "Reinforce"; "Move";
                          "Trade Cards"; "End turn"]
 let cards_strings = ["Infantry";"Cavalry";"Artillery";"Wildcard"]
 let locale = GtkMain.Main.init ()
+let controller = ref (Controller.init_game 2)
 let continent_labels_list = ref []
 let buttons_list = ref []
 let territory_troop_list = ref []
@@ -36,7 +37,6 @@ let selection1_label_global = ref (GMisc.label ())
 let selection2_label_global = ref (GMisc.label ())
 let confirm_button_global = ref (GButton.button ())
 let actions_cbox_global = ref (fst (GEdit.combo_box_text ()))
-
 let current_selection_mode = ref No_selection
 let selection1 = ref None
 let selection2 = ref None
@@ -435,7 +435,11 @@ let confirm_button_handler parent () =
       None
     end) 
   in
-  (*Cases over*)
+  (*Cases over - apply action*)
+  match action with
+  | None -> ()
+  | Some act -> controller := Controller.controller_update !controller act;
+                ();
   Mutex.unlock mutex;
   ()
 
@@ -558,8 +562,8 @@ let main () =
     | _ -> ()
   done;
 
-  (*TODO: initialize game*)
-  (*let controller = Controller.init_game !player_num in*)
+  (*Initialize game*)
+  controller := Controller.init_game !player_num;
 
   (*Info pack setup*)
   let player_frame = GBin.frame ~label:"Current Player" ~border_width:3
