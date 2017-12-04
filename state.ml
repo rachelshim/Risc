@@ -35,16 +35,6 @@ type player =
     controls_cont: string list;
   }
 
-type action =
-  | ADeployment of string (* places one troop on region s *)
-  | APlay_Cards of (card * card * card) (* the cards to trade in *)
-  | AWait_Reinforcement
-  | AReinforcement of string * int (* reinforce region s with n troops *)
-  | AAttack of string * string (* attack from region s1 to region s2 *)
-  | AMovement of (string * string) * int
-      (* move n troops from region s1 to region s2 *)
-  | ANext_Turn
-
 type curr_move =
   | CDeployment
   | CReinforcement of int (* reinforce with n total troops *)

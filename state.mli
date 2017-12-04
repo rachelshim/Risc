@@ -1,3 +1,4 @@
+open Action
 
 (* [player] represents a player in the game *)
 type player
@@ -19,9 +20,6 @@ type continent
 
 (* [gamelog] keeps track of every action that has been taken in the game. *)
 type gamelog
-
-(* [action] defines an action a player can do in a turn. *)
-type action
 
 (* [create_player str] creates a new player with id [str]. *)
 val create_player : string -> player
