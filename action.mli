@@ -1,10 +1,14 @@
+(** Variant [card] represents the types of card that can be traded in *)
+type card = Infantry | Cavalry | Artillery | Wild
+
+(** Variant [action] represents the types of actions that can be taken as
+    part of the game *)
 type action =
-| Deploy of string
-| Reinforce of string * int
-| Move of (string * string) * int
-| Attack of (string * string) * int
-| TradeSameInf
-| TradeSameCav
-| TradeSameArt
-| TradeDiff
-| EndTurn
+  | ADeployment of string (* places one troop on region s *)
+  | APlayCards of (card * card * card) (* the cards to trade in *)
+  | AWaitReinforcement
+  | AReinforcement of string * int (* reinforce region s with n troops *)
+  | AAttack of string * string (* attack from region s1 to region s2 *)
+  | AMovement of (string * string) * int
+      (* move n troops from region s1 to region s2 *)
+  | ANextTurn

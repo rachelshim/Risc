@@ -1,3 +1,4 @@
+open Action
 
 (* [player] represents a player in the game *)
 type player
@@ -20,9 +21,6 @@ type continent
 (* [gamelog] keeps track of every action that has been taken in the game. *)
 type gamelog
 
-(* [action] defines an action a player can do in a turn. *)
-type action
-
 (* [create_player str] creates a new player with id [str]. *)
 val create_player : string -> player
 
@@ -35,7 +33,10 @@ val init_state : int -> state
 val is_over : state -> bool
 
 (* [update a s] updates the state in accordance with the action [a]. *)
-val update : action -> state -> state
+val update : state -> action -> state
 
 (* [valid_mode a s] returns [true] if the attempted move is valid. *)
 val valid_mode : action -> state -> bool
+
+(** [current_player st] returns the current player for a given state *)
+val current_player : state -> player

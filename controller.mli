@@ -4,10 +4,10 @@ open Action
 (** Calls respective update function in GUI, passing along pertinent info
     depending on action type, as well as message to display in console log.
     Note: check for winner. *)
-val update_gui : action -> unit
+val update_gui : state -> action -> unit
 
 (* Take in an action from the GUI and a state and return an updated state. *)
-val update : action -> state -> state
+val controller_update : state -> action -> state
 
 (* [init_game i] returns a new game state with the specified number of players.
  *)
