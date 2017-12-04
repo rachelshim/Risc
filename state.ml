@@ -470,12 +470,13 @@ let update st = function
       (* TODO add some code to make sure l is a subset of head player's cards *)
       (* also force players with 5+ cards to trade in their cards *)
         if (c1 <> c2 && c2 <> c3 && c1 <> c3) ||
-            (c1 = Wild && c2 = Wild) ||
-            (c1 = Wild && c3 = Wild) ||
-            (c2 = Wild && c3 = Wild) ||
-            (c1 = c2 && c3 = Wild) ||
-            (c1 = c3 && c2 = Wild) ||
-            (c2 = c3 && c1 = Wild)
+           (c1 = Wild && c2 = Wild) ||
+           (c1 = Wild && c3 = Wild) ||
+           (c2 = Wild && c3 = Wild) ||
+           (c1 = c2 && c3 = Wild) ||
+           (c1 = c3 && c2 = Wild) ||
+           (c2 = c3 && c1 = Wild) ||
+           (c1 = c2 && c1 = c3 && c2 = c3)
             then
           let bonus_n = st.bonus_troops + n in
           let new_cards = remove_cards c1 p.cards
