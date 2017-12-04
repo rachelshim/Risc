@@ -577,3 +577,14 @@ let troops_in st r =
 
 let num_controlled pl =
   List.fold_left ( fun acc (str, n) -> acc + n ) 0 pl.continent_troops
+
+let ctrl_of_reg st r =
+  (region_of_name st r).controller
+
+let owner_of_cont st c =
+  match List.assoc c st.continents with
+  | None -> "None"
+  | Some owner -> owner
+
+let cont_of_reg st r =
+  (region_of_name st r).continent
