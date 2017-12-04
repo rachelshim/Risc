@@ -15,7 +15,7 @@ type selection_mode =
 let color_options = ["Red"; "Blue"; "Green"; "Yellow"; "Purple"; "Orange"]
 let actions_strings =   ["Deploy"; "Attack"; "Reinforce"; "Move"; 
                          "Trade Cards"; "End turn"]
-let cards_strings = ["Infantry";"Calvalry";"Artillery"]
+let cards_strings = ["Infantry";"Cavalry";"Artillery";"Wildcard"]
 let locale = GtkMain.Main.init ()
 let continent_labels_list = ref []
 let buttons_list = ref []
@@ -41,6 +41,20 @@ let selection1 = ref None
 let selection2 = ref None
 
 let mutex = Core.Mutex.create ()
+
+let card_of_int num = 
+  if num = 0 then Some Infantry
+  else if num = 1 then Some Cavalry
+  else if num = 2 then Some Artillery
+  else if num = 3 then Some Wild
+  else None
+
+let string_of_card card = 
+  match card with
+  | Infantry -> "Infantry"
+  | Cavalry -> "Cavalry"
+  | Artillery -> "Artillery"
+  | Wild -> "Wildcard"
 
 let set_color wid col_str = 
   let sty = wid#misc#style#copy in
@@ -241,7 +255,7 @@ let run_init_dialog parent =
 let run_cards_dialog parent = 
   let cards_selected = ref None in
   let cards_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true 
-                  ~title:"Initialization Dialog" ~deletable:true 
+                  ~title:"Card Selection Dialog" ~deletable:true 
                   ~resizable:false () in
   let cards_dialog_label = GMisc.label 
                   ~text:"Please select the cards to exchange."
@@ -369,7 +383,23 @@ let confirm_button_handler parent () =
     end
     (*Trade Cards: 4*)
     else if index = 4 then begin
-      Some ANextTurn (*todo: cases*)
+      let cards = run_cards_dialog parent in
+      match cards with
+      | None -> None
+      | Some (c_int1, c_int2, c_int3) -> begin
+        let card1 = card_of_int c_int1 in
+        let card2 = card_of_int c_int2 in
+        let card3 = card_of_int c_int3 in
+        match (card1, card2, card3) with
+        | (Some c1, Some c2, Some c3) ->
+                                      let st1 = string_of_card c1 in
+                                      let st2 = string_of_card c2 in
+                                      let st3 = string_of_card c3 in
+                                      write_log ("Playing " ^ st1 ^ ", " ^ st2 
+                                                  ^ ", and " ^ st3 ^ ".");
+                                      Some (APlayCards (c1, c2, c3))
+        | _ -> None
+      end
     end
     (*End Turn: 5*)
     else if index = 5 then begin
