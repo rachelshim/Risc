@@ -4,7 +4,7 @@ open Action
 (** Calls respective update function in GUI, passing along pertinent info
     depending on action type, as well as message to display in console log.
     Note: check for winner. *)
-val update_gui : state -> action -> unit
+(*val update_gui : state -> action -> unit*)
 
 (* Take in a state, set of GUI functions, and action and return an updated
    state. *)
