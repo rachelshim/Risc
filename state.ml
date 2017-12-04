@@ -12,6 +12,7 @@ type region =
   {
     name: string;
     controller: string;
+    troops: int;
     routes: string list;
     continent: string;
   }
@@ -21,7 +22,6 @@ type player =
     id: string;
     cards: card list;
     total_troops: int;
-    controls: (string * int) list;
     continent_troops: (string * int) list; (*regions owned per continent*)
     controls_cont: string list;
   }
@@ -30,9 +30,7 @@ type curr_move =
   | CDeployment of int (* final player has n troops left to place *)
   | CReinforcement of int (* reinforce with n total troops *)
   | CAttack
-  | CMovement
-  | CRecieve_Card of card
-  | CNext_Turn
+  | CRecieve_Card of card option
   | CGame_Won of string (* player s won the game *)
 
 (** Map representing region, with key region name and value [region] *)
@@ -79,184 +77,226 @@ let init_regions =
   [{name = "Alaska";
     routes = ["Northwest Territory"; "Alberta"; "Kamchatka"];
     continent = "North America";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Northwest Territory";
     routes = ["Alaska"; "Alberta"; "Ontario"; "Greenland"];
     continent = "North America";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Alberta";
     routes =
       ["Alaska"; "Northwest Territory"; "Ontario"; "Western United States"];
     continent = "North America";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Greenland";
     routes = ["Northwest Territory"; "Ontario"; "Quebec"; "Iceland"];
     continent = "North America";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Ontario";
     routes =
       ["Alberta"; "Northwest Territory"; "Greenland"; "Quebec";
        "Eastern United States"; "Western US"];
     continent = "North America";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Quebec";
     routes = ["Ontario"; "Greenland"; "Eastern United States"];
     continent = "North America";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Western United States";
     routes = ["Alberta"; "Ontario"; "Eastern United States"; "Central America"];
     continent = "North America";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Eastern United States";
     routes = ["Western United States"; "Ontario"; "Quebec"; "Central America"];
     continent = "North America";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Central America";
     routes = ["Western United States"; "Eastern United States"; "Venezuela"];
     continent = "North America";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Venezuela";
     routes = ["Peru"; "Brazil"];
     continent = "South America";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Peru";
     routes = ["Venezuela"; "Brazil"; "Argentina"];
     continent = "South America";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Argentina";
     routes = ["Peru"; "Brazil"];
     continent = "South America";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Brazil";
     routes = ["Venezuela"; "Peru"; "Argentina"; "North Africa"];
     continent = "South America";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Iceland";
     routes = ["Greenland"; "Great Britain"; "Scandinavia"];
     continent = "Europe";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Great Britain";
     routes = ["Iceland"; "Western Europe"; "Scandinavia"; "Northern Europe"];
     continent = "Europe";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Western Europe";
     routes =
       ["Great Britain"; "Northern Europe"; "Southern Europe"; "North Africa"];
     continent = "Europe";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Scandinavia";
     routes = ["Iceland"; "Great Britain"; "Northern Europe"; "Ukraine"];
     continent = "Europe";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Northern Europe";
     routes =
       ["Great Britain"; "Southern Europe"; "Western Europe"; "Scandinavia";
        "Ukraine"];
     continent = "Europe";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Southern Europe";
     routes =
       ["Western Europe"; "North Africa"; "Egypt"; "Middle East"; "Ukraine"];
     continent = "Europe";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Ukraine";
     routes =
       ["Scandinavia"; "Northern Europe"; "Southern Europe"; "Ural";
        "Afghanistan"; "Middle East"];
     continent = "Europe";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "North Africa";
     routes =
       ["Brazil"; "Western Europe"; "Southern Europe"; "Egypt"; "East Africa";
        "Congo"];
     continent = "Africa";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Egypt";
     routes = ["North Africa"; "Southern Europe"; "Middle East"; "East Africa"];
     continent = "Africa";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Congo";
     routes = ["North Africa"; "East Africa"; "South Africa"];
     continent = "Africa";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "East Africa";
     routes =
       ["North Africa"; "Egypt"; "Middle East"; "Madagascar"; "South Africa";
        "Congo"];
     continent = "Africa";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "South Africa";
     routes = ["Congo"; "East Africa"; "Madagascar"];
     continent = "Africa";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Madagascar";
     routes = ["South Africa"; "East Africa"];
     continent = "Africa";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Middle East";
     routes = ["East Africa"; "Egypt"; "Ukraine"; "Afghanistan"; "India"];
     continent = "Asia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Afghanistan";
     routes = ["Middle East"; "Ukraine"; "Ural"; "China"; "India"];
     continent = "Asia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Ural";
     routes = ["Siberia"; "China"; "Afghanistan"; "Ukraine"];
     continent = "Asia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Siberia";
     routes = ["Yakutsk"; "Irkutsk"; "Mongolia"; "China"; "Ural"];
     continent = "Asia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "India";
     routes = ["Middle East"; "Afghanistan"; "China"; "Siam"];
     continent = "Asia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Siam";
     routes = ["India"; "China"; "Indonesia"];
     continent = "Asia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "China";
     routes = ["Siam"; "India"; "Afghanistan"; "Ural"; "Siberia"; "Mongolia"];
     continent = "Asia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Mongolia";
     routes = ["China"; "Siberia"; "Irkutsk"; "Kamchatka"; "Japan"];
     continent = "Asia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Japan";
     routes = ["Mongolia"; "Kamchatka"];
     continent = "Asia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Kamchatka";
     routes = ["Mongolia"; "Japan"; "Alaska"; "Irkutsk"; "Yakutsk"];
     continent = "Asia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Irkutsk";
     routes = ["Ural"; "Yakutsk"; "Kamchatka"; "Mongolia"];
     continent = "Asia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Yakutsk";
     routes = ["Ural"; "Irkutsk"; "Kamchatka"];
     continent = "Asia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Indonesia";
     routes = ["Siam"; "New Guinea"; "Western Australia"];
     continent = "Australia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "New Guinea";
     routes = ["Indonesia"; "Eastern Australia"; "Western Australia"];
     continent = "Australia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Western Australia";
     routes = ["Indonesia"; "New Guinea"; "Eastern Australia"];
     continent = "Australia";
-    controller = "None"};
+    controller = "None";
+    troops = 1};
    {name = "Eastern Australia";
     routes = ["Indonesia"; "New Guinea"; "Western Australia"];
     continent = "Australia";
-    controller = "None"}
+    controller = "None";
+    troops = 1}
   ]
 
 (** [Regions] with all regions in game stored*)
@@ -298,7 +338,6 @@ let rec add_regions ps map rs =
     let new_p =
       {p with
        total_troops = p.total_troops + 1;
-       controls = (h.name, 1)::p.controls;
        continent_troops =
          let in_cont = List.assoc h.continent p.continent_troops + 1 in
          List.remove_assoc h.continent p.continent_troops |>
@@ -324,7 +363,6 @@ let init_state n =
            id = name;
            cards = [];
            total_troops = 0;
-           controls = [];
            continent_troops = [("Asia", 0); ("Africa", 0); ("North America", 0);
                          ("South America", 0); ("Europe", 0); ("Australia", 0)];
            controls_cont = [];
@@ -390,35 +428,38 @@ let rec remove_cards c l =
   | h::t -> if h = c then t
     else remove_cards c t
 
+(** [get_player_reinforcments p] is the number of reinforcements given to [p] *)
+let get_player_reinforcements p =
+  let reg_troops =
+    (List.fold_left (fun tr tup -> snd tup + tr) 0 p.continent_troops) / 3 in
+  List.fold_left
+    (fun tr c -> (List.assoc c continents |> snd) + tr) reg_troops
+    p.controls_cont
+
 let update st = function
   | ADeployment r ->
     begin
       match st.current_move with
       | CDeployment n ->
         let p = List.hd st.players in
-        begin
-          try
-            let num_troops = List.assoc r p.controls in
-            let new_controls = List.remove_assoc r p.controls in
-            let p' = {p with
-                      controls = (r, num_troops + 1)::new_controls;
-                      total_troops = p.total_troops + 1} in
-            let p_list = append_player p' st.players in
-            {st with
-             players = p_list;
-             current_move =
-               if (List.hd p_list).id = "Red"
-               then
-                 if n = 1
-                 then CNext_Turn
-                 else CDeployment (n - 1)
-               else CDeployment n;
-             log = "Successfuly deployed to " ^ r ^ ".";
-             }
-          with
-          | Not_found ->
-            {st with log = "Invalid move: You don't control " ^ r ^ "." }
-        end
+        let region = Regions.find r st.regions in
+        if region.controller != p.id
+        then {st with log = "Invalid move: You don't control " ^ r ^ "." }
+        else
+          let p' = {p with total_troops = p.total_troops + 1} in
+          let p_list = append_player p' st.players in
+          {st with
+           players = p_list;
+           current_move =
+             if (List.hd p_list).id = "Red"
+             then
+               if n = 1
+               then CReinforcement (get_player_reinforcements (List.hd p_list))
+               else CDeployment (n - 1)
+             else CDeployment n;
+           regions =
+             Regions.add r {region with troops = region.troops + 1} st.regions;
+           log = "Successfuly deployed to " ^ r ^ "."}
       | _ -> {st with log= "Invalid move: cannot deploy at this time."}
     end
   | APlayCards (c1, c2, c3) ->
@@ -463,23 +504,29 @@ let update st = function
                 log = "You have " ^ (string_of_int troops) ^ " to deploy."; }
     | _ -> { st with log = "Invalid move" }) *)
   | AReinforcement (r, i) ->
-    (match st.current_move with
-    | CReinforcement n ->
-      if n >= i then
-        let p = List.hd st.players in
-        (try
-          let n = List.assoc r p.controls in
-          let new_controls = List.remove_assoc r p.controls in
-          let p' = { p with controls = (r, n + i)::new_controls } in
-          let p_list = prepend_player p' st.players in
-          { st with current_move = CReinforcement (n - i);
-                    players = p_list;
-                    log = "Successfully reinforced " ^ r ^ " with " ^
-                          (string_of_int i) ^ " new troops." }
-        with
-        | Not_found -> { st with log = "You don't control that territory." })
-      else { st with log = "You don't have enough troops. Try again." }
-    | _ -> { st with log = "Invalid move"; })
+    begin
+      match st.current_move with
+      | CReinforcement n ->
+        if n >= i then
+          let p = List.hd st.players in
+          let region = Regions.find r st.regions in
+          if region.controller != p.id
+          then {st with log = "Invalid move: You don't control " ^ r ^ "." }
+          else
+            let p' = {p with total_troops = p.total_troops + i} in
+            let p_list = prepend_player p' st.players in
+            { st with current_move =
+                        if n > i then CReinforcement (n - i)
+                        else CAttack;
+                      players = p_list;
+                      regions =
+                        Regions.add r {region with troops = region.troops + i}
+                          st.regions;
+                      log = "Successfully reinforced " ^ r ^ " with " ^
+                            (string_of_int i) ^ " new troops."}
+        else { st with log = "You don't have enough troops. Try again." }
+      | _ -> { st with log = "Invalid move: cannot reinforce at this time"}
+    end
   | _ -> failwith "TODO"
 
 let is_over st =
@@ -522,10 +569,7 @@ let player_of_id st id =
   List.hd ( List.filter (fun p -> p.id = id ) st.players )
 
 let region_of_name st r =
-  failwith "unimplemented"
-  (* List.hd (List.filter (fun x -> x.name = r) st.regions) *)
+  Regions.find r st.regions
 
-(** TODO update once theres a regions assoc list  *)
 let troops_in st r =
-  let c = (region_of_name st r).controller in
-  List.assoc r (player_of_id st c).controls
+  (region_of_name st r).troops
