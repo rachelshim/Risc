@@ -222,6 +222,11 @@ let run_blocking_popup () =
   block_dialog#destroy();
   ()
 
+(*
+ * This function roll is needed for the Controller to be able to set gui values
+ * without creating a situation in which the project cannot compile due to 
+ * circular dependencies (which occurs when Controller opens Gui).
+ *)
 let setters = (write_log, update_territories, update_continent_owners, 
               update_current_player, update_available_reinforcements, 
               update_cards, update_territories_count, update_troop_count, 
