@@ -2,7 +2,7 @@
 open State
 open Action
 
-let update_gui (st : state) (write_log, update_territories, update_continent_owners, update_current_player, update_available_reinforcements, update_cards, update_territories_count, update_troop_count, set_game_over) (act : action) =
+let update_gui (st : state) (write_log, update_territories, update_continent_owners, update_current_player, update_available_reinforcements, update_cards, update_territories_count, update_troop_count, set_game_over, run_blocking_popup) (act : action) =
   let pl = current_player st in
   match act with
   | ADeployment reg -> () (* places one troop on region s *)
