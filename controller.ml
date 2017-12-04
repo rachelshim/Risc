@@ -14,7 +14,7 @@ let update_gui (st : state)
     ((write_log, update_territories, update_continent_owners,
      update_current_player, update_available_reinforcements, update_cards,
      update_territories_count, update_troop_count, set_game_over,
-     run_blocking_popup):((string -> unit) * ((string * string * int) list -> unit) * ((string * string) list -> unit) * (string -> unit) * (int -> unit) * (int * int * int * int -> unit) * (int -> unit) * (int -> unit) * (bool -> unit) * (unit -> unit))) (act : action) =
+     run_blocking_popup):((string -> unit) * ((string * string * int) list -> unit) * ((string * string) list -> unit) * (string -> unit) * (int -> unit) * (int * int * int * int -> unit) * (int -> unit) * (int -> unit) * (bool -> unit) * (string -> unit))) (act : action) =
   let pl = current_player st in
   match act with
   | ADeployment reg -> update_territories
@@ -36,7 +36,7 @@ let update_gui (st : state)
 
   | _ -> ()
 
-let controller_update (st : state) (funcs:((string -> unit) * ((string * string * int) list -> unit) * ((string * string) list -> unit) * (string -> unit) * (int -> unit) * (int * int * int * int -> unit) * (int -> unit) * (int -> unit) * (bool -> unit) * (unit -> unit))) (act : action) =
+let controller_update (st : state) (funcs:((string -> unit) * ((string * string * int) list -> unit) * ((string * string) list -> unit) * (string -> unit) * (int -> unit) * (int * int * int * int -> unit) * (int -> unit) * (int -> unit) * (bool -> unit) * (string -> unit))) (act : action) =
   let st' = update st act in
   let gui' = update_gui st' funcs act in
   st'

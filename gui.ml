@@ -212,12 +212,12 @@ let set_game_over over =
   end
   else ()
 
-let run_blocking_popup () = 
+let run_blocking_popup message = 
   let block_dialog = GWindow.message_dialog ~parent:!window_global 
       ~message_type:`QUESTION ~resizable:false 
       ~title:"Next Turn Delay" 
       ~buttons:GWindow.Buttons.ok 
-      ~message:"Please click OK when the next player\nis ready to begin their turn." () in
+      ~message:message () in
   let block_delete_event = block_dialog#run () in
   block_dialog#destroy();
   ()
@@ -449,9 +449,7 @@ let confirm_button_handler parent () =
       end
       (*End Turn: 5*)
       else if index = 5 then begin
-        (*TODO: switch back to normal*)
         Some ANextTurn
-        (*None*)
       end
       else begin
         None
