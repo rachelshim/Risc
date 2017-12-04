@@ -564,10 +564,7 @@ let player_of_id st id =
   List.hd ( List.filter (fun p -> p.id = id ) st.players )
 
 let region_of_name st r =
-  failwith "unimplemented"
-  (* List.hd (List.filter (fun x -> x.name = r) st.regions) *)
+  Regions.find r st.regions
 
-(** TODO update once theres a regions assoc list  *)
 let troops_in st r =
-  let c = (region_of_name st r).controller in
-  List.assoc r (player_of_id st c).controls
+  (region_of_name st r).troops
