@@ -14,8 +14,7 @@ type selection_mode =
 (*Globals setup*)
 let color_options = ["Red"; "Blue"; "Green"; "Yellow"; "Purple"; "Orange"]
 let actions_strings =   ["Deploy"; "Attack"; "Reinforce"; "Move"; 
-                         "Trade Cards - 3 Same"; "Trade Cards - 3 Different"; 
-                         "End turn"]
+                         "Trade Cards"; "End turn"]
 let cards_strings = ["Infantry";"Calvalry";"Artillery"]
 let locale = GtkMain.Main.init ()
 let continent_labels_list = ref []
@@ -35,7 +34,6 @@ let troops_label_global = ref (GMisc.label ())
 let selection1_label_global = ref (GMisc.label ())
 let selection2_label_global = ref (GMisc.label ())
 let confirm_button_global = ref (GButton.button ())
-let cards_cbox_global = ref (fst (GEdit.combo_box_text ()))
 let actions_cbox_global = ref (fst (GEdit.combo_box_text ()))
 
 let current_selection_mode = ref No_selection
@@ -369,16 +367,12 @@ let confirm_button_handler parent () =
     else if index = 3 then begin
       Some (AMovement (("", ""), 0))
     end
-    (*Trade Cards Same: 4*)
+    (*Trade Cards: 4*)
     else if index = 4 then begin
       Some ANextTurn (*todo: cases*)
     end
-    (*Trade Cards Different: 5*)
+    (*End Turn: 5*)
     else if index = 5 then begin
-      Some ANextTurn
-    end
-    (*End Turn: 6*)
-    else if index = 6 then begin
       Some ANextTurn
     end
     else begin
@@ -413,13 +407,6 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
     else begin
       set_selection_mode No_selection
     end;
-    (*card trading in separate if-clause because all others should lock it*)
-    if index = 4 then begin
-      !cards_cbox_global#misc#set_sensitive true
-    end
-    else begin
-      !cards_cbox_global#misc#set_sensitive false
-    end
   end
   else ();
   Mutex.unlock mutex;
@@ -561,15 +548,6 @@ let main () =
                         (actions_cbox_handler actions_cbox) in
   actions_cbox_global := fst actions_cbox;
 
-  let cards_cbox_frame = GBin.frame ~label:"Card Selection" ~border_width:3
-                  ~packing:actions_pack#add () in
-  let cards_cbox = GEdit.combo_box_text 
-              ~strings:cards_strings
-              ~width:100 ~height:20 
-              ~packing:cards_cbox_frame#add () in
-  (fst cards_cbox)#set_active 0;
-  cards_cbox_global := fst cards_cbox;
-
   let confirm_button = GButton.button ~label:"Confirm"
                                       ~packing:actions_pack#add () in
   let confirm_button_signal = confirm_button#connect#clicked 
@@ -687,7 +665,6 @@ let main () =
 
   (*Set some sensitivities before game starts*)
   set_territory_buttons_sensitivity false;
-  (fst cards_cbox)#misc#set_sensitive false;
   confirm_button#misc#set_sensitive false;
 
   (*Final window configuration and display*)
