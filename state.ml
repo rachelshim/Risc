@@ -421,7 +421,7 @@ let update st = function
         end
       | _ -> {st with log= "Invalid move: cannot deploy at this time."}
     end
-  | APlay_Cards (c1, c2, c3) ->
+  | APlayCards (c1, c2, c3) ->
     begin
       match st.current_move with
       | CReinforcement n ->
