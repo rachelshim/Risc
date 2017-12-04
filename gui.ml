@@ -220,7 +220,6 @@ let run_blocking_popup () =
       ~message:"Please click OK when the next player\nis ready to begin their turn." () in
   let block_delete_event = block_dialog#run () in
   block_dialog#destroy();
-  print_endline "done";
   ()
 
 let setters = (write_log, update_territories, update_continent_owners, 
