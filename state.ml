@@ -436,61 +436,54 @@ let get_player_reinforcements p =
     (fun tr c -> (List.assoc c continents |> snd) + tr) reg_troops
     p.controls_cont
 
-let update st = function
-  | ADeployment r ->
-    begin
-      match st.current_move with
-      | CDeployment n ->
-        let p = List.hd st.players in
-        let region = Regions.find r st.regions in
-        if region.controller != p.id
-        then {st with log = "Invalid move: You don't control " ^ r ^ "." }
-        else
-          let p' = {p with total_troops = p.total_troops + 1} in
-          let p_list = append_player p' st.players in
-          {st with
-           players = p_list;
-           current_move =
-             if (List.hd p_list).id = "Red"
-             then
-               if n = 1
-               then CReinforcement (get_player_reinforcements (List.hd p_list))
-               else CDeployment (n - 1)
-             else CDeployment n;
-           regions =
-             Regions.add r {region with troops = region.troops + 1} st.regions;
-           log = "Successfuly deployed to " ^ r ^ "."}
-      | _ -> {st with log= "Invalid move: cannot deploy at this time."}
-    end
-  | APlayCards (c1, c2, c3) ->
-    begin
-      match st.current_move with
-      | CReinforcement n ->
-        let p = List.hd st.players in
-      (* TODO add some code to make sure l is a subset of head player's cards *)
-      (* also force players with 5+ cards to trade in their cards *)
-        if (c1 <> c2 && c2 <> c3 && c1 <> c3) ||
-            (c1 = Wild && c2 = Wild) ||
-            (c1 = Wild && c3 = Wild) ||
-            (c2 = Wild && c3 = Wild) ||
-            (c1 = c2 && c3 = Wild) ||
-            (c1 = c3 && c2 = Wild) ||
-            (c2 = c3 && c1 = Wild)
-            then
-          let bonus_n = st.bonus_troops + n in
-          let new_cards = remove_cards c1 p.cards
-                          |> remove_cards c2 |> remove_cards c3 in
-          let p' = { p with cards = new_cards } in
-          let p_list = prepend_player p' st.players in
-          { st with current_move = CReinforcement bonus_n;
-                    players = p_list;
-                    bonus_troops = increment_bonus bonus_n;
-                    log = "Successfully traded in cards for " ^
-                          (string_of_int bonus_n) ^ " extra troops"; }
-        else
-          { st with log = "Invalid card trade-in" }
-      | _ -> { st with log = "Invalid move" }
-    end
+let update st a =
+  match a, st.current_move with
+  | ADeployment r, CDeployment n ->
+    let p = List.hd st.players in
+    let region = Regions.find r st.regions in
+    if region.controller != p.id
+    then {st with log = "Invalid move: You don't control " ^ r ^ "." }
+    else
+      let p' = {p with total_troops = p.total_troops + 1} in
+      let p_list = append_player p' st.players in
+      {st with
+       players = p_list;
+       current_move =
+         if (List.hd p_list).id = "Red"
+         then
+           if n = 1
+           then CReinforcement (get_player_reinforcements (List.hd p_list))
+           else CDeployment (n - 1)
+         else CDeployment n;
+       regions =
+         Regions.add r {region with troops = region.troops + 1} st.regions;
+       log = "Successfuly deployed to " ^ r ^ "."}
+  | ADeployment _, _ ->
+    {st with log= "Invalid move: cannot deploy at this time."}
+  | APlayCards (c1, c2, c3), CReinforcement n ->
+    let p = List.hd st.players in
+    (* TODO add some code to make sure l is a subset of head player's cards *)
+    (* also force players with 5+ cards to trade in their cards *)
+    if (c1 <> c2 && c2 <> c3 && c1 <> c3) ||
+        (c1 = Wild && c2 = Wild) ||
+        (c1 = Wild && c3 = Wild) ||
+        (c2 = Wild && c3 = Wild) ||
+        (c1 = c2 && c3 = Wild) ||
+        (c1 = c3 && c2 = Wild) ||
+        (c2 = c3 && c1 = Wild)
+        then
+      let bonus_n = st.bonus_troops + n in
+      let new_cards = remove_cards c1 p.cards
+                      |> remove_cards c2 |> remove_cards c3 in
+      let p' = { p with cards = new_cards } in
+      let p_list = prepend_player p' st.players in
+      { st with current_move = CReinforcement bonus_n;
+                players = p_list;
+                bonus_troops = increment_bonus bonus_n;
+                log = "Successfully traded in cards for " ^
+                      (string_of_int bonus_n) ^ " extra troops"; }
+    else { st with log = "Invalid card trade-in" }
+  | APlayCards _, _ -> { st with log = "Invalid move" }
   (* | AWaitReinforcement ->
     (match st.current_move with
     | CReinforcement n ->
@@ -503,30 +496,27 @@ let update st = function
       { st with current_move = CReinforcement troops;
                 log = "You have " ^ (string_of_int troops) ^ " to deploy."; }
     | _ -> { st with log = "Invalid move" }) *)
-  | AReinforcement (r, i) ->
-    begin
-      match st.current_move with
-      | CReinforcement n ->
-        if n >= i then
-          let p = List.hd st.players in
-          let region = Regions.find r st.regions in
-          if region.controller != p.id
-          then {st with log = "Invalid move: You don't control " ^ r ^ "." }
-          else
-            let p' = {p with total_troops = p.total_troops + i} in
-            let p_list = prepend_player p' st.players in
-            { st with current_move =
-                        if n > i then CReinforcement (n - i)
-                        else CAttack;
-                      players = p_list;
-                      regions =
-                        Regions.add r {region with troops = region.troops + i}
-                          st.regions;
-                      log = "Successfully reinforced " ^ r ^ " with " ^
-                            (string_of_int i) ^ " new troops."}
-        else { st with log = "You don't have enough troops. Try again." }
-      | _ -> { st with log = "Invalid move: cannot reinforce at this time"}
-    end
+  | AReinforcement (r, i), CReinforcement n ->
+    if n >= i then
+      let p = List.hd st.players in
+      let region = Regions.find r st.regions in
+      if region.controller != p.id
+      then {st with log = "Invalid move: You don't control " ^ r ^ "." }
+      else
+        let p' = {p with total_troops = p.total_troops + i} in
+        let p_list = prepend_player p' st.players in
+        { st with current_move =
+                    if n > i then CReinforcement (n - i)
+                    else CAttack;
+                  players = p_list;
+                  regions =
+                    Regions.add r {region with troops = region.troops + i}
+                      st.regions;
+                  log = "Successfully reinforced " ^ r ^ " with " ^
+                        (string_of_int i) ^ " new troops."}
+    else { st with log = "You don't have enough troops. Try again." }
+  | AReinforcement _, _ ->
+    { st with log = "Invalid move: cannot reinforce at this time"}
   | _ -> failwith "TODO"
 
 let is_over st =
