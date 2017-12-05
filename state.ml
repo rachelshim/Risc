@@ -22,7 +22,7 @@ type player =
     id: string;
     cards: card list;
     total_troops: int;
-    continent_troops: (string * int) list; (*regions owned per continent*)
+    continent_regions: (string * int) list; (*regions owned per continent*)
     controls_cont: string list;
   }
 
@@ -306,6 +306,63 @@ let init_regions_map =
   List.fold_left
     (fun map r -> Regions.add r.name r map) Regions.empty init_regions
 
+(* ############################################################################
+
+       Helpful functions for outside use
+
+############################################################################# *)
+
+let current_player st =
+  List.hd st.players
+
+let num_inf pl =
+  List.length (List.find_all (fun x -> x = Infantry) pl.cards)
+
+let num_cav pl =
+  List.length (List.find_all (fun x -> x = Cavalry) pl.cards)
+
+let num_art pl =
+  List.length (List.find_all (fun x -> x = Artillery) pl.cards)
+
+let num_wild pl =
+  List.length (List.find_all (fun x -> x = Wild) pl.cards)
+
+let player_id pl =
+  pl.id
+
+let avail_troops st =
+  match st.current_move with
+  | CDeployment i -> i
+  | _ -> 0 (** TODO handle this better *)
+
+let player_of_id st id =
+  List.hd ( List.filter (fun p -> p.id = id ) st.players )
+
+let region_of_name st r =
+  Regions.find r st.regions
+
+let troops_in st r =
+  (region_of_name st r).troops
+
+let num_controlled pl =
+  List.fold_left ( fun acc (str, n) -> acc + n ) 0 pl.continent_regions
+
+let ctrl_of_reg st r =
+  (region_of_name st r).controller
+
+let owner_of_cont st c =
+  match List.assoc c st.continents with
+  | None -> "Grey"
+  | Some owner -> owner
+
+let cont_of_reg st r =
+  (region_of_name st r).continent
+
+let get_log st =
+  st.log
+
+let get_regions st =
+  Regions.bindings st.regions |> List.map fst
 
 (* ############################################################################
 
@@ -340,9 +397,9 @@ let rec add_regions ps map rs =
     let new_p =
       {p with
        total_troops = p.total_troops + 1;
-       continent_troops =
-         let in_cont = List.assoc h.continent p.continent_troops + 1 in
-         List.remove_assoc h.continent p.continent_troops |>
+       continent_regions =
+         let in_cont = List.assoc h.continent p.continent_regions + 1 in
+         List.remove_assoc h.continent p.continent_regions |>
          List.cons (h.continent, in_cont)
       } in
     let new_map = Regions.add h.name {h with controller = p.id} map in
@@ -365,8 +422,9 @@ let init_state n =
            id = name;
            cards = [];
            total_troops = 0;
-           continent_troops = [("Asia", 0); ("Africa", 0); ("North America", 0);
-                         ("South America", 0); ("Europe", 0); ("Australia", 0)];
+           continent_regions =
+             [("Asia", 0); ("Africa", 0); ("North America", 0);
+              ("South America", 0); ("Europe", 0); ("Australia", 0)];
            controls_cont = [];
          }) in
   let (players_w_regions, regions_map) =
@@ -376,7 +434,7 @@ let init_state n =
     add_regions players init_regions_map in
   let players_w_continents =
     List.map
-      (fun p -> {p with controls_cont = add_conts p.continent_troops})
+      (fun p -> {p with controls_cont = add_conts p.continent_regions})
       players_w_regions in
   let total_conts =
     List.fold_left
@@ -399,9 +457,6 @@ let init_state n =
     log = "Game started! It is now " ^
           (List.hd players_w_continents).id ^ "'s turn to deploy troops."
   }
-
-
-
 
 (* ############################################################################
 
@@ -443,10 +498,108 @@ let rec remove_cards c l =
 (* [get_player_reinforcments p] is the number of reinforcements given to [p] *)
 let get_player_reinforcements p =
   let reg_troops =
-    (List.fold_left (fun tr tup -> snd tup + tr) 0 p.continent_troops) / 3 in
+    (List.fold_left (fun tr tup -> snd tup + tr) 0 p.continent_regions) / 3 in
   List.fold_left
     (fun tr c -> (List.assoc c continents |> snd) + tr) reg_troops
     p.controls_cont
+
+(**
+ * [give_player_region r st] is an updated [st] in which the current player
+ * now controls region [r]. Fields within [r] are not changed, so it is a
+ * precondition that [r]'s controller field is already updated. The player's
+ * total_troops is also unchanged.
+ *)
+let give_player_region r st =
+  let p = List.hd st.players in
+  let troops_in_cont = List.assoc r.name p.continent_regions + 1 in
+  let makes_continent =
+    List.assoc r.continent continents |> fst = troops_in_cont in
+  {st with
+   regions = Regions.add r.name r st.regions;
+   players =
+     (let new_p =
+       {p with
+        continent_regions =
+          List.remove_assoc r.name p.continent_regions |>
+          List.cons (r.name, troops_in_cont);
+        controls_cont =
+          if makes_continent then r.continent::p.controls_cont
+          else p.controls_cont} in
+     prepend_player new_p st.players);
+   continents =
+     if makes_continent
+     then
+       List.remove_assoc r.continent st.continents |>
+       List.cons (r.continent, Some p.id)
+     else st.continents}
+
+(** [get_player p_id] returns the player in input list with id [p_id] *)
+let rec get_player p_id = function
+  | [] -> failwith "precondition violation"
+  | h::t -> if h.id = p_id then h else get_player p_id t
+
+(** [remove_player p_id] removes the player in input list with id [p_id] *)
+let rec remove_player p_id = function
+  | [] -> failwith "precondition violation"
+  | h::t -> if h.id = p_id then t else h::(remove_player p_id t)
+
+(**
+ * [replace_player new_p] removes the player in input list with id [new_p.id]
+ * and replaces it with [new_p]
+ *)
+let rec replace_player new_p = function
+  | [] -> failwith "precondition violation"
+  | h::t -> if h.id = new_p.id then new_p::t else h::(replace_player new_p t)
+
+let rec get_next_player_id default p_id = function
+  | [] | _::[]-> default
+  | _::h2::_ -> h2.id
+
+let rec remove_from_list v = function
+  | [] -> []
+  | h::t -> if h = v then t else h::(remove_from_list v t)
+
+(**
+ * [transfer_region r st t] is an updated [st] where [r] is given to the current
+ * player, and [t] troops are placed on [r]. total_troops is not changed for any
+ * player.
+ *)
+let transfer_region r st t =
+  let p_a = List.hd st.players in
+  let p_d = get_player r.controller st.players in
+  let new_r = {r with controller = p_a.id; troops = t} in
+  let new_st =
+    {st with regions = Regions.add new_r.name new_r st.regions} |>
+    give_player_region new_r in
+  if num_controlled p_d = 1
+  then
+    let moved_cards = p_d.cards in
+    let p_a' = List.hd new_st.players in
+    let new_players =
+      prepend_player {p_a' with cards = p_a'.cards @ moved_cards}
+        new_st.players in
+    {new_st with
+     players = remove_player p_d.id new_players;
+     log =
+       p_a.id ^ " has taken " ^ r.name ^ " and eliminated" ^ p_d.id ^ "!" ^
+       (if List.length moved_cards > 0
+        then
+          "They take " ^ p_d.id ^ "'s " ^
+          string_of_int (List.length moved_cards) ^ " cards."
+        else "")}
+  else
+    let curr_cont_reg = List.assoc r.continent p_d.continent_regions in
+    let new_p_d =
+      {p_d with
+       controls_cont = remove_from_list r.continent p_d.controls_cont;
+       continent_regions =
+         List.remove_assoc r.continent p_d.continent_regions |>
+         List.cons (r.continent, curr_cont_reg - 1)} in
+    {new_st with
+     players = replace_player new_p_d new_st.players;
+     continents =
+       List.remove_assoc r.continent new_st.continents |>
+       List.cons (r.continent, None)}
 
 (* helper function for testing dfs in utop delete later *)
 let find_terr p st = 
@@ -476,15 +629,15 @@ let rec check_path p s1 s2 st =
                   else if check_controls p h st then
                     let () = print_endline h in
                     search_helper (h::visited) (Regions.find h st).routes
-                  else search_helper (h::visited) t 
-                end 
+                  else search_helper (h::visited) t
+                end
                 in
     let rec search visited = function
       | [] -> false
       | x::xs ->
         if List.mem x visited then search visited xs
         else begin
-          if check_target p x s2 st 
+          if check_target p x s2 st
             then true
           else if check_controls p x st then
             let () = print_endline x in
@@ -497,12 +650,12 @@ let rec check_path p s1 s2 st =
     search [s1] r1_routes
 
 
-let update st a =
+let rec update st a =
   match a, st.current_move with
   | ADeployment r, CDeployment n ->
     let p = List.hd st.players in
     let region = Regions.find r st.regions in
-    if region.controller != p.id
+    if region.controller <> p.id
     then {st with log = "Invalid move: You don't control " ^ r ^ "." }
     else
       let p' = {p with total_troops = p.total_troops + 1} in
@@ -532,7 +685,7 @@ let update st a =
        (c1 = c3 && c2 = Wild) ||
        (c2 = c3 && c1 = Wild) ||
        (c1 = c2 && c2 = c3)
-        then
+    then
       begin
         try
           let new_cards = remove_cards c1 p.cards
@@ -548,25 +701,18 @@ let update st a =
         with Not_found -> { st with log = "You don't have those cards." }
       end
     else { st with log = "Invalid card trade-in" }
-  | APlayCards _, _ -> { st with log = "Invalid move" }
-  (* | AWaitReinforcement ->
-    (match st.current_move with
-    | CReinforcement n ->
-      let p = List.hd st.players in
-      let n_controls = (List.length p.controls) / 3 in
-      let rec n_continents acc = function
-        | [] -> acc
-        | h::t -> n_continents (acc + (snd (List.assoc h continents))) t in
-      let troops = n_continents 0 p.controls_cont + n_controls + n in
-      { st with current_move = CReinforcement troops;
-                log = "You have " ^ (string_of_int troops) ^ " to deploy."; }
-    | _ -> { st with log = "Invalid move" }) *)
+  | APlayCards _, CAttack ->
+    if List.length (List.hd st.players).cards > 4
+    then update {st with current_move = CReinforcement 0} a
+    else {st with log = "Invalid move: cannot play cards at this time."}
+  | APlayCards _, _ ->
+    {st with log = "Invalid move: cannot play cards at this time."}
   | AReinforcement (r, i), CReinforcement n ->
     if n >= i then
       let p = List.hd st.players in
       let region = Regions.find r st.regions in
-      if region.controller != p.id
-      then {st with log = "Invalid move: You don't control " ^ r ^ "." }
+      if region.controller <> p.id
+      then {st with log = "Invalid move: you don't control " ^ r ^ "." }
       else
         let p' = {p with total_troops = p.total_troops + i} in
         let p_list = prepend_player p' st.players in
@@ -581,9 +727,85 @@ let update st a =
                         (string_of_int i) ^ " new troops."}
     else { st with log = "You don't have enough troops. Try again." }
   | AReinforcement _, _ ->
-    { st with log = "Invalid move: cannot reinforce at this time"}
+    {st with log = "Invalid move: cannot reinforce at this time"}
+  | AAttack ((r1_name, r2_name), t), CAttack ->
+    let r1 = Regions.find r1_name st.regions in
+    let r2 = Regions.find r2_name st.regions in
+    let a = List.hd st.players in
+    let d = get_player r2.controller st.players in
+    if List.length a.cards > 4
+    then {st with log = "Invalid move: must play cards."}
+    else if r1.controller <> a.id
+    then {st with log = "Invalid move: you don't control " ^ r1_name ^ "."}
+    else if r2.controller = a.id
+    then {st with log = "Invalid move: you control " ^ r2_name ^ "."}
+    else if r1.troops <= t
+    then {st with log = "Invalid move: you don't have enough troops."}
+    else
+      let a_troops = min 3 t in
+      let d_troops = min 2 r2.troops in
+      let (a_lost_troops, d_lost_troops) =
+        if min a_troops d_troops = 1
+        then
+          let a_max =
+            Random.int 6
+            |> max (if a_troops > 1 then (Random.int 6) else 0)
+            |> max (if a_troops > 2 then (Random.int 6) else 0) in
+          let b_max =
+            Random.int 6
+            |> max (if a_troops = 2 then (Random.int 6) else 0) in
+          begin if a_max <= b_max then (1, 0) else (0, 1) end
+        else
+          let a_max =
+            let fst_roll = Random.int 6 in
+            let snd_roll = Random.int 6 in
+            let first_two = (max fst_roll snd_roll, min fst_roll snd_roll) in
+            if a_troops = 2 then first_two
+            else
+              let trd_roll = Random.int 6 in
+              if trd_roll > fst first_two then (trd_roll, fst first_two)
+              else if trd_roll > snd first_two then (fst first_two, trd_roll)
+              else first_two in
+          let b_max =
+            let fst_roll = Random.int 6 in
+            let snd_roll = Random.int 6 in
+            (max fst_roll snd_roll, min fst_roll snd_roll) in
+          let top = if fst a_max <= fst b_max then (1, 0) else (0, 1) in
+          if snd a_max <= snd b_max
+          then (fst top + 1, snd top)
+          else (fst top, snd top + 1) in
+    let new_a = {a with total_troops = a.total_troops - a_lost_troops} in
+    let new_d = {d with total_troops = d.total_troops - d_lost_troops} in
+    let new_r1 = {r1 with troops = r1.troops - a.total_troops} in
+    let new_r2 =  {r2 with troops = r2.troops - d.total_troops} in
+    if new_r2.troops = 0
+    then
+      let new_r1' = {new_r1 with troops = new_r1.troops - t} in
+      let new_st =
+        {st with
+         regions = Regions.add r1_name new_r1' st.regions;
+         players =
+           replace_player new_a st.players |>
+           replace_player new_d} in
+      let final_st = transfer_region new_r2 new_st t in
+      begin
+        if List.length final_st.players = 1
+        then {final_st with
+              current_move = CGame_Won a.id;
+              turns = final_st.turns + 1}
+        else final_st
+      end
+    else
+      {st with
+       regions =
+         Regions.add r1_name new_r1 st.regions |>
+         Regions.add r2_name new_r2;
+       players =
+         replace_player new_a st.players |>
+         replace_player new_d}
+  | AAttack _, _ ->
+    {st with log = "Invalid move: cannot attack at this time"}
   | AMovement ((r1, r2), n), CAttack -> failwith "TODO"
-
   | _ -> failwith "TODO"
 
 let is_over st =
@@ -591,62 +813,3 @@ let is_over st =
 
 let valid_mode a st =
   failwith "unimplemented"
-
-
-(* ############################################################################
-
-   Helpful functions for outside use
-
-   ########################################################################## *)
-
-let current_player st =
-  List.hd st.players
-
-let num_inf pl =
-  List.length (List.find_all (fun x -> x = Infantry) pl.cards)
-
-let num_cav pl =
-  List.length (List.find_all (fun x -> x = Cavalry) pl.cards)
-
-let num_art pl =
-  List.length (List.find_all (fun x -> x = Artillery) pl.cards)
-
-let num_wild pl =
-  List.length (List.find_all (fun x -> x = Wild) pl.cards)
-
-let player_id pl =
-  pl.id
-
-let avail_troops st =
-  match st.current_move with
-  | CDeployment i -> i
-  | _ -> 0 (** TODO handle this better *)
-
-let player_of_id st id =
-  List.hd ( List.filter (fun p -> p.id = id ) st.players )
-
-let region_of_name st r =
-  Regions.find r st.regions
-
-let troops_in st r =
-  (region_of_name st r).troops
-
-let num_controlled pl =
-  List.fold_left ( fun acc (str, n) -> acc + n ) 0 pl.continent_troops
-
-let ctrl_of_reg st r =
-  (region_of_name st r).controller
-
-let owner_of_cont st c =
-  match List.assoc c st.continents with
-  | None -> "Grey"
-  | Some owner -> owner
-
-let cont_of_reg st r =
-  (region_of_name st r).continent
-
-let get_log st =
-  st.log
-
-let get_regions st =
-  Regions.bindings st.regions |> List.map fst
