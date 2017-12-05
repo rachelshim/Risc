@@ -78,5 +78,8 @@ val owner_of_cont : state -> string -> string
 (** [cont_of_reg st r] returns the continent region r is located in, in st*)
 val cont_of_reg : state -> string -> string
 
-(** [get_log st] returns the log message contained in st.  *)
+(** [get_log st] returns the log message contained in st. *)
 val get_log : state -> string
+
+(** [get_regions st] returns a list of region names in the map *)
+val get_regions : state -> string list
