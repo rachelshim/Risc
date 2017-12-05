@@ -17,7 +17,7 @@ let actions_strings =   ["Deploy"; "Attack"; "Reinforce"; "Move";
                          "Trade Cards"; "End turn"]
 let cards_strings = ["Infantry";"Cavalry";"Artillery";"Wildcard"]
 let locale = GtkMain.Main.init ()
-let controller = ref (Controller.init_game 2)
+let controller = ref (Controller.init_state_emp 2)
 let window_global = ref (GWindow.window ())
 let continent_labels_list = ref []
 let buttons_list = ref []
@@ -343,7 +343,12 @@ let run_cards_dialog parent =
   !cards_selected
 
 (*
- *
+ * [run_troop_dialog parent message (min, max)] is a blocking function that 
+ * creates a dialog window with parent [parent] and text content [message]
+ * requring them to select some number on a slider between [min] [max] 
+ * (inclusive). The return value is an int option of None if the user failed
+ * to respond (i.e. by closing the window) or Some value if they responded
+ * correctly.
  *)
 let run_troop_dialog parent message (min, max) =
   let value = ref None in
@@ -383,7 +388,11 @@ let run_troop_dialog parent message (min, max) =
   !value
 
 (*
- *
+ * [confirm_button_handler parent] is a function callback for the GUI confirm 
+ * button with the side effect that it confirms the currently selected action 
+ * by extracting relevant data from the GUI, creating an Action based on that
+ * information, and executing that action on the current state. This alters
+ * the value stored by controller. This method is thread safe.
  *)
 let confirm_button_handler parent () =
   Mutex.lock mutex;
@@ -454,7 +463,7 @@ let confirm_button_handler parent () =
             "Select the number of troops to move." (1, src_troops) in
           match (src, dest, num) with
           | (Some s, Some d, Some n) -> write_log ("Moving " ^ (string_of_int n) ^
-                                          " unit(s) from " ^ s ^ " to " ^ d ^ ".");
+                                        " unit(s) from " ^ s ^ " to " ^ d ^ ".");
                                         Some (AMovement ((s, d), n))
           | _ -> None
         end
@@ -501,7 +510,8 @@ let confirm_button_handler parent () =
 
 (*
  * [actions_cbox_handler box] is a function with the side effect that it 
- * sets the gui state 
+ * sets the gui state based on the action selected in the combobox [box].
+ * This operation is thread safe.
  *)
 let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
   Mutex.lock mutex;

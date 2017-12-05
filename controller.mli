@@ -33,3 +33,6 @@ val get_available_reinforcement : state -> int
 (** [get_troops_in_territory id t] returns the number of troops in territory t.
 *)
 val get_troops_in_territory : state -> string -> int
+
+(** [init_state_emp i] returns an initial state with i players  *)
+val init_state_emp : int -> state

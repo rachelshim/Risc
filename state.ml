@@ -591,3 +591,6 @@ let cont_of_reg st r =
 
 let get_log st =
   st.log
+
+let get_regions st =
+  failwith "unimp"
