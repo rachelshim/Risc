@@ -17,7 +17,11 @@ val controller_update : state ->
 
 (* [init_game i] returns a new game state with the specified number of players.
  *)
-val init_game : int -> state
+val init_game : int -> (string -> unit) * ((string * string * int) list -> unit)
+  * ((string * string) list -> unit) * (string -> unit) * (int -> unit) *
+  (int * int * int * int -> unit) * (int -> unit) * (int -> unit) *
+  (bool -> unit) * (string -> unit) ->
+  state
 
 (* GUI calls controller method with an update and state ref, and controller
    calls update method in the state, and returns an updated state. *)
