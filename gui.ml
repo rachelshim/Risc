@@ -192,9 +192,8 @@ let set_territory_troops name num =
   ()
 
 let rec update_territories (data:(string * string * int) list) =
-  let temp = List.map (fun x -> match x with | (_, n , _) -> n) data in
-  print_endline ("[" ^ (String.concat " , " temp) ^ "]");
-
+  (*let temp = List.map (fun x -> match x with | (_, n , _) -> n) data in
+  print_endline ("[" ^ (String.concat " , " temp) ^ "]");*)
   match data with
   | [] -> ()
   | (name, owner, troops)::tl -> begin
@@ -867,19 +866,6 @@ let main () =
   add_territory gameplay_pack 1016 352 "Indonesia" "Australia";
   add_territory gameplay_pack 1140 377 "New Guinea" "Australia";
   add_territory gameplay_pack 1036 473 "Western Australia" "Australia";
-
-  (*
-  let names = fst (List.split !buttons_list) in
-  let st = String.concat "; " names in
-  print_endline st;
-  *)
-
-  (*
-  let fres = run_troop_dialog window "message" (1, 40) in
-  match fres with
-  | None -> print_endline "none"
-  | Some x -> print_endline ("some: " ^ string_of_int x);
-  *)
 
   (*Set some sensitivities before game starts*)
   set_territory_buttons_sensitivity false;
