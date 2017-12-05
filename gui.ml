@@ -43,6 +43,9 @@ let selection2 = ref None
 
 let mutex = Core.Mutex.create ()
 
+(*
+ *
+ *)
 let card_of_int num =
   if num = 0 then Some Infantry
   else if num = 1 then Some Cavalry
@@ -50,6 +53,9 @@ let card_of_int num =
   else if num = 3 then Some Wild
   else None
 
+(*
+ *
+ *)
 let string_of_card card =
   match card with
   | Infantry -> "Infantry"
@@ -57,6 +63,10 @@ let string_of_card card =
   | Artillery -> "Artillery"
   | Wild -> "Wildcard"
 
+
+(*
+ *
+ *)
 let set_color wid col_str =
   let sty = wid#misc#style#copy in
   sty#set_bg[`NORMAL,`NAME col_str; `INSENSITIVE,`NAME col_str;
@@ -64,19 +74,32 @@ let set_color wid col_str =
   wid#misc#set_style sty;
   ()
 
+
+(*
+ *
+ *)
 let lookup_troop_count name =
   List.assoc name !territory_troop_list
 
+(*
+ *
+ *)
 let set_territory_sensitivity name new_sens =
   let button = List.assoc name !buttons_list in
   button#misc#set_sensitive new_sens;
   ()
 
+(*
+ *
+ *)
 let set_territory_buttons_sensitivity new_sens =
   let buttons = snd (List.split !buttons_list) in
   let u_list = List.map (fun b -> b#misc#set_sensitive new_sens) buttons in
   ()
 
+(*
+ *
+ *)
 let clear_selections () =
   selection1 := None;
   selection2 := None;
@@ -127,6 +150,9 @@ let make_selection name =
     end
   end
 
+(*
+ *
+ *)
 let lock_all () =
   (*lock territories, clear selection, lock confirm *)
   set_territory_buttons_sensitivity false;
@@ -134,6 +160,9 @@ let lock_all () =
   !confirm_button_global#misc#set_sensitive false;
   ()
 
+(*
+ *
+ *)
 let set_selection_mode mode =
   match mode with
   | No_selection -> set_territory_buttons_sensitivity false;
@@ -234,6 +263,9 @@ let setters = (write_log, update_territories, update_continent_owners,
 
 (* EXPOSED SETTER METHODS END *)
 
+(*
+ *
+ *)
 let run_init_dialog parent =
   let players_num = ref None in
   let init_dialog_accept_handler cbox dialog () =
@@ -267,6 +299,9 @@ let run_init_dialog parent =
   let init_dialog_delete_event = init_dialog#run () in
   !players_num
 
+(*
+ *
+ *)
 let run_cards_dialog parent =
   let cards_selected = ref None in
   let cards_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true
@@ -316,6 +351,9 @@ let run_cards_dialog parent =
   let init_dialog_delete_event = cards_dialog#run () in
   !cards_selected
 
+(*
+ *
+ *)
 let run_troop_dialog parent message (min, max) =
   let value = ref None in
   let troop_dialog_accept_handler scale dialog () =
@@ -353,6 +391,9 @@ let run_troop_dialog parent message (min, max) =
   let init_dialog_delete_event = troop_dialog#run () in
   !value
 
+(*
+ *
+ *)
 let confirm_button_handler parent () =
   Mutex.lock mutex;
   begin
@@ -467,6 +508,9 @@ let confirm_button_handler parent () =
   Mutex.unlock mutex;
   ()
 
+(*
+ *
+ *)
 let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
   Mutex.lock mutex;
   begin
@@ -501,6 +545,9 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
   Mutex.unlock mutex;
   ()
 
+(*
+ *
+ *)
 let territory_button_handler name (button: GButton.button) () =
   Mutex.lock mutex;
   begin
@@ -515,6 +562,9 @@ let territory_button_handler name (button: GButton.button) () =
   Mutex.unlock mutex;
   ()
 
+(*
+ *
+ *)
 let cancel_button_handler () =
   Mutex.lock mutex;
   begin
@@ -527,6 +577,12 @@ let cancel_button_handler () =
   Mutex.unlock mutex;
   ()
 
+(*
+ * [add_territory pack x y name extra] adds a territory button to the gameplay
+ * fixed packing [pack] at pixel coords [x], [y] with tooltip and territory name
+ * [name] with private tooltip comment [extra]. Also adds the mapping from
+ * [name] to the created button to the territory button list.
+ *)
 let add_territory (pack:GPack.fixed) x y name extra =
   let button = GButton.button ~label:"0"
                               ~packing:(pack#put ~x:x ~y:y) () in
@@ -539,6 +595,12 @@ let add_territory (pack:GPack.fixed) x y name extra =
   territory_troop_list := (name, 0)::(!territory_troop_list);
   ()
 
+(*
+ * [add_label pack x y width height name] adds a framed label to the GUI 
+ * gameplay fixed packing [pack] at pixel coords [x], [y] with a frame 
+ * of width [width] and height [height] and the name [name]. This function
+ * is for use in creating continent labels.
+ *)
 let add_label (pack:GPack.fixed) x y width height name =
   let label_frame = GBin.frame ~width:width ~height:height
                                ~packing:(pack#put ~x:x ~y:y) () in
@@ -548,6 +610,11 @@ let add_label (pack:GPack.fixed) x y width height name =
   set_color label_frame "grey";
   ()
 
+(*
+ * [main ()] sets requisite mutable global values, prompts the user for 
+ * appropriate init information, creates the controller, and displays the GUI
+ * in its initial state.
+ *)
 let main () =
   let window = GWindow.window ~width:1450 ~height:860
                               ~title:"Risc" ~resizable:false () in
@@ -602,9 +669,6 @@ let main () =
                 got_player_num := true;
     | _ -> ()
   done;
-
-  (*Initialize game*)
-  controller := Controller.init_game !player_num;
 
   (*Info pack setup*)
   let player_frame = GBin.frame ~label:"Current Player" ~border_width:3
@@ -785,6 +849,10 @@ let main () =
   set_territory_buttons_sensitivity false;
   confirm_button#misc#set_sensitive false;
 
+  (*Initialize game*)
+  (*TODO: make controller set default values (territories + current player) *)
+  controller := Controller.init_game !player_num;
+
   (*Final window configuration and display*)
   window#add_accel_group accel_group;
   window#show ();
@@ -794,4 +862,5 @@ let main () =
   (*main GTK loop*)
   Main.main ()
 
+(* Run GTK loop*)
 let () = main ()
