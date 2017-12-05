@@ -123,7 +123,7 @@ let init_regions =
     controller = "None";
     troops = 1};
    {name = "Venezuela";
-    routes = ["Peru"; "Brazil"];
+    routes = ["Peru"; "Brazil"; "Central America"];
     continent = "South America";
     controller = "None";
     troops = 1};
@@ -172,7 +172,8 @@ let init_regions =
     troops = 1};
    {name = "Southern Europe";
     routes =
-      ["Western Europe"; "North Africa"; "Egypt"; "Middle East"; "Ukraine"];
+      ["Western Europe"; "North Africa"; "Egypt"; "Middle East"; "Ukraine";
+       "Northern Europe"];
     continent = "Europe";
     controller = "None";
     troops = 1};
@@ -218,7 +219,8 @@ let init_regions =
     controller = "None";
     troops = 1};
    {name = "Middle East";
-    routes = ["East Africa"; "Egypt"; "Ukraine"; "Afghanistan"; "India"];
+    routes = ["East Africa"; "Egypt"; "Ukraine"; "Afghanistan"; "India"; 
+              "Southern Europe"];
     continent = "Asia";
     controller = "None";
     troops = 1};
@@ -294,13 +296,7 @@ let init_regions =
     troops = 1};
    {name = "Eastern Australia";
     routes = ["Indonesia"; "New Guinea"; "Western Australia"];
-    continent = "A
-
-
-
-
-
-    tralia";
+    continent = "Australia";
     controller = "None";
     troops = 1}
   ]
@@ -454,7 +450,9 @@ let get_player_reinforcements p =
 
 (* helper function for testing dfs in utop delete later *)
 let find_terr p st = 
-  Regions.bindings st.regions |> List.filter (fun (x, y) -> y.controller = p)
+  Regions.bindings st.regions 
+  |> List.filter (fun (x, y) -> y.controller = p)
+  |> List.map (fun (x, y) -> x)
 
 let check_target p s1 s2 st =
   let r1 = Regions.find s1 st in
@@ -466,7 +464,8 @@ let check_controls p s st =
   r.controller = p
 
 let rec check_path p s1 s2 st =
-  if check_target p s1 s2 st then true
+  if not (check_controls p s1 st) then false
+  else if check_target p s1 s2 st then true
   else
     let r1_routes = (Regions.find s1 st).routes in
     let rec search_helper visited = function
@@ -475,18 +474,20 @@ let rec check_path p s1 s2 st =
                 else begin
                   if check_target p h s2 st then (true, visited)
                   else if check_controls p h st then
+                    let () = print_endline h in
                     search_helper (h::visited) (Regions.find h st).routes
                   else search_helper (h::visited) t 
                 end 
                 in
     let rec search visited = function
       | [] -> false
-      | x::xs -> 
+      | x::xs ->
         if List.mem x visited then search visited xs
         else begin
           if check_target p x s2 st 
             then true
           else if check_controls p x st then
+            let () = print_endline x in
             match search_helper (x::visited) (Regions.find x st).routes with
             | true, _ -> true
             | false, l -> search (x::(l @ visited)) xs
@@ -495,29 +496,6 @@ let rec check_path p s1 s2 st =
         in
     search [s1] r1_routes
 
-
-(* let rec bfs p s1 s2 visited st = 
-  let r1 = Regions.find s1 st in
-  let r2 = Regions.find s2 st in
-  if r1.name = r2.name &&
-    p = r1.controller &&
-    p = r2.controller then [true]
-  else
-    let r1_routes = r1.routes in
-    let rec bfs_route = function
-      | [] -> []
-      | h::t -> if List.mem h (s1::visited) then bfs_route t
-                else dfs p h s2 (s1::visited) st
-  in bfs_route r1_routes <> [] *)
-
-
-
-(* [check_path p r1 r2] returns true if there is a path that player [p] controls
- * from region [r1] to region [r2].
- * RI: [r1] and [r2] must be valid regions in Regions
- *)
-(* let check_path p r1 r2 st =
-  dfs p.id r1 r2 st.regions *)
 
 let update st a =
   match a, st.current_move with
