@@ -434,11 +434,11 @@ let append_player p = function
 (* [remove_cards c l] removes card [c] from the list of cards [l]. *)
 let rec remove_cards c l =
   match l with
-  | [] -> l
+  | [] -> raise Not_found
   | h::t -> if h = c then t
     else remove_cards c t
 
-(** [get_player_reinforcments p] is the number of reinforcements given to [p] *)
+(* [get_player_reinforcments p] is the number of reinforcements given to [p] *)
 let get_player_reinforcements p =
   let reg_troops =
     (List.fold_left (fun tr tup -> snd tup + tr) 0 p.continent_troops) / 3 in
@@ -472,8 +472,7 @@ let update st a =
     {st with log= "Invalid move: cannot deploy at this time."}
   | APlayCards (c1, c2, c3), CReinforcement n ->
     let p = List.hd st.players in
-    (* TODO add some code to make sure l is a subset of head player's cards *)
-    (* also force players with 5+ cards to trade in their cards *)
+    (* making sure card trade-in is valid *)
     if (c1 <> c2 && c2 <> c3 && c1 <> c3) ||
        (c1 = Wild && c2 = Wild) ||
        (c1 = Wild && c3 = Wild) ||
@@ -483,16 +482,20 @@ let update st a =
        (c2 = c3 && c1 = Wild) ||
        (c1 = c2 && c2 = c3)
         then
-      let bonus_n = st.bonus_troops + n in
-      let new_cards = remove_cards c1 p.cards
-                      |> remove_cards c2 |> remove_cards c3 in
-      let p' = { p with cards = new_cards } in
-      let p_list = prepend_player p' st.players in
-      { st with current_move = CReinforcement bonus_n;
-                players = p_list;
-                bonus_troops = increment_bonus bonus_n;
-                log = "Successfully traded in cards for " ^
-                      (string_of_int bonus_n) ^ " extra troops"; }
+      begin
+        try
+          let new_cards = remove_cards c1 p.cards
+                          |> remove_cards c2 |> remove_cards c3 in
+          let bonus_n = st.bonus_troops + n in
+          let p' = { p with cards = new_cards } in
+          let p_list = prepend_player p' st.players in
+          { st with current_move = CReinforcement bonus_n;
+                    players = p_list;
+                    bonus_troops = increment_bonus bonus_n;
+                    log = "Successfully traded in cards for " ^
+                          (string_of_int bonus_n) ^ " extra troops"; }
+        with Not_found -> { st with log = "You don't have those cards." }
+      end
     else { st with log = "Invalid card trade-in" }
   | APlayCards _, _ -> { st with log = "Invalid move" }
   (* | AWaitReinforcement ->
