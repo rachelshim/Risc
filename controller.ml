@@ -19,7 +19,7 @@ let update_gui (st : state)
   write_log (get_log st);
   match act with
   | ADeployment reg -> update_territories
-                         [(reg, player_id pl, troops_in st reg)];
+                         [(reg, ctrl_of_reg st reg, troops_in st reg)];
     update_available_reinforcements (avail_troops st);
     update_territories_count (num_controlled pl)
     (* TODO update_troop_count when implemented in state *)
@@ -28,7 +28,7 @@ let update_gui (st : state)
     update_available_reinforcements (avail_troops st)
 (** TODO update troops available based on state  *)
   | AReinforcement (reg, num) -> update_territories
-                                   [(reg, player_id pl, troops_in st reg)];
+                                   [(reg, ctrl_of_reg st reg, troops_in st reg)];
     update_available_reinforcements (avail_troops st)
 (* TODO update_troop_count when implemented in state *)
   | AAttack ((r1, r2), num) ->
@@ -38,8 +38,8 @@ let update_gui (st : state)
     update_continent_owners [(cont_of_reg st r1, owner_of_cont st r1);
                              (cont_of_reg st r2, owner_of_cont st r2)]
   | AMovement ((r1, r2), num) -> update_territories
-                                   [(r1, player_id pl, troops_in st r1)];
-    update_territories [(r2, player_id pl, troops_in st r2)];
+                                   [(r1, ctrl_of_reg st r1, troops_in st r1)];
+    update_territories [(r2, ctrl_of_reg st r2, troops_in st r2)];
     update_available_reinforcements (avail_troops st);
     run_blocking_popup "You have been awarded a card." (** TODO specify which card *)
   | ANextTurn -> update_cards (num_inf pl, num_cav pl, num_art pl, num_wild pl);
