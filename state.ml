@@ -414,14 +414,24 @@ let increment_bonus n =
   else if n = 12 then 15
   else n + 5
 
+(* [prepend_player p l] returns the tail of [l] with [p] as its new head.
+ * to be used when a player's fields are updated, and the player list needs
+ * to be updated accordingly  ** and ** it is still their turn.
+ *)
 let prepend_player p = function
   | [] -> [p]
   | h::t -> p::t
 
+(* [append_player p l] returns the tail of [l] with [p] appended to it.
+ * to be used when a player's field is updated and the player list needs
+ * to be updated accordingly, and it is the end of the player's turn.
+ *)
 let append_player p = function
   | [] -> [p]
   | h::t -> t @ [p]
 
+
+(* [remove_cards c l] removes card [c] from the list of cards [l]. *)
 let rec remove_cards c l =
   match l with
   | [] -> l
@@ -470,7 +480,8 @@ let update st a =
        (c2 = Wild && c3 = Wild) ||
        (c1 = c2 && c3 = Wild) ||
        (c1 = c3 && c2 = Wild) ||
-       (c2 = c3 && c1 = Wild)
+       (c2 = c3 && c1 = Wild) ||
+       (c1 = c2 && c2 = c3)
         then
       let bonus_n = st.bonus_troops + n in
       let new_cards = remove_cards c1 p.cards
