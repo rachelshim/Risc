@@ -661,7 +661,7 @@ let ctrl_of_reg st r =
 
 let owner_of_cont st c =
   match List.assoc c st.continents with
-  | None -> "None"
+  | None -> "Grey"
   | Some owner -> owner
 
 let cont_of_reg st r =
@@ -671,4 +671,4 @@ let get_log st =
   st.log
 
 let get_regions st =
-  failwith "unimp"
+  Regions.bindings st.regions |> List.map fst
