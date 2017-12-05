@@ -98,7 +98,7 @@ let init_regions =
    {name = "Ontario";
     routes =
       ["Alberta"; "Northwest Territory"; "Greenland"; "Quebec";
-       "Eastern United States"; "Western US"];
+       "Eastern United States"; "Western United States"];
     continent = "North America";
     controller = "None";
     troops = 1};
@@ -294,7 +294,13 @@ let init_regions =
     troops = 1};
    {name = "Eastern Australia";
     routes = ["Indonesia"; "New Guinea"; "Western Australia"];
-    continent = "Australia";
+    continent = "A
+
+
+
+
+
+    tralia";
     controller = "None";
     troops = 1}
   ]
@@ -446,6 +452,73 @@ let get_player_reinforcements p =
     (fun tr c -> (List.assoc c continents |> snd) + tr) reg_troops
     p.controls_cont
 
+(* helper function for testing dfs in utop delete later *)
+let find_terr p st = 
+  Regions.bindings st.regions |> List.filter (fun (x, y) -> y.controller = p)
+
+let check_target p s1 s2 st =
+  let r1 = Regions.find s1 st in
+  let r2 = Regions.find s2 st in
+  r1.name = r2.name && p = r1.controller && p = r2.controller
+
+let check_controls p s st =
+  let r = Regions.find s st in
+  r.controller = p
+
+let rec check_path p s1 s2 st =
+  if check_target p s1 s2 st then true
+  else
+    let r1_routes = (Regions.find s1 st).routes in
+    let rec search_helper visited = function
+      | [] -> (false, visited)
+      | h::t -> if List.mem h visited then search_helper visited t
+                else begin
+                  if check_target p h s2 st then (true, visited)
+                  else if check_controls p h st then
+                    search_helper (h::visited) (Regions.find h st).routes
+                  else search_helper (h::visited) t 
+                end 
+                in
+    let rec search visited = function
+      | [] -> false
+      | x::xs -> 
+        if List.mem x visited then search visited xs
+        else begin
+          if check_target p x s2 st 
+            then true
+          else if check_controls p x st then
+            match search_helper (x::visited) (Regions.find x st).routes with
+            | true, _ -> true
+            | false, l -> search (x::(l @ visited)) xs
+          else search (x::visited) xs
+        end
+        in
+    search [s1] r1_routes
+
+
+(* let rec bfs p s1 s2 visited st = 
+  let r1 = Regions.find s1 st in
+  let r2 = Regions.find s2 st in
+  if r1.name = r2.name &&
+    p = r1.controller &&
+    p = r2.controller then [true]
+  else
+    let r1_routes = r1.routes in
+    let rec bfs_route = function
+      | [] -> []
+      | h::t -> if List.mem h (s1::visited) then bfs_route t
+                else dfs p h s2 (s1::visited) st
+  in bfs_route r1_routes <> [] *)
+
+
+
+(* [check_path p r1 r2] returns true if there is a path that player [p] controls
+ * from region [r1] to region [r2].
+ * RI: [r1] and [r2] must be valid regions in Regions
+ *)
+(* let check_path p r1 r2 st =
+  dfs p.id r1 r2 st.regions *)
+
 let update st a =
   match a, st.current_move with
   | ADeployment r, CDeployment n ->
@@ -531,6 +604,8 @@ let update st a =
     else { st with log = "You don't have enough troops. Try again." }
   | AReinforcement _, _ ->
     { st with log = "Invalid move: cannot reinforce at this time"}
+  | AMovement ((r1, r2), n), CAttack -> failwith "TODO"
+
   | _ -> failwith "TODO"
 
 let is_over st =
