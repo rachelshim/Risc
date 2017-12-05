@@ -3,20 +3,12 @@ open State
 open Action
 
 let rec update_all_regions update_territories st lst =
-  match lst with
-  | [] -> ()
-  | r::t -> update_territories
-              [(r, player_id (current_player st),
-                troops_in st r)];
-    (update_all_regions update_territories st t)
+  update_territories (List.map (fun r -> (r, ctrl_of_reg st r, troops_in st r))
+                        lst)
 
 let rec update_all_cont_owners update_continent_owners st lst =
-  match lst with
-  | [] -> ()
-  | r::t -> let c = cont_of_reg st r in
-    update_continent_owners
-              [(c, owner_of_cont st c)];
-    (update_all_cont_owners update_continent_owners st t)
+  update_continent_owners (List.map (fun r ->
+      let c = cont_of_reg st r in (c, owner_of_cont st c)) lst)
 
 let update_gui (st : state)
     ((write_log, update_territories, update_continent_owners,
