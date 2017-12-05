@@ -596,4 +596,4 @@ let get_log st =
   st.log
 
 let get_regions st =
-  failwith "unimp"
+  Regions.bindings st.regions |> List.map fst

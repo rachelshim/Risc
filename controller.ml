@@ -2,14 +2,21 @@
 open State
 open Action
 
-(** maybe do this  *)
 let rec update_all_regions update_territories st lst =
   match lst with
   | [] -> ()
   | r::t -> update_territories
               [(r, player_id (current_player st),
                 troops_in st r)];
-              (update_all_regions update_territories st t)
+    (update_all_regions update_territories st t)
+
+let rec update_all_cont_owners update_continent_owners st lst =
+  match lst with
+  | [] -> ()
+  | r::t -> let c = cont_of_reg st r in
+    update_continent_owners
+              [(c, owner_of_cont st c)];
+    (update_all_cont_owners update_continent_owners st t)
 
 let update_gui (st : state)
     ((write_log, update_territories, update_continent_owners,
@@ -61,6 +68,12 @@ let init_game num ((write_log, update_territories, update_continent_owners,
   let st = init_state num in
   let pl = current_player st in
   update_all_regions (update_territories) st (get_regions st);
+  update_all_cont_owners (update_continent_owners) st (get_regions st);
+  update_current_player (player_id pl);
+  update_available_reinforcements (avail_troops st);
+  update_cards (0,0,0,0);
+  update_territories_count (num_controlled pl);
+  (* TODO update_troop_count *)
   st
 
 let init_state_emp num=
