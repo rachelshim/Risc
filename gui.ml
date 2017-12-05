@@ -284,6 +284,7 @@ let setters = (write_log, update_territories, update_continent_owners,
  *)
 let run_init_dialog parent =
   let players_num = ref None in
+  (*create handler for use later*)
   let init_dialog_accept_handler cbox dialog () =
     let num = ((fst cbox)#active + 2) in
     let res = dialog#event#send (GdkEvent.create `DELETE) in
@@ -293,6 +294,7 @@ let run_init_dialog parent =
     dialog#destroy ();
     ()
   in
+  (*dialog components*)
   let init_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true
                   ~title:"Initialization Dialog" ~deletable:true
                   ~resizable:false () in
@@ -302,7 +304,6 @@ let run_init_dialog parent =
   let init_dialog_options = ["2";"3";"4";"5";"6"] in
   let init_dialog_combobox = GEdit.combo_box_text
                   ~strings:init_dialog_options
-                  (* ~width:100 ~height:20 *)
                   ~packing:init_dialog#vbox#add () in
   (fst init_dialog_combobox)#set_active 0;
   let init_dialog_accept_button = GButton.button ~label:"Accept"
@@ -310,6 +311,7 @@ let run_init_dialog parent =
   let accept_signal =
       init_dialog_accept_button#connect#clicked
       ~callback:(init_dialog_accept_handler init_dialog_combobox init_dialog) in
+  (*Run blocking dialog*)
   let close_event = init_dialog#event#connect#delete
       ~callback:(fun _ -> init_dialog#destroy (); true) in
   let init_dialog_delete_event = init_dialog#run () in
@@ -761,20 +763,20 @@ let main () =
   let actions_cbox = GEdit.combo_box_text
               ~strings:actions_strings
               ~packing:actions_cbox_frame#add () in
-  let actions_signal = (fst actions_cbox)#connect#changed
-                        (actions_cbox_handler actions_cbox) in
+  let actions_signal =  (fst actions_cbox)#connect#changed
+                        ~callback:(actions_cbox_handler actions_cbox) in
   actions_cbox_global := fst actions_cbox;
 
   let confirm_button = GButton.button ~label:"Confirm"
                                       ~packing:actions_pack#add () in
   let confirm_button_signal = confirm_button#connect#clicked
-                                      (confirm_button_handler window) in
+                              ~callback:(confirm_button_handler window) in
   confirm_button_global := confirm_button;
 
   let cancel_button = GButton.button ~label:"Cancel"
                                       ~packing:actions_pack#add () in
   let cancel_button_signal =
-    cancel_button#connect#clicked cancel_button_handler in
+    cancel_button#connect#clicked ~callback:cancel_button_handler in
 
   let selection1_frame = GBin.frame ~label:"Territory Selection 1"
                                     ~border_width:3
@@ -878,7 +880,6 @@ let main () =
   Gdk.Window.set_back_pixmap gameplay_pack#misc#window (`PIXMAP pmap);
 
   (*Initialize game; must go here to preserve button look and feel*)
-  (*TODO: make controller set default values (territories + current player) *)
   controller := Controller.init_game !player_num setters;
 
   (*main GTK loop*)
