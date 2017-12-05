@@ -806,6 +806,8 @@ let rec update st a =
   | AAttack _, _ ->
     {st with log = "Invalid move: cannot attack at this time"}
   | AMovement ((r1, r2), n), CAttack -> failwith "TODO"
+  | AMovement _, _ -> 
+    { st with log = "Invalid move: cannot move troops at this time" }
   | _ -> failwith "TODO"
 
 let is_over st =
