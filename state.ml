@@ -465,12 +465,12 @@ let update st a =
     (* TODO add some code to make sure l is a subset of head player's cards *)
     (* also force players with 5+ cards to trade in their cards *)
     if (c1 <> c2 && c2 <> c3 && c1 <> c3) ||
-        (c1 = Wild && c2 = Wild) ||
-        (c1 = Wild && c3 = Wild) ||
-        (c2 = Wild && c3 = Wild) ||
-        (c1 = c2 && c3 = Wild) ||
-        (c1 = c3 && c2 = Wild) ||
-        (c2 = c3 && c1 = Wild)
+       (c1 = Wild && c2 = Wild) ||
+       (c1 = Wild && c3 = Wild) ||
+       (c2 = Wild && c3 = Wild) ||
+       (c1 = c2 && c3 = Wild) ||
+       (c1 = c3 && c2 = Wild) ||
+       (c2 = c3 && c1 = Wild)
         then
       let bonus_n = st.bonus_troops + n in
       let new_cards = remove_cards c1 p.cards
@@ -550,7 +550,7 @@ let num_wild pl =
 let player_id pl =
   pl.id
 
-let avail_troops pl st =
+let avail_troops st =
   match st.current_move with
   | CDeployment i -> i
   | _ -> 0 (** TODO handle this better *)
@@ -563,3 +563,20 @@ let region_of_name st r =
 
 let troops_in st r =
   (region_of_name st r).troops
+
+let num_controlled pl =
+  List.fold_left ( fun acc (str, n) -> acc + n ) 0 pl.continent_troops
+
+let ctrl_of_reg st r =
+  (region_of_name st r).controller
+
+let owner_of_cont st c =
+  match List.assoc c st.continents with
+  | None -> "None"
+  | Some owner -> owner
+
+let cont_of_reg st r =
+  (region_of_name st r).continent
+
+let get_log st =
+  st.log
