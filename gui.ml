@@ -21,7 +21,6 @@ let controller = ref (Controller.init_game 2)
 let window_global = ref (GWindow.window ())
 let continent_labels_list = ref []
 let buttons_list = ref []
-let territory_troop_list = ref []
 let map_pixbuf = GdkPixbuf.from_file "resources/map.png"
 let log_buffer = GText.buffer ()
 let log_window_global = ref (GBin.scrolled_window ())
@@ -74,13 +73,6 @@ let set_color wid col_str =
   wid#misc#set_style sty;
   ()
 
-
-(*
- *
- *)
-let lookup_troop_count name =
-  List.assoc name !territory_troop_list
-
 (*
  *
  *)
@@ -95,18 +87,6 @@ let set_territory_sensitivity name new_sens =
 let set_territory_buttons_sensitivity new_sens =
   let buttons = snd (List.split !buttons_list) in
   let u_list = List.map (fun b -> b#misc#set_sensitive new_sens) buttons in
-  ()
-
-(*
- *
- *)
-let clear_selections () =
-  selection1 := None;
-  selection2 := None;
-  !selection1_label_global#set_text
-    ("No Selection");
-  !selection2_label_global#set_text
-    ("No Selection");
   ()
 
 (*
@@ -153,16 +133,6 @@ let make_selection name =
 (*
  *
  *)
-let lock_all () =
-  (*lock territories, clear selection, lock confirm *)
-  set_territory_buttons_sensitivity false;
-  clear_selections ();
-  !confirm_button_global#misc#set_sensitive false;
-  ()
-
-(*
- *
- *)
 let set_selection_mode mode =
   match mode with
   | No_selection -> set_territory_buttons_sensitivity false;
@@ -172,12 +142,33 @@ let set_selection_mode mode =
   | Double -> set_territory_buttons_sensitivity true;
               current_selection_mode := mode
 
+(*
+ *
+ *)
+let clear_selections () =
+  selection1 := None;
+  selection2 := None;
+  !selection1_label_global#set_text
+    ("No Selection");
+  !selection2_label_global#set_text
+    ("No Selection");
+  set_selection_mode !current_selection_mode;
+  ()
+
+(*
+ *
+ *)
+let lock_all () =
+  (*lock territories, clear selection, lock confirm *)
+  set_territory_buttons_sensitivity false;
+  clear_selections ();
+  !confirm_button_global#misc#set_sensitive false;
+  ()
+
 (* EXPOSED SETTER METHODS BEGIN *)
 
 let set_territory_troops name num =
   let button = List.assoc name !buttons_list in
-  territory_troop_list := List.remove_assoc name !territory_troop_list;
-  territory_troop_list := (name, num)::!territory_troop_list;
   button#set_label (string_of_int num);
   ()
 
@@ -509,7 +500,8 @@ let confirm_button_handler parent () =
   ()
 
 (*
- *
+ * [actions_cbox_handler box] is a function with the side effect that it 
+ * sets the gui state 
  *)
 let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
   Mutex.lock mutex;
@@ -546,15 +538,17 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
   ()
 
 (*
- *
+ * [territory_button_handler name button ()] is a function with the side effect
+ * that it attempts to select the button specified by [name] and [button],
+ * printing a failure message to the log if this is not possible. Thread safe.
  *)
 let territory_button_handler name (button: GButton.button) () =
   Mutex.lock mutex;
   begin
   try
-    set_territory_troops name (lookup_troop_count name |> succ);
     write_log ("Region: " ^ name);
     let sel_result = make_selection name in
+    (if not sel_result then write_log ("Failed to select " ^ name));
     ();
   with
   | _ ->  write_log "An unexpected error has occurred.";
@@ -563,14 +557,14 @@ let territory_button_handler name (button: GButton.button) () =
   ()
 
 (*
- *
+ * [cancel_button_handler ()] is a function with the side effect that it clears
+ * all territory selections in a thread-safe manner.
  *)
 let cancel_button_handler () =
   Mutex.lock mutex;
   begin
   try
     clear_selections ();
-    set_territory_buttons_sensitivity true;
   with
   | _ ->  write_log "An unexpected error has occurred.";
   end;
@@ -592,7 +586,6 @@ let add_territory (pack:GPack.fixed) x y name extra =
   let button_signal = button#connect#clicked
                           ~callback: (territory_button_handler name button) in
   buttons_list := (name,button)::(!buttons_list);
-  territory_troop_list := (name, 0)::(!territory_troop_list);
   ()
 
 (*
@@ -851,7 +844,7 @@ let main () =
 
   (*Initialize game*)
   (*TODO: make controller set default values (territories + current player) *)
-  controller := Controller.init_game !player_num;
+  controller := Controller.init_game !player_num setters;
 
   (*Final window configuration and display*)
   window#add_accel_group accel_group;
