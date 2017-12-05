@@ -98,7 +98,7 @@ let init_regions =
    {name = "Ontario";
     routes =
       ["Alberta"; "Northwest Territory"; "Greenland"; "Quebec";
-       "Eastern United States"; "Western US"];
+       "Eastern United States"; "Western United States"];
     continent = "North America";
     controller = "None";
     troops = 1};
@@ -294,7 +294,13 @@ let init_regions =
     troops = 1};
    {name = "Eastern Australia";
     routes = ["Indonesia"; "New Guinea"; "Western Australia"];
-    continent = "Australia";
+    continent = "A
+
+
+
+
+
+    tralia";
     controller = "None";
     troops = 1}
   ]
@@ -306,9 +312,9 @@ let init_regions_map =
 
 (* ############################################################################
 
-   Helpful functions for outside use
+       Helpful functions for outside use
 
-   ########################################################################## *)
+############################################################################# *)
 
 let current_player st =
   List.hd st.players
@@ -350,7 +356,7 @@ let ctrl_of_reg st r =
 
 let owner_of_cont st c =
   match List.assoc c st.continents with
-  | None -> "None"
+  | None -> "Grey"
   | Some owner -> owner
 
 let cont_of_reg st r =
@@ -358,6 +364,9 @@ let cont_of_reg st r =
 
 let get_log st =
   st.log
+
+let get_regions st =
+  Regions.bindings st.regions |> List.map fst
 
 (* ############################################################################
 
@@ -466,21 +475,31 @@ let increment_bonus n =
   else if n = 12 then 15
   else n + 5
 
+(* [prepend_player p l] returns the tail of [l] with [p] as its new head.
+ * to be used when a player's fields are updated, and the player list needs
+ * to be updated accordingly  ** and ** it is still their turn.
+ *)
 let prepend_player p = function
   | [] -> [p]
   | h::t -> p::t
 
+(* [append_player p l] returns the tail of [l] with [p] appended to it.
+ * to be used when a player's field is updated and the player list needs
+ * to be updated accordingly, and it is the end of the player's turn.
+ *)
 let append_player p = function
   | [] -> [p]
   | h::t -> t @ [p]
 
+
+(* [remove_cards c l] removes card [c] from the list of cards [l]. *)
 let rec remove_cards c l =
   match l with
-  | [] -> l
+  | [] -> raise Not_found
   | h::t -> if h = c then t
     else remove_cards c t
 
-(** [get_player_reinforcments p] is the number of reinforcements given to [p] *)
+(* [get_player_reinforcments p] is the number of reinforcements given to [p] *)
 let get_player_reinforcements p =
   let reg_troops =
     (List.fold_left (fun tr tup -> snd tup + tr) 0 p.continent_regions) / 3 in
@@ -586,6 +605,73 @@ let transfer_region r st t =
        List.remove_assoc r.continent new_st.continents |>
        List.cons (r.continent, None)}
 
+(* helper function for testing dfs in utop delete later *)
+let find_terr p st =
+  Regions.bindings st.regions |> List.filter (fun (x, y) -> y.controller = p)
+
+let check_target p s1 s2 st =
+  let r1 = Regions.find s1 st in
+  let r2 = Regions.find s2 st in
+  r1.name = r2.name && p = r1.controller && p = r2.controller
+
+let check_controls p s st =
+  let r = Regions.find s st in
+  r.controller = p
+
+let rec check_path p s1 s2 st =
+  if check_target p s1 s2 st then true
+  else
+    let r1_routes = (Regions.find s1 st).routes in
+    let rec search_helper visited = function
+      | [] -> (false, visited)
+      | h::t -> if List.mem h visited then search_helper visited t
+                else begin
+                  if check_target p h s2 st then (true, visited)
+                  else if check_controls p h st then
+                    search_helper (h::visited) (Regions.find h st).routes
+                  else search_helper (h::visited) t
+                end
+                in
+    let rec search visited = function
+      | [] -> false
+      | x::xs ->
+        if List.mem x visited then search visited xs
+        else begin
+          if check_target p x s2 st
+            then true
+          else if check_controls p x st then
+            match search_helper (x::visited) (Regions.find x st).routes with
+            | true, _ -> true
+            | false, l -> search (x::(l @ visited)) xs
+          else search (x::visited) xs
+        end
+        in
+    search [s1] r1_routes
+
+
+(* let rec bfs p s1 s2 visited st =
+  let r1 = Regions.find s1 st in
+  let r2 = Regions.find s2 st in
+  if r1.name = r2.name &&
+    p = r1.controller &&
+    p = r2.controller then [true]
+  else
+    let r1_routes = r1.routes in
+    let rec bfs_route = function
+      | [] -> []
+      | h::t -> if List.mem h (s1::visited) then bfs_route t
+                else dfs p h s2 (s1::visited) st
+  in bfs_route r1_routes <> [] *)
+
+
+
+(* [check_path p r1 r2] returns true if there is a path that player [p] controls
+ * from region [r1] to region [r2].
+ * RI: [r1] and [r2] must be valid regions in Regions
+ *)
+(* let check_path p r1 r2 st =
+  dfs p.id r1 r2 st.regions *)
+
 let rec update st a =
   match a, st.current_move with
   | ADeployment r, CDeployment n ->
@@ -612,27 +698,31 @@ let rec update st a =
     {st with log= "Invalid move: cannot deploy at this time."}
   | APlayCards (c1, c2, c3), CReinforcement n ->
     let p = List.hd st.players in
-    (* TODO add some code to make sure l is a subset of head player's cards *)
-    (* also force players with 5+ cards to trade in their cards *)
+    (* making sure card trade-in is valid *)
     if (c1 <> c2 && c2 <> c3 && c1 <> c3) ||
        (c1 = Wild && c2 = Wild) ||
        (c1 = Wild && c3 = Wild) ||
        (c2 = Wild && c3 = Wild) ||
        (c1 = c2 && c3 = Wild) ||
        (c1 = c3 && c2 = Wild) ||
-       (c2 = c3 && c1 = Wild)
-        then
-      let bonus_n = st.bonus_troops + n in
-      let new_cards = remove_cards c1 p.cards
-                      |> remove_cards c2 |> remove_cards c3 in
-      let p' = { p with cards = new_cards } in
-      let p_list = prepend_player p' st.players in
-      { st with current_move = CReinforcement bonus_n;
-                players = p_list;
-                bonus_troops = increment_bonus bonus_n;
-                log = "Successfully traded in cards for " ^
-                      (string_of_int bonus_n) ^ " extra troops"; }
-        else { st with log = "Invalid card trade-in" }
+       (c2 = c3 && c1 = Wild) ||
+       (c1 = c2 && c2 = c3)
+    then
+      begin
+        try
+          let new_cards = remove_cards c1 p.cards
+                          |> remove_cards c2 |> remove_cards c3 in
+          let bonus_n = st.bonus_troops + n in
+          let p' = { p with cards = new_cards } in
+          let p_list = prepend_player p' st.players in
+          { st with current_move = CReinforcement bonus_n;
+                    players = p_list;
+                    bonus_troops = increment_bonus bonus_n;
+                    log = "Successfully traded in cards for " ^
+                          (string_of_int bonus_n) ^ " extra troops"; }
+        with Not_found -> { st with log = "You don't have those cards." }
+      end
+    else { st with log = "Invalid card trade-in" }
   | APlayCards _, CAttack ->
     if List.length (List.hd st.players).cards > 4
     then update {st with current_move = CReinforcement 0} a
@@ -737,6 +827,7 @@ let rec update st a =
          replace_player new_d}
   | AAttack _, _ ->
     {st with log = "Invalid move: cannot attack at this time"}
+  | AMovement ((r1, r2), n), CAttack -> failwith "TODO"
   | _ -> failwith "TODO"
 
 let is_over st =

@@ -17,11 +17,10 @@ let actions_strings =   ["Deploy"; "Attack"; "Reinforce"; "Move";
                          "Trade Cards"; "End turn"]
 let cards_strings = ["Infantry";"Cavalry";"Artillery";"Wildcard"]
 let locale = GtkMain.Main.init ()
-let controller = ref (Controller.init_game 2)
+let controller = ref (Controller.init_state_emp 2)
 let window_global = ref (GWindow.window ())
 let continent_labels_list = ref []
 let buttons_list = ref []
-let territory_troop_list = ref []
 let map_pixbuf = GdkPixbuf.from_file "resources/map.png"
 let log_buffer = GText.buffer ()
 let log_window_global = ref (GBin.scrolled_window ())
@@ -43,6 +42,11 @@ let selection2 = ref None
 
 let mutex = Core.Mutex.create ()
 
+(*
+ * [card_of_int num] is an Action.card option produced by mapping the int value
+ * [num] to Some 0:Infantry, 1:Calvalry, 2:Artillery, and 3:Wild. Any other
+ * value of [num] yeilds None.
+ *)
 let card_of_int num =
   if num = 0 then Some Infantry
   else if num = 1 then Some Cavalry
@@ -50,6 +54,10 @@ let card_of_int num =
   else if num = 3 then Some Wild
   else None
 
+(*
+ * [string_of_card card] is a string giving a representation of the Action.card
+ * described by [card].
+ *)
 let string_of_card card =
   match card with
   | Infantry -> "Infantry"
@@ -57,33 +65,41 @@ let string_of_card card =
   | Artillery -> "Artillery"
   | Wild -> "Wildcard"
 
+(*
+ * [set_color wid col_str] is a function with the side effect that it sets the 
+ * color properties of the Gtk widget [wid] to the color [col_str], which must
+ * be a member of the list of strings given in /usr/lib/x11/rgb.txt, or the 
+ * function will have no effect (fails silently in the event of 
+ * Gdk.Error("color_parse")).
+ *)
 let set_color wid col_str =
   let sty = wid#misc#style#copy in
-  sty#set_bg[`NORMAL,`NAME col_str; `INSENSITIVE,`NAME col_str;
-    `NORMAL,`NAME col_str; `PRELIGHT,`NAME col_str; `SELECTED,`NAME col_str];
+  let () = 
+    try
+      sty#set_bg[`NORMAL,`NAME col_str; `INSENSITIVE,`NAME col_str;
+        `NORMAL,`NAME col_str;`PRELIGHT,`NAME col_str;`SELECTED,`NAME col_str];
+    with e -> ()
+  in
   wid#misc#set_style sty;
   ()
 
-let lookup_troop_count name =
-  List.assoc name !territory_troop_list
-
+(*
+ * [set_territory_sensitivity name new_sens] is a function with the side effect
+ * that the territory button associated with [name] in buttons_list is set to 
+ * have the sensitivity specified by [new_sens].
+ *)
 let set_territory_sensitivity name new_sens =
   let button = List.assoc name !buttons_list in
   button#misc#set_sensitive new_sens;
   ()
 
+(*
+ * [set_territory_buttons_sensitivity new_sens] is a function with the side
+ * effect that it sets all territory buttons to have the sensitivity [new_sens].
+ *)
 let set_territory_buttons_sensitivity new_sens =
   let buttons = snd (List.split !buttons_list) in
   let u_list = List.map (fun b -> b#misc#set_sensitive new_sens) buttons in
-  ()
-
-let clear_selections () =
-  selection1 := None;
-  selection2 := None;
-  !selection1_label_global#set_text
-    ("No Selection");
-  !selection2_label_global#set_text
-    ("No Selection");
   ()
 
 (*
@@ -127,13 +143,11 @@ let make_selection name =
     end
   end
 
-let lock_all () =
-  (*lock territories, clear selection, lock confirm *)
-  set_territory_buttons_sensitivity false;
-  clear_selections ();
-  !confirm_button_global#misc#set_sensitive false;
-  ()
-
+(*
+ * [set_selection_mode mode] is a function with the side effect that it sets the
+ * global selection mode and related sensitivity information based on the value
+ * provided in [mode].
+ *)
 let set_selection_mode mode =
   match mode with
   | No_selection -> set_territory_buttons_sensitivity false;
@@ -143,16 +157,43 @@ let set_selection_mode mode =
   | Double -> set_territory_buttons_sensitivity true;
               current_selection_mode := mode
 
+(*
+ * [clear_selections ()] is a function with the side effect that it unsets
+ * internal tracking of selections, resets GUI territory selection displays
+ * and reloads the selection mode.
+ *)
+let clear_selections () =
+  selection1 := None;
+  selection2 := None;
+  !selection1_label_global#set_text
+    ("No Selection");
+  !selection2_label_global#set_text
+    ("No Selection");
+  set_selection_mode !current_selection_mode;
+  ()
+
+(*
+ * [lock_all ()] is a function with the side effect that is locks the gui into
+ * an unusable state by disabling the confirm and territory buttons. This
+ * is for use only when the game is over to prevent any action by players.
+ *)
+let lock_all () =
+  (*lock territories, clear selection, lock confirm *)
+  set_territory_buttons_sensitivity false;
+  clear_selections ();
+  !confirm_button_global#misc#set_sensitive false;
+  ()
+
 (* EXPOSED SETTER METHODS BEGIN *)
 
 let set_territory_troops name num =
   let button = List.assoc name !buttons_list in
-  territory_troop_list := List.remove_assoc name !territory_troop_list;
-  territory_troop_list := (name, num)::!territory_troop_list;
   button#set_label (string_of_int num);
   ()
 
 let rec update_territories (data:(string * string * int) list) =
+  (*let temp = List.map (fun x -> match x with | (_, n , _) -> n) data in
+  print_endline ("[" ^ (String.concat " , " temp) ^ "]");*)
   match data with
   | [] -> ()
   | (name, owner, troops)::tl -> begin
@@ -206,7 +247,7 @@ let write_log (message : string) =
 let set_game_over over =
   if over then begin
     lock_all ();
-    write_log "Game ended.";
+    write_log "Game ended. User interface locked.";
     (*Possible TODO: other things*)
     ()
   end
@@ -234,8 +275,16 @@ let setters = (write_log, update_territories, update_continent_owners,
 
 (* EXPOSED SETTER METHODS END *)
 
+(*
+ * [run_init_dialog parent] is a blocking function that creates a dialog window
+ * with parent [parent] that allows the user to select the number of players
+ * in the game (2 - 6, inclusive). The return value is an int option of None if 
+ * the user failed to respond (i.e. by closing the window) or Some value of 
+ * player count if they selected and accepted.
+ *)
 let run_init_dialog parent =
   let players_num = ref None in
+  (*create handler for use later*)
   let init_dialog_accept_handler cbox dialog () =
     let num = ((fst cbox)#active + 2) in
     let res = dialog#event#send (GdkEvent.create `DELETE) in
@@ -245,6 +294,7 @@ let run_init_dialog parent =
     dialog#destroy ();
     ()
   in
+  (*dialog components*)
   let init_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true
                   ~title:"Initialization Dialog" ~deletable:true
                   ~resizable:false () in
@@ -254,7 +304,6 @@ let run_init_dialog parent =
   let init_dialog_options = ["2";"3";"4";"5";"6"] in
   let init_dialog_combobox = GEdit.combo_box_text
                   ~strings:init_dialog_options
-                  (* ~width:100 ~height:20 *)
                   ~packing:init_dialog#vbox#add () in
   (fst init_dialog_combobox)#set_active 0;
   let init_dialog_accept_button = GButton.button ~label:"Accept"
@@ -262,11 +311,20 @@ let run_init_dialog parent =
   let accept_signal =
       init_dialog_accept_button#connect#clicked
       ~callback:(init_dialog_accept_handler init_dialog_combobox init_dialog) in
+  (*Run blocking dialog*)
   let close_event = init_dialog#event#connect#delete
       ~callback:(fun _ -> init_dialog#destroy (); true) in
   let init_dialog_delete_event = init_dialog#run () in
   !players_num
 
+(*
+ * [run_cards_dialog parent] is a blocking function that creates a dialog 
+ * window with parent [parent] requring them to select a set of 3 cards to play.
+ * The return value is an int * int * int option of None if the user failed
+ * to respond (i.e. by closing the window) or Some (card1,card2,card3) 
+ * if they responded correctly, where the int values represent infantry,
+ * cavalry, artillery, or wild cards (as values 0-3), respectively.
+ *)
 let run_cards_dialog parent =
   let cards_selected = ref None in
   let cards_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true
@@ -316,6 +374,14 @@ let run_cards_dialog parent =
   let init_dialog_delete_event = cards_dialog#run () in
   !cards_selected
 
+(*
+ * [run_troop_dialog parent message (min, max)] is a blocking function that 
+ * creates a dialog window with parent [parent] and text content [message]
+ * requring them to select some number on a slider between [min] [max] 
+ * (inclusive). The return value is an int option of None if the user failed
+ * to respond (i.e. by closing the window) or Some value if they responded
+ * correctly.
+ *)
 let run_troop_dialog parent message (min, max) =
   let value = ref None in
   let troop_dialog_accept_handler scale dialog () =
@@ -353,6 +419,13 @@ let run_troop_dialog parent message (min, max) =
   let init_dialog_delete_event = troop_dialog#run () in
   !value
 
+(*
+ * [confirm_button_handler parent] is a function callback for the GUI confirm 
+ * button with the side effect that it confirms the currently selected action 
+ * by extracting relevant data from the GUI, creating an Action based on that
+ * information, and executing that action on the current state. This alters
+ * the value stored by controller. This method is thread safe.
+ *)
 let confirm_button_handler parent () =
   Mutex.lock mutex;
   begin
@@ -372,9 +445,9 @@ let confirm_button_handler parent () =
         let dest = !selection2 in
         let src_troops = match src with
         | None -> 0
-        | Some loc -> (Controller.get_troops_in_territory !controller loc) - 1 in
+        | Some loc -> (Controller.get_troops_in_territory !controller loc)- 1 in
         if src_troops = 0 then begin
-          write_log "Unable to comply. Insufficient troops in source territory.";
+          write_log"Unable to comply. Insufficient troops in source territory.";
           None
         end
         else begin
@@ -383,7 +456,8 @@ let confirm_button_handler parent () =
           match (src, dest, num) with
           | (Some s, Some d, Some n) -> write_log ("Attacking " ^ d ^ " from "
                                                   ^ s ^ " with " ^
-                                                  (string_of_int n) ^ " unit(s).");
+                                                  (string_of_int n) 
+                                                  ^ " unit(s).");
                                         Some (AAttack ((s, d), n))
           | _ -> None
         end
@@ -402,7 +476,7 @@ let confirm_button_handler parent () =
             match num with
             | None -> None
             | Some x -> write_log ("Reinforcing " ^ dep ^ " with " ^
-                          (string_of_int x) ^ " troops.");
+                                  (string_of_int x) ^ " troops.");
                         Some (AReinforcement (dep, x))
           end
       end
@@ -412,17 +486,18 @@ let confirm_button_handler parent () =
         let dest = !selection2 in
         let src_troops = match src with
         | None -> 0
-        | Some loc -> (Controller.get_troops_in_territory !controller loc) - 1 in
+        | Some loc -> (Controller.get_troops_in_territory !controller loc)- 1 in
         if src_troops = 0 then begin
-          write_log "Unable to comply. Insufficient troops in source territory.";
+          write_log"Unable to comply. Insufficient troops in source territory.";
           None
         end
         else begin
           let num = run_troop_dialog parent
             "Select the number of troops to move." (1, src_troops) in
           match (src, dest, num) with
-          | (Some s, Some d, Some n) -> write_log ("Moving " ^ (string_of_int n) ^
-                                          " unit(s) from " ^ s ^ " to " ^ d ^ ".");
+          | (Some s, Some d, Some n) -> write_log ("Moving "^(string_of_int n) ^
+                                                  " unit(s) from " ^ s ^ " to " 
+                                                  ^ d ^ ".");
                                         Some (AMovement ((s, d), n))
           | _ -> None
         end
@@ -467,6 +542,11 @@ let confirm_button_handler parent () =
   Mutex.unlock mutex;
   ()
 
+(*
+ * [actions_cbox_handler box] is a function with the side effect that it 
+ * sets the gui state based on the action selected in the combobox [box].
+ * This operation is thread safe.
+ *)
 let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
   Mutex.lock mutex;
   begin
@@ -501,13 +581,18 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
   Mutex.unlock mutex;
   ()
 
+(*
+ * [territory_button_handler name button ()] is a function with the side effect
+ * that it attempts to select the button specified by [name] and [button],
+ * printing a failure message to the log if this is not possible. Thread safe.
+ *)
 let territory_button_handler name (button: GButton.button) () =
   Mutex.lock mutex;
   begin
   try
-    set_territory_troops name (lookup_troop_count name |> succ);
     write_log ("Region: " ^ name);
     let sel_result = make_selection name in
+    (if not sel_result then write_log ("Failed to select " ^ name));
     ();
   with
   | _ ->  write_log "An unexpected error has occurred.";
@@ -515,18 +600,27 @@ let territory_button_handler name (button: GButton.button) () =
   Mutex.unlock mutex;
   ()
 
+(*
+ * [cancel_button_handler ()] is a function with the side effect that it clears
+ * all territory selections in a thread-safe manner.
+ *)
 let cancel_button_handler () =
   Mutex.lock mutex;
   begin
   try
     clear_selections ();
-    set_territory_buttons_sensitivity true;
   with
   | _ ->  write_log "An unexpected error has occurred.";
   end;
   Mutex.unlock mutex;
   ()
 
+(*
+ * [add_territory pack x y name extra] adds a territory button to the gameplay
+ * fixed packing [pack] at pixel coords [x], [y] with tooltip and territory name
+ * [name] with private tooltip comment [extra]. Also adds the mapping from
+ * [name] to the created button to the territory button list.
+ *)
 let add_territory (pack:GPack.fixed) x y name extra =
   let button = GButton.button ~label:"0"
                               ~packing:(pack#put ~x:x ~y:y) () in
@@ -536,9 +630,14 @@ let add_territory (pack:GPack.fixed) x y name extra =
   let button_signal = button#connect#clicked
                           ~callback: (territory_button_handler name button) in
   buttons_list := (name,button)::(!buttons_list);
-  territory_troop_list := (name, 0)::(!territory_troop_list);
   ()
 
+(*
+ * [add_label pack x y width height name] adds a framed label to the GUI 
+ * gameplay fixed packing [pack] at pixel coords [x], [y] with a frame 
+ * of width [width] and height [height] and the name [name]. This function
+ * is for use in creating continent labels.
+ *)
 let add_label (pack:GPack.fixed) x y width height name =
   let label_frame = GBin.frame ~width:width ~height:height
                                ~packing:(pack#put ~x:x ~y:y) () in
@@ -548,6 +647,11 @@ let add_label (pack:GPack.fixed) x y width height name =
   set_color label_frame "grey";
   ()
 
+(*
+ * [main ()] sets requisite mutable global values, prompts the user for 
+ * appropriate init information, creates the controller, and displays the GUI
+ * in its initial state.
+ *)
 let main () =
   let window = GWindow.window ~width:1450 ~height:860
                               ~title:"Risc" ~resizable:false () in
@@ -602,9 +706,6 @@ let main () =
                 got_player_num := true;
     | _ -> ()
   done;
-
-  (*Initialize game*)
-  controller := Controller.init_game !player_num;
 
   (*Info pack setup*)
   let player_frame = GBin.frame ~label:"Current Player" ~border_width:3
@@ -662,20 +763,20 @@ let main () =
   let actions_cbox = GEdit.combo_box_text
               ~strings:actions_strings
               ~packing:actions_cbox_frame#add () in
-  let actions_signal = (fst actions_cbox)#connect#changed
-                        (actions_cbox_handler actions_cbox) in
+  let actions_signal =  (fst actions_cbox)#connect#changed
+                        ~callback:(actions_cbox_handler actions_cbox) in
   actions_cbox_global := fst actions_cbox;
 
   let confirm_button = GButton.button ~label:"Confirm"
                                       ~packing:actions_pack#add () in
   let confirm_button_signal = confirm_button#connect#clicked
-                                      (confirm_button_handler window) in
+                              ~callback:(confirm_button_handler window) in
   confirm_button_global := confirm_button;
 
   let cancel_button = GButton.button ~label:"Cancel"
                                       ~packing:actions_pack#add () in
   let cancel_button_signal =
-    cancel_button#connect#clicked cancel_button_handler in
+    cancel_button#connect#clicked ~callback:cancel_button_handler in
 
   let selection1_frame = GBin.frame ~label:"Territory Selection 1"
                                     ~border_width:3
@@ -768,19 +869,6 @@ let main () =
   add_territory gameplay_pack 1140 377 "New Guinea" "Australia";
   add_territory gameplay_pack 1036 473 "Western Australia" "Australia";
 
-  (*
-  let names = fst (List.split !buttons_list) in
-  let st = String.concat "; " names in
-  print_endline st;
-  *)
-
-  (*
-  let fres = run_troop_dialog window "message" (1, 40) in
-  match fres with
-  | None -> print_endline "none"
-  | Some x -> print_endline ("some: " ^ string_of_int x);
-  *)
-
   (*Set some sensitivities before game starts*)
   set_territory_buttons_sensitivity false;
   confirm_button#misc#set_sensitive false;
@@ -791,7 +879,11 @@ let main () =
   let pmap = GdkPixbuf.create_pixmap map_pixbuf |> fst in
   Gdk.Window.set_back_pixmap gameplay_pack#misc#window (`PIXMAP pmap);
 
+  (*Initialize game; must go here to preserve button look and feel*)
+  controller := Controller.init_game !player_num setters;
+
   (*main GTK loop*)
   Main.main ()
 
+(* Run GTK loop*)
 let () = main ()

@@ -66,7 +66,7 @@ val avail_troops : state -> int
 (** [troops_in st r] returns the number of troops currently in region r *)
 val troops_in : state -> string -> int
 
-(** [troops_controlled pl] returns the number of regions controlled by pl  *)
+(** [num_controlled pl] returns the number of regions controlled by pl  *)
 val num_controlled : player -> int
 
 (** [controller_of_reg st r] returns the player id that controls r in st. *)
@@ -78,5 +78,8 @@ val owner_of_cont : state -> string -> string
 (** [cont_of_reg st r] returns the continent region r is located in, in st*)
 val cont_of_reg : state -> string -> string
 
-(** [get_log st] returns the log message contained in st.  *)
+(** [get_log st] returns the log message contained in st. *)
 val get_log : state -> string
+
+(** [get_regions st] returns a list of region names in the map *)
+val get_regions : state -> string list
