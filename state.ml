@@ -586,7 +586,7 @@ let ctrl_of_reg st r =
 
 let owner_of_cont st c =
   match List.assoc c st.continents with
-  | None -> "None"
+  | None -> "Grey"
   | Some owner -> owner
 
 let cont_of_reg st r =
