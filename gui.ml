@@ -73,12 +73,13 @@ let string_of_card card =
  * Gdk.Error("color_parse")).
  *)
 let set_color wid col_str =
-  (*TODO: check if this works*)
   let sty = wid#misc#style#copy in
-  (*try*)
-    sty#set_bg[`NORMAL,`NAME col_str; `INSENSITIVE,`NAME col_str;
-      `NORMAL,`NAME col_str; `PRELIGHT,`NAME col_str; `SELECTED,`NAME col_str];
-  (*with _ -> ();*)
+  let () = 
+    try
+      sty#set_bg[`NORMAL,`NAME col_str; `INSENSITIVE,`NAME col_str;
+        `NORMAL,`NAME col_str;`PRELIGHT,`NAME col_str;`SELECTED,`NAME col_str];
+    with e -> ()
+  in
   wid#misc#set_style sty;
   ()
 
@@ -884,15 +885,15 @@ let main () =
   set_territory_buttons_sensitivity false;
   confirm_button#misc#set_sensitive false;
 
-  (*Initialize game*)
-  (*TODO: make controller set default values (territories + current player) *)
-  controller := Controller.init_game !player_num setters;
-
   (*Final window configuration and display*)
   window#add_accel_group accel_group;
   window#show ();
   let pmap = GdkPixbuf.create_pixmap map_pixbuf |> fst in
   Gdk.Window.set_back_pixmap gameplay_pack#misc#window (`PIXMAP pmap);
+
+  (*Initialize game; must go here to preserve button look and feel*)
+  (*TODO: make controller set default values (territories + current player) *)
+  controller := Controller.init_game !player_num setters;
 
   (*main GTK loop*)
   Main.main ()
