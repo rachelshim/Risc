@@ -561,7 +561,7 @@ let num_wild pl =
 let player_id pl =
   pl.id
 
-let avail_troops pl st =
+let avail_troops st =
   match st.current_move with
   | CDeployment i -> i
   | _ -> 0 (** TODO handle this better *)
@@ -588,3 +588,6 @@ let owner_of_cont st c =
 
 let cont_of_reg st r =
   (region_of_name st r).continent
+
+let get_log st =
+  st.log
