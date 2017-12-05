@@ -74,12 +74,11 @@ let string_of_card card =
  *)
 let set_color wid col_str =
   (*TODO: check if this works*)
-  print_endline col_str;
   let sty = wid#misc#style#copy in
-  try
+  (*try*)
     sty#set_bg[`NORMAL,`NAME col_str; `INSENSITIVE,`NAME col_str;
       `NORMAL,`NAME col_str; `PRELIGHT,`NAME col_str; `SELECTED,`NAME col_str];
-  with _ -> ();
+  (*with _ -> ();*)
   wid#misc#set_style sty;
   ()
 
@@ -192,6 +191,9 @@ let set_territory_troops name num =
   ()
 
 let rec update_territories (data:(string * string * int) list) =
+  let temp = List.map (fun x -> match x with | (_, n , _) -> n) data in
+  print_endline ("[" ^ (String.concat " , " temp) ^ "]");
+
   match data with
   | [] -> ()
   | (name, owner, troops)::tl -> begin
