@@ -74,6 +74,7 @@ let string_of_card card =
  *)
 let set_color wid col_str =
   (*TODO: check if this works*)
+  print_endline col_str;
   let sty = wid#misc#style#copy in
   try
     sty#set_bg[`NORMAL,`NAME col_str; `INSENSITIVE,`NAME col_str;
