@@ -2,7 +2,5 @@
 3110 Final Project
 
 Dependencies:
-gtk
+GTK+2 Runtime Environment
 lablgtk
-core
-async
