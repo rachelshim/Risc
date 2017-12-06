@@ -180,6 +180,23 @@ let lock_all () =
   !confirm_button_global#misc#set_sensitive false;
   ()
 
+
+(*
+ * [run_blocking_dialog mtype title message] opens a dialog box and halts
+ * the main GTK loop until some acknowlegement is recieved. The dialog box
+ * has the window title [title], GTK message type (determines icon) [mtype],
+ * and contains the string content [message].
+ *)
+let run_blocking_dialog mtype title message =
+  let block_dialog = GWindow.message_dialog ~parent:!window_global
+      ~message_type:mtype ~resizable:false
+      ~title:title
+      ~buttons:GWindow.Buttons.ok
+      ~message:message () in
+  ignore(block_dialog#run ());
+  block_dialog#destroy();
+  ()
+
 (* EXPOSED SETTER METHODS BEGIN *)
 
 let set_territory_troops name num =
@@ -249,15 +266,8 @@ let set_game_over over =
   end
   else ()
 
-let run_blocking_popup message =
-  let block_dialog = GWindow.message_dialog ~parent:!window_global
-      ~message_type:`QUESTION ~resizable:false
-      ~title:"Next Turn Delay"
-      ~buttons:GWindow.Buttons.ok
-      ~message:message () in
-  ignore(block_dialog#run ());
-  block_dialog#destroy();
-  ()
+let run_blocking_infobox message =
+  run_blocking_dialog `QUESTION "Turn Information" message
 
 (*
  * This function roll is needed for the Controller to be able to set gui values
@@ -267,7 +277,7 @@ let run_blocking_popup message =
 let setters = (write_log, update_territories, update_continent_owners,
               update_current_player, update_available_reinforcements,
               update_cards, update_territories_count, update_troop_count,
-              set_game_over, run_blocking_popup)
+              set_game_over, run_blocking_infobox)
 
 (* EXPOSED SETTER METHODS END *)
 
@@ -801,6 +811,10 @@ let main () =
   let file_menu = factory#add_submenu "File" in
 
   (*File menu setup*)
+  let factory = new GMenu.factory file_menu ~accel_group in
+  ignore(factory#add_item "Quit" ~key:_Q ~callback: Main.quit);
+
+  (*Help menu setup*)
   let factory = new GMenu.factory file_menu ~accel_group in
   ignore(factory#add_item "Quit" ~key:_Q ~callback: Main.quit);
 

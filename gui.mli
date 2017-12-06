@@ -64,8 +64,8 @@ val update_troop_count : int -> unit
 val set_game_over : bool -> unit
 
 (*
- * [run_blocking_popup message] is a function with the side effect that it 
+ * [run_blocking_infobox message] is a function with the side effect that it 
  * displays a message dialog containing the text [message] that blocks the 
  * current thread and GUI until the dialog box is acknowledged.
  *)
-val run_blocking_popup : string -> unit
+val run_blocking_infobox : string -> unit
