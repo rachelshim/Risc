@@ -1,5 +1,4 @@
 open GMain
-open GdkKeysyms
 open Gtk
 open Action
 
@@ -182,12 +181,13 @@ let lock_all () =
 
 
 (*
- * [run_blocking_dialog mtype title message] opens a dialog box and halts
+ * [run_blocking_dialog mtype title message ()] opens a dialog box and halts
  * the main GTK loop until some acknowlegement is recieved. The dialog box
  * has the window title [title], GTK message type (determines icon) [mtype],
- * and contains the string content [message].
+ * and contains the string content [message]. Takes a unit as its final arg
+ * in order to be suitable for use as a GTK callback.
  *)
-let run_blocking_dialog mtype title message =
+let run_blocking_dialog mtype title message () =
   let block_dialog = GWindow.message_dialog ~parent:!window_global
       ~message_type:mtype ~resizable:false
       ~title:title
@@ -267,7 +267,7 @@ let set_game_over over =
   else ()
 
 let run_blocking_infobox message =
-  run_blocking_dialog `QUESTION "Turn Information" message
+  run_blocking_dialog `QUESTION "Turn Information" message ()
 
 (*
  * This function roll is needed for the Controller to be able to set gui values
@@ -809,14 +809,17 @@ let main () =
   let factory = new GMenu.factory menubar in
   let accel_group = factory#accel_group in
   let file_menu = factory#add_submenu "File" in
+  let help_menu = factory#add_submenu "Help" in
 
   (*File menu setup*)
   let factory = new GMenu.factory file_menu ~accel_group in
-  ignore(factory#add_item "Quit" ~key:_Q ~callback: Main.quit);
+  ignore(factory#add_item "Quit" ~callback: Main.quit);
 
   (*Help menu setup*)
-  let factory = new GMenu.factory file_menu ~accel_group in
-  ignore(factory#add_item "Quit" ~key:_Q ~callback: Main.quit);
+  (*TODO: add text*)
+  let factory = new GMenu.factory help_menu ~accel_group in
+  ignore(factory#add_item "About" ~callback:(run_blocking_dialog `INFO "About" "string"));
+  ignore(factory#add_item "Rules" ~callback:(run_blocking_dialog `INFO "Rules" "string"));
 
   (*Continent label setup*)
   add_label gameplay_pack 274 204 110 25 "North America";
