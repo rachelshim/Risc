@@ -38,7 +38,6 @@ let current_selection_mode = ref No_selection
 let selection1 = ref None
 let selection2 = ref None
 
-
 (*
  * [card_of_int num] is an Action.card option produced by mapping the int value
  * [num] to Some 0:Infantry, 1:Calvalry, 2:Artillery, and 3:Wild. Any other
@@ -256,7 +255,7 @@ let run_blocking_popup message =
       ~title:"Next Turn Delay"
       ~buttons:GWindow.Buttons.ok
       ~message:message () in
-  let block_delete_event = block_dialog#run () in
+  ignore(block_dialog#run ());
   block_dialog#destroy();
   ()
 
@@ -284,7 +283,7 @@ let run_init_dialog parent =
   (*create handler for use later*)
   let init_dialog_accept_handler cbox dialog () =
     let num = ((fst cbox)#active + 2) in
-    let res = dialog#event#send (GdkEvent.create `DELETE) in
+    ignore(dialog#event#send (GdkEvent.create `DELETE));
     players_num :=
       if num = 1 then None
       else Some num;
@@ -305,13 +304,14 @@ let run_init_dialog parent =
   (fst init_dialog_combobox)#set_active 0;
   let init_dialog_accept_button = GButton.button ~label:"Accept"
                   ~packing:init_dialog#vbox#add () in
-  let accept_signal =
-      init_dialog_accept_button#connect#clicked
-      ~callback:(init_dialog_accept_handler init_dialog_combobox init_dialog) in
+  (*Connect accept button signal*)
+  ignore(init_dialog_accept_button#connect#clicked
+      ~callback:(init_dialog_accept_handler init_dialog_combobox init_dialog));
+  (*connect popup delete signal*)
+  ignore(init_dialog#event#connect#delete
+      ~callback:(fun _ -> init_dialog#destroy (); true));
   (*Run blocking dialog*)
-  let close_event = init_dialog#event#connect#delete
-      ~callback:(fun _ -> init_dialog#destroy (); true) in
-  let init_dialog_delete_event = init_dialog#run () in
+  ignore(init_dialog#run ());
   !players_num
 
 (*
@@ -363,12 +363,14 @@ let run_cards_dialog parent =
   in
   let cards_dialog_accept_button = GButton.button ~label:"Accept"
                   ~packing:cards_dialog#vbox#add () in
-  let accept_signal = cards_dialog_accept_button#connect#clicked
-                  ~callback:(cards_dialog_accept_handler) in
-  (*blocking loop*)
-  let close_event = cards_dialog#event#connect#delete
-                  ~callback:(fun _ -> cards_dialog#destroy (); true) in
-  let init_dialog_delete_event = cards_dialog#run () in
+  (*Connect accept button signal*)
+  ignore(cards_dialog_accept_button#connect#clicked
+                  ~callback:(cards_dialog_accept_handler));
+  (*connect close event; ensures window is destroyed on x-button*)
+  ignore(cards_dialog#event#connect#delete
+                  ~callback:(fun _ -> cards_dialog#destroy (); true));
+  (*Run blocking dialog loop*)
+  ignore(cards_dialog#run ());
   !cards_selected
 
 (*
@@ -384,7 +386,7 @@ let run_troop_dialog parent message (min, max) =
   let troop_dialog_accept_handler scale dialog () =
     let num = int_of_float scale#adjustment#value in
     value := Some num;
-    let res = dialog#event#send (GdkEvent.create `DELETE) in
+    ignore(dialog#event#send (GdkEvent.create `DELETE));
     dialog#destroy ();
     ()
   in
@@ -408,12 +410,14 @@ let run_troop_dialog parent message (min, max) =
                   ~packing:scale_frame#add () in
   let troop_dialog_accept_button = GButton.button ~label:"Accept"
                   ~packing:troop_dialog#vbox#add () in
-  let accept_signal =
-    troop_dialog_accept_button#connect#clicked
-      ~callback:(troop_dialog_accept_handler troop_dialog_scale troop_dialog) in
-  let close_event = troop_dialog#event#connect#delete
-      ~callback:(fun _ -> troop_dialog#destroy (); true) in
-  let init_dialog_delete_event = troop_dialog#run () in
+  (*Connect selection accept signal to handler*)
+  ignore(troop_dialog_accept_button#connect#clicked
+      ~callback:(troop_dialog_accept_handler troop_dialog_scale troop_dialog));
+  (*Connect close event to ensure window is destroyed on exit*)
+  ignore(troop_dialog#event#connect#delete
+      ~callback:(fun _ -> troop_dialog#destroy (); true));
+  (*Run the dialog in blocking loop*)
+  ignore(troop_dialog#run ());
   !value
 
 (*
@@ -616,8 +620,9 @@ let add_territory (pack:GPack.fixed) x y name extra =
   button#misc#set_name name;
   GtkData.Tooltips.set_tip (GtkData.Tooltips.create ()) button#as_widget
                           ~text:name ~privat:extra;
-  let button_signal = button#connect#clicked
-                          ~callback: (territory_button_handler name button) in
+  (*Connect the button click signal; throw away value b/c will never change*)
+  ignore(button#connect#clicked
+                          ~callback: (territory_button_handler name button));
   buttons_list := (name,button)::(!buttons_list);
   ()
 
@@ -645,7 +650,7 @@ let main () =
   let window = GWindow.window ~width:1450 ~height:860
                               ~title:"Risc" ~resizable:false () in
   window_global := window;
-  let window_exit_signal = window#connect#destroy ~callback:Main.quit in
+  ignore(window#connect#destroy ~callback:Main.quit);
 
   let top_pane_pack = GPack.paned ~width:1450 ~height:860
                               ~packing:window#add ~border_width:5
@@ -752,20 +757,19 @@ let main () =
   let actions_cbox = GEdit.combo_box_text
               ~strings:actions_strings
               ~packing:actions_cbox_frame#add () in
-  let actions_signal =  (fst actions_cbox)#connect#changed
-                        ~callback:(actions_cbox_handler actions_cbox) in
+  ignore((fst actions_cbox)#connect#changed
+                        ~callback:(actions_cbox_handler actions_cbox));
   actions_cbox_global := fst actions_cbox;
 
   let confirm_button = GButton.button ~label:"Confirm"
                                       ~packing:actions_pack#add () in
-  let confirm_button_signal = confirm_button#connect#clicked
-                              ~callback:(confirm_button_handler window) in
+  ignore(confirm_button#connect#clicked
+                              ~callback:(confirm_button_handler window));
   confirm_button_global := confirm_button;
 
   let cancel_button = GButton.button ~label:"Cancel"
                                       ~packing:actions_pack#add () in
-  let cancel_button_signal =
-    cancel_button#connect#clicked ~callback:cancel_button_handler in
+  ignore(cancel_button#connect#clicked ~callback:cancel_button_handler);
 
   let selection1_frame = GBin.frame ~label:"Territory Selection 1"
                                     ~border_width:3
@@ -798,8 +802,7 @@ let main () =
 
   (*File menu setup*)
   let factory = new GMenu.factory file_menu ~accel_group in
-  let file_quit_signal = factory#add_item "Quit" ~key:_Q
-                                ~callback: Main.quit in
+  ignore(factory#add_item "Quit" ~key:_Q ~callback: Main.quit);
 
   (*Continent label setup*)
   add_label gameplay_pack 274 204 110 25 "North America";
