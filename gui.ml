@@ -1,8 +1,6 @@
 open GMain
 open GdkKeysyms
 open Gtk
-open Unix
-open Thread
 open Action
 
 (*Selection modes*)
@@ -40,7 +38,6 @@ let current_selection_mode = ref No_selection
 let selection1 = ref None
 let selection2 = ref None
 
-let mutex = Core.Mutex.create ()
 
 (*
  * [card_of_int num] is an Action.card option produced by mapping the int value
@@ -99,7 +96,7 @@ let set_territory_sensitivity name new_sens =
  *)
 let set_territory_buttons_sensitivity new_sens =
   let buttons = snd (List.split !buttons_list) in
-  let u_list = List.map (fun b -> b#misc#set_sensitive new_sens) buttons in
+  ignore(List.map (fun b -> b#misc#set_sensitive new_sens) buttons);
   ()
 
 (*
@@ -427,7 +424,6 @@ let run_troop_dialog parent message (min, max) =
  * the value stored by controller. This method is thread safe.
  *)
 let confirm_button_handler parent () =
-  Mutex.lock mutex;
   begin
   try
     let index = !actions_cbox_global#active in
@@ -539,7 +535,6 @@ let confirm_button_handler parent () =
   with
   | _ ->  write_log "An unexpected error has occurred.";
   end;
-  Mutex.unlock mutex;
   ()
 
 (*
@@ -548,7 +543,6 @@ let confirm_button_handler parent () =
  * This operation is thread safe.
  *)
 let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
-  Mutex.lock mutex;
   begin
   try
     let index = (fst box)#active in
@@ -578,7 +572,6 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
   with
   | _ ->  write_log "An unexpected error has occurred.";
   end;
-  Mutex.unlock mutex;
   ()
 
 (*
@@ -587,7 +580,6 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
  * printing a failure message to the log if this is not possible. Thread safe.
  *)
 let territory_button_handler name (button: GButton.button) () =
-  Mutex.lock mutex;
   begin
   try
     write_log ("Region: " ^ name);
@@ -597,7 +589,6 @@ let territory_button_handler name (button: GButton.button) () =
   with
   | _ ->  write_log "An unexpected error has occurred.";
   end;
-  Mutex.unlock mutex;
   ()
 
 (*
@@ -605,14 +596,12 @@ let territory_button_handler name (button: GButton.button) () =
  * all territory selections in a thread-safe manner.
  *)
 let cancel_button_handler () =
-  Mutex.lock mutex;
   begin
-  try
-    clear_selections ();
-  with
-  | _ ->  write_log "An unexpected error has occurred.";
+    try
+      clear_selections ();
+    with
+    | _ ->  write_log "An unexpected error has occurred.";
   end;
-  Mutex.unlock mutex;
   ()
 
 (*

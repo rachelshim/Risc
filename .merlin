@@ -1,10 +1,5 @@
 B _build
 PKG oUnit
-PKG yojson
-PKG str
-PKG ANSITerminal
-PKG core
 PKG lablgtk2
-PKG async
 PKG lwt
 PKG Gtk
