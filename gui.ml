@@ -547,7 +547,8 @@ let confirm_button_handler parent () =
                                   !controller setters act;
                   ();
   with
-  | _ ->  write_log "An unexpected error has occurred.";
+  (*TODO: suppress*)
+  | e ->  write_log "An unexpected error has occurred."; raise e
   end;
   clear_selections();
   ()
