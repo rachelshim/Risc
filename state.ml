@@ -451,7 +451,8 @@ let init_state n =
       players_w_continents in
   {
     players = players_w_continents;
-    current_move = CDeployment (50 - 5 * n - (42 / n));
+    (* current_move = CDeployment (50 - 5 * n - (42 / n)); *)
+    current_move = CDeployment 2;
     gets_card = false;
     turns = 0;
     continents = total_conts;
@@ -826,7 +827,7 @@ let rec update st a =
       { st with log = "Invalid move: try different regions."}
     (* add stuff for updating continent thing in player *)
     (* also add transitioning into next state *)
-  | AMovement _, _ -> 
+  | AMovement _, _ ->
     { st with log = "Invalid move: cannot move troops at this time" }
   | ANextTurn, CAttack ->
     if List.length (List.hd st.players).cards > 4
@@ -874,8 +875,3 @@ let valid_mode a st =
   Helper methods for testing
 
 ##############################################################################*)
-
-
-
-
-
