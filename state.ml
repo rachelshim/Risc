@@ -739,12 +739,6 @@ let transfer_region r st t =
      players = replace_player new_p_d new_st.players;
      log = p_a.id ^ " has taken " ^ r.name ^ " from " ^ p_d.id ^ "."}
 
-(* helper function for testing dfs in utop delete later *)
-let find_terr p st =
-  Regions.bindings st.regions
-  |> List.filter (fun (x, y) -> y.controller = p)
-  |> List.map (fun (x, y) -> x)
-
 (* Helper function for [check_path]
  * [check_target p s1 s2 reg] returns [true] if the regions represented by
  * strings [s1] and [s2] in the map of regions [reg] have the same name and

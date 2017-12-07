@@ -183,6 +183,9 @@ let tests =
   "movement_fail_japan_iceland2" >:: (fun _ -> assert_equal (troops_in test_map4 "Japan") (troops_in (update test_map4 (AMovement (("Japan", "Iceland"), 1))) "Japan"));
   "movement_fail_brazil_china" >:: (fun _ -> assert_equal (troops_in test_map4 "China") (troops_in (update test_map4 (AMovement (("Brazil", "China"), 1))) "China"));
   "movement_fail_brazil_china" >:: (fun _ -> assert_equal (troops_in test_map4 "Brazil") (troops_in (update test_map4 (AMovement (("Brazil", "China"), 1))) "Brazil"));
+
+  (* end turn *)
+  "next_turn_blue" >:: (fun _ -> assert_equal "Blue" (update (update test_map4 ANextTurn) ANextTurn |> current_player |> player_id));
 ]
 
 let suite = "State tests" >::: tests
