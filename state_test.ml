@@ -13,8 +13,6 @@ let tests =
   (* Tests on two-player game *)
   "two_player_init" >:: (fun _ -> assert_equal (player_id (current_player two_player)) "Red");
 
-  (* Tests on two-player game *)
-  "two_player_init" >:: (fun _ -> assert_equal (player_id (current_player two_player)) "Red");
 
 ]
 
