@@ -18,3 +18,6 @@ test:
 
 debug:
 	ocamlbuild -use-ocamlfind gui.d.byte
+
+zip:
+	zip -r --exclude=*.git* Risc_archive.zip .
