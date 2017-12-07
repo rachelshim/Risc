@@ -302,7 +302,7 @@ let run_init_dialog parent =
   in
   (*dialog components*)
   let init_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true
-                  ~title:"Risc" ~deletable:true ~width:300 ~height:150
+                  ~title:"Risc" ~deletable:true ~width:350 ~height:150
                   ~resizable:false () in
   let init_dialog_label = GMisc.label
                   ~text:"Welcome! Please select the number of players."
