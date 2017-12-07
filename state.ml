@@ -653,6 +653,31 @@ let rec check_path p s1 s2 st =
         in
     search [s1] r1_routes
 
+(** 
+ * [invalid_move_log] is an error log for an invalid combination of [a]
+ * and [c_m]
+ *)
+let invalid_move_log a c_m =
+  let attempted_action =
+    match a with
+    | ADeployment _ -> "deploy"
+    | APlayCards _ -> "play cards"
+    | AReinforcement _ -> "reinforce"
+    | AAttack _ -> "attack"
+    | AMovement _ -> "move troops"
+    | ANextTurn -> "end your turn" in
+  let state_log = 
+    match c_m with
+    | CDeployment _ -> "You must deploy a troop."
+    | CReinforcement n -> 
+      "You must either reinforce your territories or play cards. There are " ^
+      (string_of_int n) ^ " reinforcements left this turn."
+    | CAttack -> "You may either attack, move troops, or end your turn."
+    | CRecieve_Card _ -> "Your turn is over; you must end your turn."
+    | CGame_Won _ -> "The game is won, so you can't make any more moves!" in
+  "Invalid move: You may not " ^ attempted_action ^
+    " at this time. " ^ state_log
+
 (* TODO: documentnation *)
 let determine_card st = 
   let p = List.hd st.players in
@@ -663,10 +688,15 @@ let determine_card st =
                       else if card_val mod 3 = 1 then Cavalry
                       else Infantry in
     let p' = { p with cards = card_togive::p.cards } in
-    { st with players = prepend_player p' st.players;
-              current_move = CRecieve_Card (Some card_togive) }
-  else { st with current_move = CRecieve_Card None }
-
+    {st with
+     players = prepend_player p' st.players;
+     current_move = CRecieve_Card (Some card_togive);
+     log = p.id ^ " ended their turn and recieved a card."}
+ else
+ {st with
+  current_move = CRecieve_Card None;
+  log = (List.hd st.players).id ^
+        " ended their turn and did not recieve a card."}
 
 let rec update st a =
   match a, st.current_move with
@@ -678,22 +708,30 @@ let rec update st a =
     else
       let p' = {p with total_troops = p.total_troops + 1} in
       let p_list = append_player p' st.players in
+      if (List.hd p_list).id = "Red" && n = 1
+      then
+        let reinforce_troops = get_player_reinforcements (List.hd p_list) in
+        {st with
+         players = p_list;
+         current_move = CReinforcement reinforce_troops;
+         regions =
+           Regions.add r {reg with troops = reg.troops + 1} st.regions;
+         log =
+           "Successfuly deployed to " ^ r ^ ". The game has now started! " ^
+           (List.hd p_list).id ^ " may now reinforce with" ^
+           (string_of_int reinforce_troops) ^ " troops."}
+      else
       {st with
        players = p_list;
        current_move =
          if (List.hd p_list).id = "Red"
-         then
-           if n = 1
-           then CReinforcement (get_player_reinforcements (List.hd p_list))
-           else CDeployment (n - 1)
+         then CDeployment (n - 1)
          else CDeployment n;
        regions =
          Regions.add r {reg with troops = reg.troops + 1} st.regions;
        log =
-         "Successfuly deployed to " ^ r ^ ". It is now " ^ (List.hd p_list).id
-         ^ "'s turn."}
-  | ADeployment _, _ ->
-    {st with log = "Invalid move: cannot deploy at this time."}
+         "Successfuly deployed to " ^ r ^ ". It is now " ^ (List.hd p_list).id ^
+         "'s turn to deploy."}
   | APlayCards (c1, c2, c3), CReinforcement n ->
     let p = List.hd st.players in
     (* making sure card trade-in is valid *)
@@ -721,13 +759,16 @@ let rec update st a =
         with Not_found ->
           {st with log = "Invalid move: you don't have those cards."}
       end
-    else { st with log = "Invalid card trade-in" }
+    else
+    {st with
+    log =
+      "Invalid card combination. To recieve bonus troops, either the" ^ 
+      "cards played must all be of the same type of of different types, or a " ^
+      "wild card must be included."}
   | APlayCards _, CAttack ->
     if List.length (List.hd st.players).cards > 4
     then update {st with current_move = CReinforcement 0} a
-    else {st with log = "Invalid move: cannot play cards at this time."}
-  | APlayCards _, _ ->
-    {st with log = "Invalid move: cannot play cards at this time."}
+    else {st with log = invalid_move_log a st.current_move}
   | AReinforcement (r, i), CReinforcement n ->
     if n >= i then
       let p = List.hd st.players in
@@ -745,18 +786,25 @@ let rec update st a =
                     Regions.add r {region with troops = region.troops + i}
                       st.regions;
                   log = "Successfully reinforced " ^ r ^ " with " ^
-                        (string_of_int i) ^ " new troops." ^
-                        (if n = i then " You may now attack." else "")}
+                        (string_of_int i) ^ " new troops" ^
+                        (if n = i
+                        then
+                          "You may now attack, move troops to end your " ^ 
+                          "turn, or end your turn without movement."
+                        else
+                          "You have " ^ string_of_int (n - i) ^
+                          " troops left to place.")}
     else { st with log = "You don't have enough troops. Try again." }
-  | AReinforcement _, _ ->
-    {st with log = "Invalid move: cannot reinforce at this time"}
   | AAttack ((r1_name, r2_name), t), CAttack ->
     let r1 = Regions.find r1_name st.regions in
     let r2 = Regions.find r2_name st.regions in
     let a = List.hd st.players in
     let d = get_player r2.controller st.players in
     if List.length a.cards > 4
-    then {st with log = "Invalid move: you must play cards."}
+    then
+      {st with
+       log = "Invalid move: you have more than 5 cards, so you must play a " ^ 
+             "card combination and recieve troops."}
     else if r1.controller <> a.id
     then {st with log = "Invalid move: you don't control " ^ r1_name ^ "."}
     else if r2.controller = a.id
@@ -798,8 +846,8 @@ let rec update st a =
           else (fst top, snd top + 1) in
     let new_a = {a with total_troops = a.total_troops - a_lost_troops} in
     let new_d = {d with total_troops = d.total_troops - d_lost_troops} in
-    let new_r1 = {r1 with troops = r1.troops - a.total_troops} in
-    let new_r2 =  {r2 with troops = r2.troops - d.total_troops} in
+    let new_r1 = {r1 with troops = r1.troops - a_lost_troops} in
+    let new_r2 =  {r2 with troops = r2.troops - d_lost_troops} in
     if new_r2.troops = 0
     then
       let new_r1' = {new_r1 with troops = new_r1.troops - t} in
@@ -824,32 +872,34 @@ let rec update st a =
          Regions.add r2_name new_r2;
        players =
          replace_player new_a st.players |>
-         replace_player new_d}
-  | AAttack _, _ ->
-    {st with log = "Invalid move: cannot attack at this time"}
+         replace_player new_d;
+       log = r1_name ^ " lost " ^ string_of_int a_lost_troops ^ " troops and " ^
+             r2_name ^ " lost " ^ string_of_int d_lost_troops ^ " troops."}
   | AMovement ((s1, s2), n), CAttack ->
-    let p = List.hd st.players in
-    let r1 = Regions.find s1 st.regions in
-    let r2 = Regions.find s2 st.regions in
-    if not (p.id == r1.controller && p.id == r2.controller) then
-      if check_path p.id s1 s2 st.regions then
-        if r1.troops <= n then
-          { st with log = "Invalid move: you don't have enough troops"}
+    let st' = 
+      let p = List.hd st.players in
+      let r1 = Regions.find s1 st.regions in
+      let r2 = Regions.find s2 st.regions in
+      if not (p.id == r1.controller && p.id == r2.controller) then
+        if check_path p.id s1 s2 st.regions then
+          if r1.troops <= n then
+            { st with log = "Invalid move: you don't have enough troops"}
+          else
+            let r1' = { r1 with troops = r1.troops - n } in
+            let r2' = { r2 with troops = r2.troops + n } in
+            { st with regions = Regions.add s1 r1' st.regions |>
+                                Regions.add s2 r2' }
         else
-          let r1' = { r1 with troops = r1.troops - n } in
-          let r2' = { r2 with troops = r2.troops + n } in
-          { st with regions = Regions.add s1 r1' st.regions |>
-                              Regions.add s2 r2' }
-      else
-        { st with log = "Invalid move: " ^ 
-                        "territories must have a contiguously controlled path"}
-    else { st with log = "Invalid move: you must control both territories" }
-  | AMovement _, CRecieve_Card _ -> determine_card st
-  | AMovement _, _ -> 
-    { st with log = "Invalid move: cannot move troops at this time" }
+          { st with log = "Invalid move: " ^ 
+                          "territories must have a contiguously controlled path"}
+      else { st with log = "Invalid move: you must control both territories" }
+    in determine_card st'
   | ANextTurn, CAttack ->
     if List.length (List.hd st.players).cards > 4
-      then {st with log = "Invalid move: you must play cards."}
+    then
+      {st with
+      log = "Invalid move: you have more than 5 cards, so you must play a " ^ 
+        "card combination and recieve troops."}
     else determine_card st
   | ANextTurn, CRecieve_Card _ ->
     let ps = append_player (List.hd st.players) st.players in
@@ -859,14 +909,15 @@ let rec update st a =
      current_move =
        if new_troops = 0
        then CAttack
-       else CReinforcement new_troops}
-  | ANextTurn, CReinforcement _ ->
-    {st with log = "Invalid move: must place all troops before ending turn."}
-  | ANextTurn, _ ->
-    {st with log = "Invalid move: cannot end turn at this time."}
-
-let valid_mode a st =
-  failwith "unimplemented"
+       else CReinforcement new_troops;
+     log =
+       "It is now " ^ (List.hd ps).id ^ "'s turn. They may now reinforce" ^
+       " with" ^ string_of_int new_troops ^
+       " troops or play a card combination."
+     }
+  | ANextTurn, _  | AAttack _, _  | AMovement _, _  | AReinforcement _, _ 
+  | ADeployment _, _ | APlayCards _, _->
+    {st with log = invalid_move_log a st.current_move}
 
 
 (* ############################################################################
@@ -875,9 +926,7 @@ let valid_mode a st =
 
 ##############################################################################*)
 
-let auto_deploy st = 
-  let num_players = List.length st.players in
-  failwith "TODO"
+let auto_deploy st = failwith "TODO"
 
 
 
