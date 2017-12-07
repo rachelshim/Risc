@@ -577,8 +577,7 @@ let confirm_button_handler parent () =
                                   !controller setters act;
                   ();
   with
-  (*TODO: suppress*)
-  | e ->  write_log "An unexpected error has occurred."; print_endline (e |> Printexc.exn_slot_id |> Printexc.get_callstack |> Printexc.raw_backtrace_to_string); print_endline (Printexc.to_string e); ()
+  | _ ->  write_log "An unexpected error has occurred."
   end;
   clear_selections();
   ()
@@ -872,8 +871,6 @@ let main () =
     "\n\t- Samuel Ringel (sjr254@cornell.edu)\n\t- Rachel Shim "^
     "(cs899@cornell.edu)\n\nYou can find further documentation at:"^
     "\nhttps://github.com/rachelshim/Risc/blob/master/README.md")));
-  ignore(factory#add_item "Rules" ~callback:(run_blocking_dialog `INFO "Rules"
-  ("TODO")));
   ignore(factory#add_item "Instructions" ~callback:(run_blocking_dialog `INFO 
   "Instructions" ("TODO")));
 
