@@ -38,7 +38,7 @@ Our .mli files contain interfaces describing our module design.
 ## Data
 Our program maintains game state data, user action data, and GUI data.
 
-- Game state: as in A2, we used record types to represent the game state cleanly, with a state type, player type, and region type. (elaborate @Rachel/Sam, also talk about the Current move variant)
+- Game state: as in A2, we used record types to represent the game state cleanly, with a state type, player type, and region type. This includes a variant entitled curr_move, which expresses the current game phase and information relevant to that phase.
 - User action data: we defined an Action variant type exposed to all modules. When the GUI receives a user event, its handlers package it into an Action constructor, which the controller passes to the State, and upon receiving an updated state, updates the GUI (also dependent on the Action variant).
 - GUI data: @Haram do dis
 
@@ -55,8 +55,8 @@ To avoid circular dependencies, imperative functions for setting GUI state are p
 - GTK+2.0 runtime environment (via Apt or Homebrew) - required for  GUI to operate
 
 ## Testing:
-- Interactive play-testing: we tested interactively by play-testing the game in both a non-malicious average user use case, and deliberately attempting to break the game through illegal actions.
-- Unit testing: used for the State, s used to demonstrate the correctness of our State implementation, as it was the only segment of the program isolated from GUI components and imperative features.
+- Interactive play-testing: we tested interactively by play-testing the game in both a non-malicious average user use case, and deliberately attempting to break the game through illegal actions. A detailed rep_ok function was also run on each state during play-testing.
+- Unit testing: used to demonstrate the correctness of our State implementation, as it was the only segment of the program isolated from GUI components and imperative features.
 - Utop: we used during development to test State operations during programming.
 - Ocamldebug: for specific error cases, we used Ocamldebug to identify the locations of problems and to verify that they were corrected after corrections were made.
 
@@ -67,5 +67,5 @@ To avoid circular dependencies, imperative functions for setting GUI state are p
 ## Division of labor:
 - Avani worked in a full-stack capacity, implementing the Controller, State functions, improving UX and user-facing logging, and helping to coordinate functionality between the backend and frontend. ~x hours
 - Haram worked largely on frontend and testing, implementing the entire GUI, in addition to development environment setup and debugging via ocamldebug. ~x hours
-- Sam developed the backend, implementing x y z. ~x hours
+- Sam developed the backend, implementing game initialization, troop deployment, attacking (including all results of an attack), turn ending, logging, and the rep_ok function. He also wrote state test cases. ~x hours
 - Rachel developed the backend, implementing x y z. ~x hours
