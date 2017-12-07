@@ -7,25 +7,25 @@ open Map
 ##############################################################################*)
 
 
-(** [region] represents a region in Risk. *)
 type region =
   {
     name: string;
-    controller: string;
-    troops: int;
-    routes: string list;
-    continent: string;
+    controller: string; (* controlling player *)
+    troops: int; (* troops on the region *)
+    routes: string list; (* connected regions *)
+    continent: string; (* continent it belongs to *)
   }
 
 type player =
   {
     id: string;
-    cards: card list;
-    total_troops: int;
+    cards: card list; (* cards in hand *)
+    total_troops: int; (* total troops on the board *)
     continent_regions: (string * int) list; (*regions owned per continent*)
-    controls_cont: string list;
+    controls_cont: string list; (* continents controlled *)
   }
 
+(** [curr_move] represents the current phase of a turn *)
 type curr_move =
   | CDeployment of int (* final player has n troops left to place *)
   | CReinforcement of int (* reinforce with n total troops *)
@@ -40,15 +40,15 @@ module Regions = Map.Make(String)
     current player whose turn it is. *)
 type state =
   {
-    current_move: curr_move;
+    current_move: curr_move; (* current phase of turn *)
     players: player list;
-    gets_card: bool;
-    turns: int;
+        (* players in game in order of next to play (head is current player) *)
+    gets_card: bool; (* whether the player will receive a card at end of turn *)
     continents: (string * string option) list;
         (* continent s is controlled by player s_opt *)
-    regions: region Regions.t;
-    bonus_troops: int;
-    log: string;
+    regions: region Regions.t; (* all regions in game *)
+    bonus_troops: int; (* troops for next card trade in *)
+    log: string; (* last message to send to log *)
   }
 
 
@@ -590,7 +590,6 @@ let init_state n =
     (* current_move = CDeployment (50 - 5 * n - (42 / n)); *)
     current_move = CDeployment 2;
     gets_card = false;
-    turns = 0;
     continents = total_conts;
     regions = regions_map;
     bonus_troops = 4;
@@ -1013,7 +1012,6 @@ let rec update st a =
         if List.length final_st.players = 1
         then {final_st with
               current_move = CGame_Won a.id;
-              turns = final_st.turns + 1;
               log = final_st.log ^ "\n> " ^ a.id ^
                     " has conquered the world and won the game!"}
         else final_st
@@ -1112,7 +1110,6 @@ let test_map =
                                    "Africa"];
               }];
     gets_card = false;
-    turns = 0;
     continents = [("North America", Some "Red");
                   ("Asia", Some "Red");
                   ("South America", Some "Blue");
