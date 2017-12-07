@@ -594,7 +594,7 @@ let transfer_region r st t =
     {new_st with
      players = remove_player p_d.id new_players;
      log =
-       p_a.id ^ " has taken " ^ r.name ^ " and eliminated" ^ p_d.id ^ "!" ^
+       p_a.id ^ " has taken " ^ r.name ^ " and eliminated " ^ p_d.id ^ "!" ^
        (if List.length moved_cards > 0
         then
           "They take " ^ p_d.id ^ "'s " ^
@@ -613,7 +613,7 @@ let transfer_region r st t =
      continents =
        List.remove_assoc r.continent new_st.continents |>
        List.cons (r.continent, None);
-     log = p_a.id ^ " has taken " ^ r.name ^ "from " ^ p_d.id ^ "."}
+     log = p_a.id ^ " has taken " ^ r.name ^ " from " ^ p_d.id ^ "."}
 
 (* helper function for testing dfs in utop delete later *)
 let find_terr p st =
