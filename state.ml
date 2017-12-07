@@ -392,9 +392,10 @@ let rep_ok st =
                     then r.troops
                     else 0) st.regions 0 = p.total_troops in
   if not (List.fold_left (fun b p -> b && check_troops p) true st.players)
-  then
+  then begin
+    print_endline "number of troops on board does not match a player's total_troops";
     failwith "number of troops on board does not match a player's total_troops"
-  else
+  end else
 
   let check_cr_att p =
     List.length p.continent_regions = 6 &&
@@ -407,8 +408,10 @@ let rep_ok st =
       ["North America"; "South America"; "Europe";
        "Africa"; "Asia"; "Australia"] in
   if not (List.fold_left (fun b p -> b && check_cr_att p) true st.players)
-  then failwith "continent_regions is has an invalid structure"
-  else
+  then begin
+    print_endline "continent_regions is has an invalid structure";
+    failwith "continent_regions is has an invalid structure"
+  end else
 
   let zeroed_continent_regions p =
     Regions.fold (fun _ r acc_lst ->
@@ -424,8 +427,10 @@ let rep_ok st =
       true (zeroed_continent_regions p) in
   if not (List.fold_left (fun b p -> b && check_continent_regions p)
                  true st.players)
-  then failwith "continent_regions does not match board state"
-  else
+  then begin 
+    print_endline "continent_regions does not match board state";
+    failwith "continent_regions does not match board state"
+  end else
 
   let check_controls_cont p =
     let (b, len) =
@@ -437,7 +442,10 @@ let rep_ok st =
     b && List.length p.controls_cont = len in
   if not (List.fold_left (fun b p -> b && check_controls_cont p)
               true st.players)
-  then failwith "controls_cont does not match continent_regions"
+  then begin 
+    print_endline "controls_cont does not match continent_regions";
+    failwith "controls_cont does not match continent_regions"
+  end
   else
 
   let check_c_att =
@@ -446,8 +454,10 @@ let rep_ok st =
       ["North America"; "South America"; "Europe";
        "Africa"; "Asia"; "Australia"] in
   if not check_c_att
-  then failwith "state.continents has an invalid structure"
-  else
+  then begin 
+    print_endline "state.continents has an invalid structure";
+    failwith "state.continents has an invalid structure"
+  end else
 
   let check_continents =
     let (b, len) =
@@ -462,8 +472,10 @@ let rep_ok st =
           (fun len p ->
             len + (List.length p.controls_cont)) 0 st.players = len in
   if not check_continents
-  then failwith "state.continents does not match each player's controls_cont"
-  else
+  then begin 
+    print_endline "state.continents does not match each player's controls_cont";
+    failwith "state.continents does not match each player's controls_cont"
+  end else
 
   let check_players_in_game =
     let players_from_map =
@@ -475,8 +487,10 @@ let rep_ok st =
     List.fold_left
       (fun b p -> b && List.mem p.id players_from_map) true st.players in
   if not check_players_in_game
-  then failwith "st.players does not match players on the board"
-  else ()
+  then begin 
+    print_endline "st.players does not match players on the board";
+    failwith "st.players does not match players on the board"
+  end else ()
 
 
 (* ############################################################################
@@ -643,9 +657,9 @@ let give_player_region r st =
     players =
       (let new_p =
         {p with
-          continent_regions =
-          List.remove_assoc r.name p.continent_regions |>
-          List.cons (r.name, ctrl_regions_count);
+        continent_regions =
+          List.remove_assoc r.continent p.continent_regions |>
+          List.cons (r.continent, ctrl_regions_count);
         controls_cont =
           if makes_continent then r.continent::p.controls_cont
           else p.controls_cont} in
@@ -826,6 +840,8 @@ let determine_card st =
 
 
 let rec update st a =
+  (*TODO: remove this line*)
+  rep_ok st;
   match a, st.current_move with
   | ADeployment r, CDeployment n ->
     let p = List.hd st.players in
