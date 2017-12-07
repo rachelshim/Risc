@@ -940,17 +940,9 @@ let rec update st a =
      log =
        "It is now " ^ (List.hd ps).id ^ "'s turn. They may now reinforce" ^
        " with " ^ string_of_int new_troops ^
-       " troops or play a card combination."
+       " troops or play a card combination.";
+     gets_card = false
      }
   | ANextTurn, _  | AAttack _, _  | AMovement _, _  | AReinforcement _, _
   | ADeployment _, _ | APlayCards _, _->
     {st with log = invalid_move_log a st.current_move}
-
-
-(* ############################################################################
-
-  Helper methods for testing
-
-##############################################################################*)
-
-let auto_deploy st = failwith "TODO"
