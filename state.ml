@@ -811,7 +811,7 @@ let rec update st a =
     let p = List.hd st.players in
     let reg = Regions.find r st.regions in
     if reg.controller <> p.id
-    then {st with log = "Invalid move: You don't control " ^ r ^ "." }
+    then { st with log = "Invalid move: You don't control " ^ r ^ "." }
     else
       let p' = {p with total_troops = p.total_troops + 1} in
       let p_list = append_player p' st.players in
@@ -877,7 +877,7 @@ let rec update st a =
     then update {st with current_move = CReinforcement 0} a
     else {st with log = invalid_move_log a st.current_move}
   | AReinforcement (r, i), CReinforcement n ->
-    if n >= i then
+    if n >= i then  (* ensure # trying to reinforce with < # troops left *)
       let p = List.hd st.players in
       let region = Regions.find r st.regions in
       if region.controller <> p.id
