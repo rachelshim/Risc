@@ -825,6 +825,7 @@ let rec update st a =
     else
       { st with log = "Invalid move: try different regions."}
     (* add stuff for updating continent thing in player *)
+    (* also add transitioning into next state *)
   | AMovement _, _ -> 
     { st with log = "Invalid move: cannot move troops at this time" }
   | ANextTurn, CAttack ->
@@ -866,3 +867,15 @@ let rec update st a =
 
 let valid_mode a st =
   failwith "unimplemented"
+
+
+(* ############################################################################
+
+  Helper methods for testing
+
+##############################################################################*)
+
+
+
+
+
