@@ -547,7 +547,8 @@ let confirm_button_handler parent () =
                                   !controller setters act;
                   ();
   with
-  | _ ->  write_log "An unexpected error has occurred.";
+  (*TODO: suppress*)
+  | e ->  write_log "An unexpected error has occurred."; raise e
   end;
   clear_selections();
   ()
@@ -735,7 +736,7 @@ let main () =
                                       ~packing:territories_frame#add () in
   territories_label_global := territories_label;
 
-  let troops_frame = GBin.frame ~label:"Troops Deployed"
+  let troops_frame = GBin.frame ~label:"Troops In Play"
                                     ~border_width:3 ~packing:info_pack#add () in
   let troops_label = GMisc.label ~text:"0"
                                  ~packing:troops_frame#add () in
