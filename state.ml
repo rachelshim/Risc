@@ -451,7 +451,8 @@ let init_state n =
       players_w_continents in
   {
     players = players_w_continents;
-    current_move = CDeployment (50 - 5 * n - (42 / n));
+    (* current_move = CDeployment (50 - 5 * n - (42 / n)); *)
+    current_move = CDeployment 2;
     gets_card = false;
     turns = 0;
     continents = total_conts;
@@ -840,7 +841,6 @@ let rec update st a =
                             Regions.add s2 r2' }
     else
       { st with log = "Invalid move: try different regions."}
-    (* also add transitioning into next state *)
   | AMovement _, CRecieve_Card _ -> determine_card st
   | AMovement _, _ -> 
     { st with log = "Invalid move: cannot move troops at this time" }
