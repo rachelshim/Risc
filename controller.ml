@@ -62,9 +62,8 @@ let update_gui (s : state) (st : state)
       begin
         update_cards (num_inf pl, num_cav pl, num_art pl, num_wild pl);
         update_current_player (player_id pl);
-        run_blocking_popup
-          ("Your turn is over- please pass the computer to the next player. " ^
-           "Huzzah!");
+        (*run_blocking_popup
+          ("You recieved a card. ");*)
       end
     else ();
   | ANextTurn ->
