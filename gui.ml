@@ -878,7 +878,9 @@ let main () =
     "using the REINFORCE command to reinforce territories. They may then\n"^
     "choose to SPEND CARDS, if available. After this, players may ATTACK\n"^
     "any number of times. Once finished, players may either MOVE once,\n"^
-    "shifting troops across controlled contiguous territory, or END TURN.")));
+    "shifting troops across controlled contiguous territory, or END TURN.\n"^
+    "Please be aware that if you elect not to MOVE, you must END TURN twice\n"^
+    "so that your cards may be allocated.")));
 
   (*Continent label setup*)
   add_label gameplay_pack 274 204 110 25 "North America";
