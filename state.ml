@@ -522,7 +522,7 @@ let get_player_reinforcements p =
  *)
 let give_player_region r st =
   let p = List.hd st.players in
-  let troops_in_cont = List.assoc r.name p.continent_regions + 1 in
+  let troops_in_cont = List.assoc r.continent p.continent_regions + 1 in
   let makes_continent =
     List.assoc r.continent continents |> fst = troops_in_cont in
   {st with
