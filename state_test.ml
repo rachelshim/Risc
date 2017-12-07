@@ -3,7 +3,6 @@ open State
 open Action
 
 let two_player = init_state 2
-let testmap = test_map
 
 
 let tests =
@@ -19,11 +18,11 @@ let tests =
                                    then (p1 + 1, p2)
                                    else (p1, p2 + 1))
                                  (0, 0)
-                                 (get_regions two_player)) (21, 21))
+                                 (get_regions two_player)) (21, 21));
 
 
-  (* Tests with testmap *)
-
+  (* Tests with test_map *)
+  "deploy_test" >:: (fun _ -> assert_equal ((troops_in test_map "Alaska") + 1) (troops_in (update test_map (ADeployment "Alaska")) "Alaska"));
 ]
 
 let suite = "State tests" >::: tests

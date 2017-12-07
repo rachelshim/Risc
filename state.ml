@@ -1054,7 +1054,7 @@ let test_map =
                        else { r with controller = "Blue";
                                      troops = 2; }) init_regions in
   {
-    current_move = CDeployment 0;
+    current_move = CDeployment 1;
     players = [{
                 id = "Red";
                 cards = [];

@@ -52,10 +52,10 @@ val num_controlled : player -> int
 (** [controller_of_reg st r] returns the player id that controls r in st. *)
 val ctrl_of_reg : state -> string -> string
 
-(** [owner_of_cont st c] returns the player id of the player that owns c in st*)
+(** [owner_of_cont st c] returns the player id of the player that owns c in st *)
 val owner_of_cont : state -> string -> string
 
-(** [cont_of_reg st r] returns the continent region r is located in, in st*)
+(** [cont_of_reg st r] returns the continent region r is located in, in st *)
 val cont_of_reg : state -> string -> string
 
 (** [get_log st] returns the log message contained in st. *)
