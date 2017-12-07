@@ -842,7 +842,10 @@ let rec update st a =
        if new_troops = 0
        then CAttack
        else CReinforcement new_troops}
-  | _ -> failwith "TODO"
+  | ANextTurn, _ ->
+    {st with log = "Invalid move: cannot advance to next turn at this time."}
+  | AMovement _, _ ->
+    { st with log = "Invalid move: cannot move troops at this time" }
 
 let is_over st =
   failwith "unimplemented"

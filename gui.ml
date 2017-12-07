@@ -1,8 +1,5 @@
 open GMain
-open GdkKeysyms
 open Gtk
-open Unix
-open Thread
 open Action
 
 (*Selection modes*)
@@ -40,8 +37,6 @@ let current_selection_mode = ref No_selection
 let selection1 = ref None
 let selection2 = ref None
 
-let mutex = Core.Mutex.create ()
-
 (*
  * [card_of_int num] is an Action.card option produced by mapping the int value
  * [num] to Some 0:Infantry, 1:Calvalry, 2:Artillery, and 3:Wild. Any other
@@ -66,15 +61,15 @@ let string_of_card card =
   | Wild -> "Wildcard"
 
 (*
- * [set_color wid col_str] is a function with the side effect that it sets the 
+ * [set_color wid col_str] is a function with the side effect that it sets the
  * color properties of the Gtk widget [wid] to the color [col_str], which must
- * be a member of the list of strings given in /usr/lib/x11/rgb.txt, or the 
- * function will have no effect (fails silently in the event of 
+ * be a member of the list of strings given in /usr/lib/x11/rgb.txt, or the
+ * function will have no effect (fails silently in the event of
  * Gdk.Error("color_parse")).
  *)
 let set_color wid col_str =
   let sty = wid#misc#style#copy in
-  let () = 
+  let () =
     try
       sty#set_bg[`NORMAL,`NAME col_str; `INSENSITIVE,`NAME col_str;
         `NORMAL,`NAME col_str;`PRELIGHT,`NAME col_str;`SELECTED,`NAME col_str];
@@ -85,7 +80,7 @@ let set_color wid col_str =
 
 (*
  * [set_territory_sensitivity name new_sens] is a function with the side effect
- * that the territory button associated with [name] in buttons_list is set to 
+ * that the territory button associated with [name] in buttons_list is set to
  * have the sensitivity specified by [new_sens].
  *)
 let set_territory_sensitivity name new_sens =
@@ -99,7 +94,7 @@ let set_territory_sensitivity name new_sens =
  *)
 let set_territory_buttons_sensitivity new_sens =
   let buttons = snd (List.split !buttons_list) in
-  let u_list = List.map (fun b -> b#misc#set_sensitive new_sens) buttons in
+  ignore(List.map (fun b -> b#misc#set_sensitive new_sens) buttons);
   ()
 
 (*
@@ -184,6 +179,24 @@ let lock_all () =
   !confirm_button_global#misc#set_sensitive false;
   ()
 
+
+(*
+ * [run_blocking_dialog mtype title message ()] opens a dialog box and halts
+ * the main GTK loop until some acknowlegement is recieved. The dialog box
+ * has the window title [title], GTK message type (determines icon) [mtype],
+ * and contains the string content [message]. Takes a unit as its final arg
+ * in order to be suitable for use as a GTK callback.
+ *)
+let run_blocking_dialog mtype title message () =
+  let block_dialog = GWindow.message_dialog ~parent:!window_global
+      ~message_type:mtype ~resizable:false
+      ~title:title
+      ~buttons:GWindow.Buttons.ok
+      ~message:message () in
+  ignore(block_dialog#run ());
+  block_dialog#destroy();
+  ()
+
 (* EXPOSED SETTER METHODS BEGIN *)
 
 let set_territory_troops name num =
@@ -253,15 +266,8 @@ let set_game_over over =
   end
   else ()
 
-let run_blocking_popup message =
-  let block_dialog = GWindow.message_dialog ~parent:!window_global
-      ~message_type:`QUESTION ~resizable:false
-      ~title:"Next Turn Delay"
-      ~buttons:GWindow.Buttons.ok
-      ~message:message () in
-  let block_delete_event = block_dialog#run () in
-  block_dialog#destroy();
-  ()
+let run_blocking_infobox message =
+  run_blocking_dialog `QUESTION "Turn Information" message ()
 
 (*
  * This function roll is needed for the Controller to be able to set gui values
@@ -271,15 +277,15 @@ let run_blocking_popup message =
 let setters = (write_log, update_territories, update_continent_owners,
               update_current_player, update_available_reinforcements,
               update_cards, update_territories_count, update_troop_count,
-              set_game_over, run_blocking_popup)
+              set_game_over, run_blocking_infobox)
 
 (* EXPOSED SETTER METHODS END *)
 
 (*
  * [run_init_dialog parent] is a blocking function that creates a dialog window
  * with parent [parent] that allows the user to select the number of players
- * in the game (2 - 6, inclusive). The return value is an int option of None if 
- * the user failed to respond (i.e. by closing the window) or Some value of 
+ * in the game (2 - 6, inclusive). The return value is an int option of None if
+ * the user failed to respond (i.e. by closing the window) or Some value of
  * player count if they selected and accepted.
  *)
 let run_init_dialog parent =
@@ -287,7 +293,7 @@ let run_init_dialog parent =
   (*create handler for use later*)
   let init_dialog_accept_handler cbox dialog () =
     let num = ((fst cbox)#active + 2) in
-    let res = dialog#event#send (GdkEvent.create `DELETE) in
+    ignore(dialog#event#send (GdkEvent.create `DELETE));
     players_num :=
       if num = 1 then None
       else Some num;
@@ -296,10 +302,10 @@ let run_init_dialog parent =
   in
   (*dialog components*)
   let init_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true
-                  ~title:"Initialization Dialog" ~deletable:true
+                  ~title:"Risc" ~deletable:true ~width:350 ~height:150
                   ~resizable:false () in
   let init_dialog_label = GMisc.label
-                  ~text:"Please select the number of players."
+                  ~text:"Welcome! Please select the number of players."
                   ~packing:init_dialog#vbox#add () in
   let init_dialog_options = ["2";"3";"4";"5";"6"] in
   let init_dialog_combobox = GEdit.combo_box_text
@@ -308,20 +314,21 @@ let run_init_dialog parent =
   (fst init_dialog_combobox)#set_active 0;
   let init_dialog_accept_button = GButton.button ~label:"Accept"
                   ~packing:init_dialog#vbox#add () in
-  let accept_signal =
-      init_dialog_accept_button#connect#clicked
-      ~callback:(init_dialog_accept_handler init_dialog_combobox init_dialog) in
+  (*Connect accept button signal*)
+  ignore(init_dialog_accept_button#connect#clicked
+      ~callback:(init_dialog_accept_handler init_dialog_combobox init_dialog));
+  (*connect popup delete signal*)
+  ignore(init_dialog#event#connect#delete
+      ~callback:(fun _ -> init_dialog#destroy (); true));
   (*Run blocking dialog*)
-  let close_event = init_dialog#event#connect#delete
-      ~callback:(fun _ -> init_dialog#destroy (); true) in
-  let init_dialog_delete_event = init_dialog#run () in
+  ignore(init_dialog#run ());
   !players_num
 
 (*
- * [run_cards_dialog parent] is a blocking function that creates a dialog 
+ * [run_cards_dialog parent] is a blocking function that creates a dialog
  * window with parent [parent] requring them to select a set of 3 cards to play.
  * The return value is an int * int * int option of None if the user failed
- * to respond (i.e. by closing the window) or Some (card1,card2,card3) 
+ * to respond (i.e. by closing the window) or Some (card1,card2,card3)
  * if they responded correctly, where the int values represent infantry,
  * cavalry, artillery, or wild cards (as values 0-3), respectively.
  *)
@@ -366,18 +373,20 @@ let run_cards_dialog parent =
   in
   let cards_dialog_accept_button = GButton.button ~label:"Accept"
                   ~packing:cards_dialog#vbox#add () in
-  let accept_signal = cards_dialog_accept_button#connect#clicked
-                  ~callback:(cards_dialog_accept_handler) in
-  (*blocking loop*)
-  let close_event = cards_dialog#event#connect#delete
-                  ~callback:(fun _ -> cards_dialog#destroy (); true) in
-  let init_dialog_delete_event = cards_dialog#run () in
+  (*Connect accept button signal*)
+  ignore(cards_dialog_accept_button#connect#clicked
+                  ~callback:(cards_dialog_accept_handler));
+  (*connect close event; ensures window is destroyed on x-button*)
+  ignore(cards_dialog#event#connect#delete
+                  ~callback:(fun _ -> cards_dialog#destroy (); true));
+  (*Run blocking dialog loop*)
+  ignore(cards_dialog#run ());
   !cards_selected
 
 (*
- * [run_troop_dialog parent message (min, max)] is a blocking function that 
+ * [run_troop_dialog parent message (min, max)] is a blocking function that
  * creates a dialog window with parent [parent] and text content [message]
- * requring them to select some number on a slider between [min] [max] 
+ * requring them to select some number on a slider between [min] [max]
  * (inclusive). The return value is an int option of None if the user failed
  * to respond (i.e. by closing the window) or Some value if they responded
  * correctly.
@@ -387,7 +396,7 @@ let run_troop_dialog parent message (min, max) =
   let troop_dialog_accept_handler scale dialog () =
     let num = int_of_float scale#adjustment#value in
     value := Some num;
-    let res = dialog#event#send (GdkEvent.create `DELETE) in
+    ignore(dialog#event#send (GdkEvent.create `DELETE));
     dialog#destroy ();
     ()
   in
@@ -411,23 +420,24 @@ let run_troop_dialog parent message (min, max) =
                   ~packing:scale_frame#add () in
   let troop_dialog_accept_button = GButton.button ~label:"Accept"
                   ~packing:troop_dialog#vbox#add () in
-  let accept_signal =
-    troop_dialog_accept_button#connect#clicked
-      ~callback:(troop_dialog_accept_handler troop_dialog_scale troop_dialog) in
-  let close_event = troop_dialog#event#connect#delete
-      ~callback:(fun _ -> troop_dialog#destroy (); true) in
-  let init_dialog_delete_event = troop_dialog#run () in
+  (*Connect selection accept signal to handler*)
+  ignore(troop_dialog_accept_button#connect#clicked
+      ~callback:(troop_dialog_accept_handler troop_dialog_scale troop_dialog));
+  (*Connect close event to ensure window is destroyed on exit*)
+  ignore(troop_dialog#event#connect#delete
+      ~callback:(fun _ -> troop_dialog#destroy (); true));
+  (*Run the dialog in blocking loop*)
+  ignore(troop_dialog#run ());
   !value
 
 (*
- * [confirm_button_handler parent] is a function callback for the GUI confirm 
- * button with the side effect that it confirms the currently selected action 
+ * [confirm_button_handler parent] is a function callback for the GUI confirm
+ * button with the side effect that it confirms the currently selected action
  * by extracting relevant data from the GUI, creating an Action based on that
  * information, and executing that action on the current state. This alters
- * the value stored by controller. This method is thread safe.
+ * the value stored by controller.
  *)
 let confirm_button_handler parent () =
-  Mutex.lock mutex;
   begin
   try
     let index = !actions_cbox_global#active in
@@ -456,7 +466,7 @@ let confirm_button_handler parent () =
           match (src, dest, num) with
           | (Some s, Some d, Some n) -> write_log ("Attacking " ^ d ^ " from "
                                                   ^ s ^ " with " ^
-                                                  (string_of_int n) 
+                                                  (string_of_int n)
                                                   ^ " unit(s).");
                                         Some (AAttack ((s, d), n))
           | _ -> None
@@ -496,7 +506,7 @@ let confirm_button_handler parent () =
             "Select the number of troops to move." (1, src_troops) in
           match (src, dest, num) with
           | (Some s, Some d, Some n) -> write_log ("Moving "^(string_of_int n) ^
-                                                  " unit(s) from " ^ s ^ " to " 
+                                                  " unit(s) from " ^ s ^ " to "
                                                   ^ d ^ ".");
                                         Some (AMovement ((s, d), n))
           | _ -> None
@@ -539,16 +549,13 @@ let confirm_button_handler parent () =
   with
   | _ ->  write_log "An unexpected error has occurred.";
   end;
-  Mutex.unlock mutex;
   ()
 
 (*
- * [actions_cbox_handler box] is a function with the side effect that it 
+ * [actions_cbox_handler box] is a function with the side effect that it
  * sets the gui state based on the action selected in the combobox [box].
- * This operation is thread safe.
  *)
 let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
-  Mutex.lock mutex;
   begin
   try
     let index = (fst box)#active in
@@ -578,16 +585,14 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
   with
   | _ ->  write_log "An unexpected error has occurred.";
   end;
-  Mutex.unlock mutex;
   ()
 
 (*
  * [territory_button_handler name button ()] is a function with the side effect
  * that it attempts to select the button specified by [name] and [button],
- * printing a failure message to the log if this is not possible. Thread safe.
+ * printing a failure message to the log if this is not possible.
  *)
 let territory_button_handler name (button: GButton.button) () =
-  Mutex.lock mutex;
   begin
   try
     write_log ("Region: " ^ name);
@@ -597,22 +602,19 @@ let territory_button_handler name (button: GButton.button) () =
   with
   | _ ->  write_log "An unexpected error has occurred.";
   end;
-  Mutex.unlock mutex;
   ()
 
 (*
  * [cancel_button_handler ()] is a function with the side effect that it clears
- * all territory selections in a thread-safe manner.
+ * all territory selections and displayed selection information.
  *)
 let cancel_button_handler () =
-  Mutex.lock mutex;
   begin
-  try
-    clear_selections ();
-  with
-  | _ ->  write_log "An unexpected error has occurred.";
+    try
+      clear_selections ();
+    with
+    | _ ->  write_log "An unexpected error has occurred.";
   end;
-  Mutex.unlock mutex;
   ()
 
 (*
@@ -627,14 +629,15 @@ let add_territory (pack:GPack.fixed) x y name extra =
   button#misc#set_name name;
   GtkData.Tooltips.set_tip (GtkData.Tooltips.create ()) button#as_widget
                           ~text:name ~privat:extra;
-  let button_signal = button#connect#clicked
-                          ~callback: (territory_button_handler name button) in
+  (*Connect the button click signal; throw away value b/c will never change*)
+  ignore(button#connect#clicked
+                          ~callback: (territory_button_handler name button));
   buttons_list := (name,button)::(!buttons_list);
   ()
 
 (*
- * [add_label pack x y width height name] adds a framed label to the GUI 
- * gameplay fixed packing [pack] at pixel coords [x], [y] with a frame 
+ * [add_label pack x y width height name] adds a framed label to the GUI
+ * gameplay fixed packing [pack] at pixel coords [x], [y] with a frame
  * of width [width] and height [height] and the name [name]. This function
  * is for use in creating continent labels.
  *)
@@ -648,7 +651,7 @@ let add_label (pack:GPack.fixed) x y width height name =
   ()
 
 (*
- * [main ()] sets requisite mutable global values, prompts the user for 
+ * [main ()] sets requisite mutable global values, prompts the user for
  * appropriate init information, creates the controller, and displays the GUI
  * in its initial state.
  *)
@@ -656,7 +659,7 @@ let main () =
   let window = GWindow.window ~width:1450 ~height:860
                               ~title:"Risc" ~resizable:false () in
   window_global := window;
-  let window_exit_signal = window#connect#destroy ~callback:Main.quit in
+  ignore(window#connect#destroy ~callback:Main.quit);
 
   let top_pane_pack = GPack.paned ~width:1450 ~height:860
                               ~packing:window#add ~border_width:5
@@ -763,20 +766,19 @@ let main () =
   let actions_cbox = GEdit.combo_box_text
               ~strings:actions_strings
               ~packing:actions_cbox_frame#add () in
-  let actions_signal =  (fst actions_cbox)#connect#changed
-                        ~callback:(actions_cbox_handler actions_cbox) in
+  ignore((fst actions_cbox)#connect#changed
+                        ~callback:(actions_cbox_handler actions_cbox));
   actions_cbox_global := fst actions_cbox;
 
   let confirm_button = GButton.button ~label:"Confirm"
                                       ~packing:actions_pack#add () in
-  let confirm_button_signal = confirm_button#connect#clicked
-                              ~callback:(confirm_button_handler window) in
+  ignore(confirm_button#connect#clicked
+                              ~callback:(confirm_button_handler window));
   confirm_button_global := confirm_button;
 
   let cancel_button = GButton.button ~label:"Cancel"
                                       ~packing:actions_pack#add () in
-  let cancel_button_signal =
-    cancel_button#connect#clicked ~callback:cancel_button_handler in
+  ignore(cancel_button#connect#clicked ~callback:cancel_button_handler);
 
   let selection1_frame = GBin.frame ~label:"Territory Selection 1"
                                     ~border_width:3
@@ -806,11 +808,24 @@ let main () =
   let factory = new GMenu.factory menubar in
   let accel_group = factory#accel_group in
   let file_menu = factory#add_submenu "File" in
+  let help_menu = factory#add_submenu "Help" in
 
   (*File menu setup*)
   let factory = new GMenu.factory file_menu ~accel_group in
-  let file_quit_signal = factory#add_item "Quit" ~key:_Q
-                                ~callback: Main.quit in
+  ignore(factory#add_item "Quit" ~callback: Main.quit);
+
+  (*Help menu setup*)
+  (*TODO: add text*)
+  let factory = new GMenu.factory help_menu ~accel_group in
+  ignore(factory#add_item "About" ~callback:(run_blocking_dialog `INFO "About" 
+    ("Risc is a OCaml implementation of the classic strategy game\nRisk, and a"^
+    " final project for our Fall 2017 CS3110 class.\n\nDeveloped by:\n\t- "^
+    "Avani Bhargava (ab2387@cornell.edu)\n\t- Haram Kim (hk592@cornell.edu)"^
+    "\n\t- Samuel Ringel (sjr254@cornell.edu)\n\t- Rachel Shim "^
+    "(cs899@cornell.edu)\n\nYou can find further documentation at:"^
+    "\nhttps://github.com/rachelshim/Risc/blob/master/README.md")));
+  ignore(factory#add_item "Rules" ~callback:(run_blocking_dialog `INFO "Rules" 
+  ("TODO")));
 
   (*Continent label setup*)
   add_label gameplay_pack 274 204 110 25 "North America";
