@@ -40,8 +40,14 @@ let update_gui (s : state) (st : state)
     update_territories [(r1, ctrl_of_reg st r1, troops_in st r1)];
     update_territories [(r2, ctrl_of_reg st r2, troops_in st r2)];
     update_available_reinforcements (avail_troops st);
-    update_continent_owners [(cont_of_reg st r1, owner_of_cont st r1);
-                             (cont_of_reg st r2, owner_of_cont st r2)]
+    let cont1 = cont_of_reg st r1 in
+    let own1 = owner_of_cont st cont1 in
+    let cont2 = cont_of_reg st r2 in
+    let own2 = owner_of_cont st cont2 in
+    update_continent_owners [(cont1, own1);
+    (cont2, own2)]
+    (*update_continent_owners [(cont_of_reg st r1, owner_of_cont st r1);
+                             (cont_of_reg st r2, owner_of_cont st r2)]*)
   | AMovement ((r1, r2), num) -> update_territories
                                    [(r1, ctrl_of_reg st r1, troops_in st r1)];
     update_territories [(r2, ctrl_of_reg st r2, troops_in st r2)];
