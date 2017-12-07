@@ -625,7 +625,8 @@ let give_player_region r st =
     continents =
       if makes_continent then
         (r.continent, Some p.id)::(List.remove_assoc r.continent st.continents)
-      else st.continents}
+      else 
+        (r.continent, None)::(List.remove_assoc r.continent st.continents)}
     
 (** [get_player p_id] returns the player in input list with id [p_id] *)
 let rec get_player p_id = function
