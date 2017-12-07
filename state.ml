@@ -333,7 +333,8 @@ let player_id pl =
 
 let avail_troops st =
   match st.current_move with
-  | CDeployment i -> i
+  | CDeployment _ -> 1
+  | CReinforcement i -> i
   | _ -> 0 (** TODO handle this better *)
 
 let player_of_id st id =
