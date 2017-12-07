@@ -695,11 +695,10 @@ let determine_card st =
     {st with
      players = prepend_player p' st.players;
      current_move = CRecieve_Card (Some card_togive);
-     log = st.log ^ "\n" ^ p.id ^ " ended their turn and recieved a card."}
+     log = st.log ^ "\n" ^ p.id ^ " recieved a card."}
   else
    {st with current_move = CRecieve_Card None;
-            log = st.log ^ "\n" ^ p.id ^
-            " ended their turn and did not recieve a card."}
+            log = st.log ^ "\n" ^ p.id ^ " did not recieve a card."}
 
 let rec update st a =
   match a, st.current_move with
@@ -879,26 +878,25 @@ let rec update st a =
        log = r1_name ^ " lost " ^ string_of_int a_lost_troops ^ " troops and " ^
              r2_name ^ " lost " ^ string_of_int d_lost_troops ^ " troops."}
   | AMovement ((s1, s2), n), CAttack ->
-    let st' = 
-      let p = List.hd st.players in
-      let r1 = Regions.find s1 st.regions in
-      let r2 = Regions.find s2 st.regions in
-      if not (p.id == r1.controller && p.id == r2.controller) then
-        if check_path p.id s1 s2 st.regions then
-          if r1.troops <= n then
-            { st with log = "Invalid move: you don't have enough troops"}
-          else
-            let r1' = { r1 with troops = r1.troops - n } in
-            let r2' = { r2 with troops = r2.troops + n } in
-            { st with regions = Regions.add s1 r1' st.regions |>
-                                Regions.add s2 r2';
-                      log = "Successfully moved " ^ (string_of_int n) ^
-                            " troops from " ^ s1 ^ " to " ^ s2 }
+    let p = List.hd st.players in
+    let r1 = Regions.find s1 st.regions in
+    let r2 = Regions.find s2 st.regions in
+    if not (p.id == r1.controller && p.id == r2.controller) then
+      if check_path p.id s1 s2 st.regions then
+        if r1.troops <= n then
+          { st with log = "Invalid move: you don't have enough troops"}
         else
-          { st with log = "Invalid move: " ^ 
-                          "territories must have a contiguously controlled path"}
-      else { st with log = "Invalid move: you must control both territories" }
-    in determine_card st'
+          let r1' = { r1 with troops = r1.troops - n } in
+          let r2' = { r2 with troops = r2.troops + n } in
+          determine_card 
+            { st with regions = Regions.add s1 r1' st.regions |>
+                              Regions.add s2 r2';
+                      log = "Successfully moved " ^ (string_of_int n) ^
+                            " troops from " ^ s1 ^ " to " ^ s2 ^ "."}
+      else
+        { st with log = "Invalid move: " ^ 
+                        "territories must have a contiguously controlled path."}
+    else { st with log = "Invalid move: you must control both territories." }
   | ANextTurn, CAttack ->
     if List.length (List.hd st.players).cards > 4
     then
