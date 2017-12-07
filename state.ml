@@ -915,28 +915,26 @@ let rec update st a =
   | AReinforcement (r, i), CReinforcement n ->
     if n >= i then  (* ensure # trying to reinforce with < # troops left *)
       let p = List.hd st.players in
-      let region = Regions.find r st.regions in
-      if region.controller <> p.id
-      then {st with log = "Invalid move: you don't control " ^ r ^ "." }
+      let reg = Regions.find r st.regions in
+      if reg.controller <> p.id then 
+        { st with log = "Invalid move: you don't control " ^ r ^ "." }
       else
-        let p' = {p with total_troops = p.total_troops + i} in
+        let p' = { p with total_troops = p.total_troops + i } in
         let p_list = prepend_player p' st.players in
         { st with current_move =
                     if n > i then CReinforcement (n - i)
                     else CAttack;
                   players = p_list;
                   regions =
-                    Regions.add r {region with troops = region.troops + i}
-                      st.regions;
+                    Regions.add r {reg with troops = reg.troops + i} st.regions;
                   log = "Successfully reinforced " ^ r ^ " with " ^
                         (string_of_int i) ^ " new troops." ^
-                        (if n = i
-                        then
+                        (if n = i then
                           "\n> You may now attack, move troops to end your " ^
                           "turn, or end your turn without movement."
                         else
                           "\n> You have " ^ string_of_int (n - i) ^
-                          " troops left to place.")}
+                          " troops left to place.") }
     else { st with log = "You don't have enough troops. Try again." }
   | AAttack ((r1_name, r2_name), t), CAttack ->
     let r1 = Regions.find r1_name st.regions in
