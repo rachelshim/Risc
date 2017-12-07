@@ -69,3 +69,6 @@ To avoid circular dependencies, imperative functions for setting GUI state are p
 - Haram worked largely on frontend and testing, implementing the entire GUI, in addition to development environment setup and debugging via ocamldebug. ~x hours
 - Sam developed the backend, implementing game initialization, troop deployment, attacking (including all results of an attack), turn ending, logging, and the rep_ok function. He also wrote state test cases. ~x hours
 - Rachel developed the backend, implementing x y z. ~x hours
+
+## Screenshots:
+![Two player game over screenshot](https://raw.githubusercontent.com/rachelshim/Risc/screenshots/game_over.png)
