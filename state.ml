@@ -831,16 +831,19 @@ let rec update st a =
     let p = List.hd st.players in
     let r1 = Regions.find s1 st.regions in
     let r2 = Regions.find s2 st.regions in
-    if check_path p.id s1 s2 st.regions then
-      if r1.troops <= n then
-        { st with log = "Invalid move: you don't have enough troops"}
+    if not (p.id == r1.controller && p.id == r2.controller) then
+      if check_path p.id s1 s2 st.regions then
+        if r1.troops <= n then
+          { st with log = "Invalid move: you don't have enough troops"}
+        else
+          let r1' = { r1 with troops = r1.troops - n } in
+          let r2' = { r2 with troops = r2.troops + n } in
+          { st with regions = Regions.add s1 r1' st.regions |>
+                              Regions.add s2 r2' }
       else
-        let r1' = { r1 with troops = r1.troops - n } in
-        let r2' = { r2 with troops = r2.troops + n } in
-        { st with regions = Regions.add s1 r1' st.regions |>
-                            Regions.add s2 r2' }
-    else
-      { st with log = "Invalid move: try different regions."}
+        { st with log = "Invalid move: " ^ 
+                        "territories must have a contiguously controlled path"}
+    else { st with log = "Invalid move: you must control both territories" }
   | AMovement _, CRecieve_Card _ -> determine_card st
   | AMovement _, _ -> 
     { st with log = "Invalid move: cannot move troops at this time" }
