@@ -335,7 +335,7 @@ let avail_troops st =
   match st.current_move with
   | CDeployment i -> i
   | CReinforcement i -> i
-  | _ -> 0 (** TODO handle this better *)
+  | _ -> 0
 
 let player_of_id st id =
   List.hd ( List.filter (fun p -> p.id = id ) st.players )
@@ -559,7 +559,7 @@ let init_state n =
   {
     players = players_w_continents;
     (*TODO: revert*)
-    (*current_move = CDeployment (50 - 5 * n - (42 / n));*)
+    (* current_move = CDeployment (50 - 5 * n - (42 / n)); *)
     current_move = CDeployment 2;
     gets_card = false;
     turns = 0;
@@ -605,7 +605,7 @@ let rec remove_cards c l =
   match l with
   | [] -> raise Not_found
   | h::t -> if h = c then t
-    else remove_cards c t
+    else h::(remove_cards c t)
 
 (* [get_player_reinforcments p] is the number of reinforcements given to [p] *)
 let get_player_reinforcements p =
@@ -660,10 +660,10 @@ let rec replace_player new_p = function
   | [] -> failwith "precondition violation"
   | h::t -> if h.id = new_p.id then new_p::t else h::(replace_player new_p t)
 
-let rec get_next_player_id default p_id = function
-  | [] | _::[]-> default
-  | _::h2::_ -> h2.id
-
+(**
+ * [remove_from_list v lst] is [lst] with the first occurance of [v] removed,
+ * if it exists.
+ *)
 let rec remove_from_list v = function
   | [] -> []
   | h::t -> if h = v then t else h::(remove_from_list v t)
