@@ -353,13 +353,9 @@ let ctrl_of_reg st r =
   (region_of_name st r).controller
 
 let owner_of_cont st c =
-  (*TODO: remove wrapper*)
-  try
-    match List.assoc c st.continents with
-    | None -> "Grey"
-    | Some owner -> owner
-  with
-  | e -> print_endline ("attempted to get continent: " ^ c); raise e
+  match List.assoc c st.continents with
+  | None -> "Grey"
+  | Some owner -> owner
 
 let cont_of_reg st r =
   (region_of_name st r).continent
@@ -522,28 +518,26 @@ let get_player_reinforcements p =
  *)
 let give_player_region r st =
   let p = List.hd st.players in
-  let troops_in_cont = List.assoc r.continent p.continent_regions + 1 in
+  let ctrl_regions_count = List.assoc r.continent p.continent_regions + 1 in
   let makes_continent =
-    List.assoc r.continent continents |> fst = troops_in_cont in
+    List.assoc r.continent continents |> fst = ctrl_regions_count in
   {st with
-   regions = Regions.add r.name r st.regions;
-   players =
-     (let new_p =
-       {p with
-        continent_regions =
+    regions = Regions.add r.name r st.regions;
+    players =
+      (let new_p =
+        {p with
+          continent_regions =
           List.remove_assoc r.name p.continent_regions |>
-          List.cons (r.name, troops_in_cont);
+          List.cons (r.name, ctrl_regions_count);
         controls_cont =
           if makes_continent then r.continent::p.controls_cont
           else p.controls_cont} in
-     prepend_player new_p st.players);
-   continents =
-     if makes_continent
-     then
-       List.remove_assoc r.continent st.continents |>
-       List.cons (r.continent, Some p.id)
-     else st.continents}
-
+      prepend_player new_p st.players);
+    continents =
+      if makes_continent then
+        (r.continent, Some p.id)::(List.remove_assoc r.continent st.continents)
+      else st.continents}
+    
 (** [get_player p_id] returns the player in input list with id [p_id] *)
 let rec get_player p_id = function
   | [] -> failwith "precondition violation"
@@ -585,7 +579,7 @@ let transfer_region r st t =
      gets_card = true} |>
     give_player_region new_r in
   if num_controlled p_d = 1
-  then
+  then begin
     let moved_cards = p_d.cards in
     let p_a' = List.hd new_st.players in
     let new_players =
@@ -600,7 +594,7 @@ let transfer_region r st t =
           "They take " ^ p_d.id ^ "'s " ^
           string_of_int (List.length moved_cards) ^ " cards."
         else "")}
-  else
+  end else
     let curr_cont_reg = List.assoc r.continent p_d.continent_regions in
     let new_p_d =
       {p_d with
@@ -610,9 +604,6 @@ let transfer_region r st t =
          List.cons (r.continent, curr_cont_reg - 1)} in
     {new_st with
      players = replace_player new_p_d new_st.players;
-     continents =
-       List.remove_assoc r.continent new_st.continents |>
-       List.cons (r.continent, None);
      log = p_a.id ^ " has taken " ^ r.name ^ " from " ^ p_d.id ^ "."}
 
 (* helper function for testing dfs in utop delete later *)
