@@ -558,6 +558,7 @@ let init_state n =
       players_w_continents in
   {
     players = players_w_continents;
+    (*TODO: revert*)
     (*current_move = CDeployment (50 - 5 * n - (42 / n));*)
     current_move = CDeployment 2;
     gets_card = false;

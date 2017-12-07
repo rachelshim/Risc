@@ -268,7 +268,6 @@ let set_game_over over =
   if over then begin
     lock_all ();
     write_log "Game ended. User interface locked.";
-    (*Possible TODO: other things*)
     ()
   end
   else ()
