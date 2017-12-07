@@ -11,19 +11,6 @@ type state
  *)
 type region
 
-(* [continent] represents a continent in Risk, which has fields for its name,
- * the number of bonus troops its controller recieves, the list of regions
- * in the continent, as well as an option for the id of the player who controls
- * it.
- *)
-(* type continent *)
-
-(* [gamelog] keeps track of every action that has been taken in the game. *)
-(* type gamelog *)
-
-(* [create_player str] creates a new player with id [str]. *)
-(* val create_player : string -> player *)
-
 (* [init_state n] creates a new game with [n] the players.
  *)
 val init_state : int -> state
