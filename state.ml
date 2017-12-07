@@ -691,12 +691,11 @@ let determine_card st =
     {st with
      players = prepend_player p' st.players;
      current_move = CRecieve_Card (Some card_togive);
-     log = p.id ^ " ended their turn and recieved a card."}
- else
- {st with
-  current_move = CRecieve_Card None;
-  log = (List.hd st.players).id ^
-        " ended their turn and did not recieve a card."}
+     log = st.log ^ "\n" ^ p.id ^ " ended their turn and recieved a card."}
+  else
+   {st with current_move = CRecieve_Card None;
+            log = st.log ^ "\n" ^ p.id ^
+            " ended their turn and did not recieve a card."}
 
 let rec update st a =
   match a, st.current_move with
@@ -888,7 +887,9 @@ let rec update st a =
             let r1' = { r1 with troops = r1.troops - n } in
             let r2' = { r2 with troops = r2.troops + n } in
             { st with regions = Regions.add s1 r1' st.regions |>
-                                Regions.add s2 r2' }
+                                Regions.add s2 r2';
+                      log = "Successfully moved " ^ (string_of_int n) ^
+                            " troops from " ^ s1 ^ " to " ^ s2 }
         else
           { st with log = "Invalid move: " ^ 
                           "territories must have a contiguously controlled path"}
