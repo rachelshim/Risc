@@ -61,7 +61,8 @@ To avoid circular dependencies, imperative functions for setting GUI state are p
 - Ocamldebug: for specific error cases, we used Ocamldebug to identify the locations of problems and to verify that they were corrected after corrections were made.
 
 ### Known problems:
-- App is only guaranteed to work on GNOME desktop environments, but may work  on some non-GNOME environments.
+- App is only guaranteed to work on GNOME desktop environments, but may work  on some non-GNOME environments. This is because other desktop systems require GTK to be implemented differently, and can cause display problems for our program.
+- Low resolution displays may have difficulty displaying the program GUI in full, due to restrictions on resizing the gameplay widget frame.
 - In some earlier design choices, we chose to separate Deployment (in the beginning of the game) and Reinforcement (occurs during each player's turn). If we were to revise our implementation, we would combine the two to avoid user confusion.
 
 ## Division of labor:
@@ -71,4 +72,10 @@ To avoid circular dependencies, imperative functions for setting GUI state are p
 - Rachel developed the backend, implementing x y z. ~x hours
 
 ## Screenshots:
+Some sample screenshots from GTK on GNOME (Ubuntu 16.04 LTS)
+
+The game window at the start of a 6-player game.
+![Six player game start screenshot](screenshots/6_player.png?raw=true)
+
+The game window at the end of a 2-player game.
 ![Two player game over screenshot](screenshots/game_over.png?raw=true)
