@@ -12,3 +12,6 @@ state:
 
 clean:
 	ocamlbuild -clean
+
+debug:
+	ocamlbuild -use-ocamlfind gui.d.byte
