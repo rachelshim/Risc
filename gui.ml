@@ -453,24 +453,29 @@ let confirm_button_handler parent () =
       else if index = 1 then begin
         let src = !selection1 in
         let dest = !selection2 in
-        let src_troops = match src with
-        | None -> 0
-        | Some loc -> (Controller.get_troops_in_territory !controller loc)- 1 in
-        if src_troops = 0 then begin
-          write_log"Unable to comply. Insufficient troops in source territory.";
-          None
+        match (src, dest) with
+        | (Some sloc, Some dloc) -> begin
+          let src_troops = 
+            (Controller.get_troops_in_territory !controller sloc)- 1 in
+          if src_troops = 0 then begin
+            write_log ("Unable to comply. "
+              ^"Insufficient troops in source territory.");
+            None
+          end
+          else begin
+            let num = run_troop_dialog parent
+              "Select the number of troops to attack with." (1, src_troops) in
+            match (src, dest, num) with
+            | (Some s, Some d, Some n) -> write_log ("Attacking " ^ d ^ " from "
+                                                    ^ s ^ " with " ^
+                                                    (string_of_int n)
+                                                    ^ " unit(s).");
+                                          Some (AAttack ((s, d), n))
+            | _ -> None
+          end
         end
-        else begin
-          let num = run_troop_dialog parent
-            "Select the number of troops to attack with." (1, src_troops) in
-          match (src, dest, num) with
-          | (Some s, Some d, Some n) -> write_log ("Attacking " ^ d ^ " from "
-                                                  ^ s ^ " with " ^
-                                                  (string_of_int n)
-                                                  ^ " unit(s).");
-                                        Some (AAttack ((s, d), n))
-          | _ -> None
-        end
+        | _ ->  write_log "You must have selected two territories to attack.";
+                None
       end
       (*Reinforce: 2*)
       else if index = 2 then begin
