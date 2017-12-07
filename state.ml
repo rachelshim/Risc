@@ -769,7 +769,7 @@ let rec check_path p s1 s2 reg =
             let () = print_endline x in
             match search_helper (x::visited) (Regions.find x reg).routes with
             | true, _ -> true
-            | false, l -> search (x::l) xs
+            | false, l -> let () = print_endline "oh" in search (x::l) xs
           else search (x::visited) xs
         end
     in search [s1] r1_routes
