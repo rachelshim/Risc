@@ -87,6 +87,7 @@ let tests =
   (* Tests with test_map *)
   "deploy_test" >:: (fun _ -> assert_equal ((troops_in test_map "Alaska") + 1) (troops_in update_deploy_alaska "Alaska"));
   "num_controlled_test" >:: (fun _ -> assert_equal 21 (current_player test_map |> num_controlled));
+  "owner_of_cont_test" >:: (fun _ -> assert_equal "Red" (owner_of_cont test_map "Asia"));
 
 
 

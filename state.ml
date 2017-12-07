@@ -1079,7 +1079,7 @@ let test_map =
     current_move = CDeployment 1;
     players = [{
                 id = "Red";
-                cards = [];
+                cards = [Infantry; Infantry; Infantry; Wild];
                 total_troops = 42;
                 continent_regions =
                   [("Asia", 12); ("Africa", 0); ("North America", 9);
@@ -1087,7 +1087,7 @@ let test_map =
                 controls_cont = ["Asia"; "North America"];
               }; {
                   id = "Blue";
-                  cards = [];
+                  cards = [Infantry; Artillery; Wild; Cavalry];
                   total_troops = 42;
                   continent_regions =
                     [("Asia", 0); ("Africa", 6); ("North America", 0);
