@@ -392,8 +392,10 @@ let rep_ok st =
                     then r.troops
                     else 0) st.regions 0 = p.total_troops in
   if not (List.fold_left (fun b p -> b && check_troops p) true st.players)
-  then failwith "check_troops doesn't hold"
-  else
+  then begin
+    print_endline "check_troops doesn't hold";
+    failwith "check_troops doesn't hold"
+  end else
 
   let check_cr_att p =
     List.length p.continent_regions = 6 &&
@@ -401,8 +403,10 @@ let rep_ok st =
       ["North America"; "South America"; "Europe";
        "Africa"; "Asia"; "Australia"] in
   if not (List.fold_left (fun b p -> b && check_cr_att p) true st.players)
-  then failwith "check_cr_att doesn't hold"
-  else
+  then begin
+    print_endline "check_cr_att doesn't hold";
+    failwith "check_cr_att doesn't hold"
+  end else
 
   let zeroed_continent_regions p =
     Regions.fold (fun _ r acc_lst ->
@@ -418,8 +422,10 @@ let rep_ok st =
       true (zeroed_continent_regions p) in
   if not (List.fold_left (fun b p -> b && check_continent_regions p)
                  true st.players)
-  then failwith "check_continent_regions doesn't hold"
-  else
+  then begin 
+    print_endline "check_continent_regions doesn't hold";
+    failwith "check_continent_regions doesn't hold"
+  end else
 
   let check_controls_cont p =
     let (b, len) =
@@ -431,7 +437,10 @@ let rep_ok st =
     b && List.length p.controls_cont = len in
   if not (List.fold_left (fun b p -> b && check_controls_cont p)
               true st.players)
-  then failwith "check_controls_cont doesn't hold"
+  then begin 
+    print_endline "check_controls_cont doesn't hold";
+    failwith "check_controls_cont doesn't hold"
+  end
   else
 
   let check_c_att =
@@ -440,8 +449,10 @@ let rep_ok st =
       ["North America"; "South America"; "Europe";
        "Africa"; "Asia"; "Australia"] in
   if not check_c_att
-  then failwith "check_c_att doesn't hold"
-  else
+  then begin 
+    print_endline "check_c_att doesn't hold";
+    failwith "check_c_att doesn't hold"
+  end else
 
   let check_continents =
     let (b, len) =
@@ -456,8 +467,10 @@ let rep_ok st =
           (fun len p ->
             len + (List.length p.controls_cont)) 0 st.players = len in
   if not check_continents
-  then failwith "check_continents doesn't hold"
-  else
+  then begin 
+    print_endline "check_continents doesn't hold";
+    failwith "check_continents doesn't hold"
+  end else
 
   let check_players_in_game =
     let players_from_map =
@@ -469,8 +482,10 @@ let rep_ok st =
     List.fold_left
       (fun b p -> b && List.mem p.id players_from_map) true st.players in
   if not check_players_in_game
-  then failwith "check_players_in_game doesn't hold"
-  else ()
+  then begin 
+    print_endline "check_players_in_game doesn't hold";
+    failwith "check_players_in_game doesn't hold"
+  end else ()
 
 
 (* ############################################################################
@@ -808,6 +823,8 @@ let determine_card st =
 
 
 let rec update st a =
+  (*TODO: remove this line*)
+  rep_ok st;
   match a, st.current_move with
   | ADeployment r, CDeployment n ->
     let p = List.hd st.players in
