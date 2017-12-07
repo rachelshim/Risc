@@ -67,7 +67,7 @@ let update_gui (s : state) (st : state)
       end
     else ();
   | ANextTurn ->
-    if current_player st <> current_player s then
+    if player_id(current_player st) <> player_id(current_player s) then
       begin
         update_cards (num_inf pl, num_cav pl, num_art pl, num_wild pl);
     run_blocking_popup
