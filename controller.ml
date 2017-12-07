@@ -10,7 +10,7 @@ let rec update_all_cont_owners update_continent_owners st lst =
   update_continent_owners (List.map (fun r ->
       let c = cont_of_reg st r in (c, owner_of_cont st c)) lst)
 
-let update_gui (st : state)
+let update_gui (s : state) (st : state)
     ((write_log, update_territories, update_continent_owners,
      update_current_player, update_available_reinforcements, update_cards,
      update_territories_count, update_troop_count, set_game_over,
@@ -47,11 +47,13 @@ let update_gui (st : state)
     update_territories [(r2, ctrl_of_reg st r2, troops_in st r2)];
     update_available_reinforcements (avail_troops st);
     run_blocking_popup "You have been awarded a card." (** TODO specify card *)
-  | ANextTurn -> update_cards (num_inf pl, num_cav pl, num_art pl, num_wild pl);
+  | ANextTurn -> if current_player s <> current_player st then begin
+    update_cards (num_inf pl, num_cav pl, num_art pl, num_wild pl);
     run_blocking_popup
       "Your turn is over- please pass the computer to the next player. Huzzah!";
-    update_current_player (player_id pl)
-  | _ -> ()
+    update_current_player (player_id pl);
+  end
+    else ()
 
 let controller_update (st : state)
     (funcs:((string -> unit) * ((string * string * int) list -> unit) *
@@ -59,7 +61,7 @@ let controller_update (st : state)
             * (int * int * int * int -> unit) * (int -> unit) * (int -> unit)
             * (bool -> unit) * (string -> unit))) (act : action) =
   let st' = update st act in
-  let gui' = update_gui st' funcs act in
+  let gui' = update_gui st st' funcs act in
   st'
 
 let init_game num ((write_log, update_territories, update_continent_owners,
