@@ -811,10 +811,10 @@ let determine_card st =
     {st with
      players = prepend_player p' st.players;
      current_move = CRecieve_Card (Some card_togive);
-     log = st.log ^ "\n" ^ p.id ^ " received a card."}
+     log = st.log ^ "\n> " ^ p.id ^ " received a card."}
   else
    {st with current_move = CRecieve_Card None;
-            log = st.log ^ "\n" ^ p.id ^ " did not receive a card."}
+            log = st.log ^ "\n> " ^ p.id ^ " did not receive a card."}
 
 
 let rec update st a =
@@ -905,13 +905,13 @@ let rec update st a =
                     Regions.add r {region with troops = region.troops + i}
                       st.regions;
                   log = "Successfully reinforced " ^ r ^ " with " ^
-                        (string_of_int i) ^ " new troops.\n" ^
+                        (string_of_int i) ^ " new troops." ^
                         (if n = i
                         then
-                          "\nYou may now attack, move troops to end your " ^
+                          "\n> You may now attack, move troops to end your " ^
                           "turn, or end your turn without movement."
                         else
-                          "You have " ^ string_of_int (n - i) ^
+                          "\n> You have " ^ string_of_int (n - i) ^
                           " troops left to place.")}
     else { st with log = "You don't have enough troops. Try again." }
   | AAttack ((r1_name, r2_name), t), CAttack ->
