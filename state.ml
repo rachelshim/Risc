@@ -862,7 +862,7 @@ let rec update st a =
                     players = p_list;
                     bonus_troops = increment_bonus bonus_n;
                     log = "Successfully traded in cards for " ^
-                          (string_of_int bonus_n) ^ " extra troops"; }
+                          (string_of_int st.bonus_troops) ^ " extra troops"; }
         with Not_found ->
           {st with log = "Invalid move: you don't have those cards."}
       end
