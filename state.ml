@@ -862,7 +862,7 @@ let rec update st a =
                     players = p_list;
                     bonus_troops = increment_bonus bonus_n;
                     log = "Successfully traded in cards for " ^
-                          (string_of_int bonus_n) ^ " extra troops"; }
+                          (string_of_int st.bonus_troops) ^ " extra troops"; }
         with Not_found ->
           {st with log = "Invalid move: you don't have those cards."}
       end
@@ -916,6 +916,12 @@ let rec update st a =
     then {st with log = "Invalid move: you don't control " ^ r1_name ^ "."}
     else if r2.controller = a.id
     then {st with log = "Invalid move: you control " ^ r2_name ^ "."}
+    else if not (List.mem r2.name r1.routes)
+    then
+      {st with
+       log =
+         "Invalid move: " ^ r1_name ^ " and " ^ r2_name ^
+         " do not border each other."}
     else if r1.troops <= t
     then {st with log = "Invalid move: you don't have enough troops."}
     else
