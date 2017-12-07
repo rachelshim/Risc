@@ -371,6 +371,95 @@ let receiving_card st =
   | CRecieve_Card _ -> true
   | _ -> false
 
+let rep_ok st =
+  (* Tabbing intentionally incorrect for increased readability *)
+  let check_troops p = 
+    Regions.fold (fun _ r acc -> acc +
+                    if p.id = r.controller
+                    then r.troops
+                    else 0) st.regions 0 = p.total_troops in
+  if not (List.fold_left (fun b p -> b && check_troops p) true st.players)
+  then failwith "check_troops doesn't hold"
+  else
+
+  let check_cr_att p =
+    List.length p.continent_regions = 6 &&
+    List.fold_left (fun b c -> b && List.mem_assoc c p.continent_regions) true
+      ["North America"; "South America"; "Europe";
+       "Africa"; "Asia"; "Australia"] in
+  if not (List.fold_left (fun b p -> b && check_cr_att p) true st.players)
+  then failwith "check_cr_att doesn't hold"
+  else
+
+  let zeroed_continent_regions p =
+    Regions.fold (fun _ r acc_lst ->
+                    if p.id = r.controller
+                    then 
+                      let n = List.assoc r.continent acc_lst in
+                      acc_lst |>
+                      List.remove_assoc r.continent |>
+                      List.cons (r.continent, n - 1)
+                    else acc_lst) st.regions p.continent_regions in
+  let check_continent_regions p =
+    List.fold_left (fun b c -> b && (snd c = 0))
+      true (zeroed_continent_regions p) in
+  if not (List.fold_left (fun b p -> b && check_continent_regions p)
+                 true st.players)
+  then failwith "check_continent_regions doesn't hold"
+  else
+
+  let check_controls_cont p =
+    let (b, len) = 
+      List.fold_left
+        (fun (b, len) c_r ->
+          if List.assoc (fst c_r) continents |> fst = snd c_r
+          then (b && List.mem (fst c_r) p.controls_cont, len + 1)
+          else (b, len)) (true, 0) p.continent_regions in
+    b && List.length p.controls_cont = len in
+  if not (List.fold_left (fun b p -> b && check_controls_cont p)
+              true st.players) 
+  then failwith "check_controls_cont doesn't hold"
+  else
+
+  let check_c_att =
+    List.length st.continents = 6 &&
+    List.fold_left (fun b c -> b && List.mem_assoc c st.continents) true
+      ["North America"; "South America"; "Europe";
+       "Africa"; "Asia"; "Australia"] in
+  if not check_c_att
+  then failwith "check_c_att doesn't hold"
+  else
+
+  let check_continents =
+    let (b, len) =
+      List.fold_left
+        (fun (b, len) c -> 
+          match snd c with
+          | None -> (b, len)
+          | Some p ->
+            (b && List.mem (fst c) (player_of_id st p).controls_cont, len + 1))
+        (true, 0) st.continents in
+    b && List.fold_left
+          (fun len p ->
+            len + (List.length p.controls_cont)) 0 st.players = len in
+  if not check_continents
+  then failwith "check_continents doesn't hold"
+  else 
+
+  let check_players_in_game =
+    let players_from_map =
+      Regions.fold (fun _ r lst ->
+                      if List.mem r.controller lst
+                      then lst
+                      else r.controller::lst) st.regions [] in
+    List.length players_from_map = List.length st.players &&
+    List.fold_left
+      (fun b p -> b && List.mem p.id players_from_map) true st.players in
+  if not check_players_in_game
+  then failwith "check_players_in_game doesn't hold"
+  else ()
+
+
 (* ############################################################################
 
   Initial state stuff
@@ -456,8 +545,8 @@ let init_state n =
       players_w_continents in
   {
     players = players_w_continents;
-    (* current_move = CDeployment (50 - 5 * n - (42 / n)); *)
-    current_move = CDeployment 2;
+    current_move = CDeployment (50 - 5 * n - (42 / n));
+    (*current_move = CDeployment 2;*)
     gets_card = false;
     turns = 0;
     continents = total_conts;
