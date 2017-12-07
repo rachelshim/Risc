@@ -871,13 +871,10 @@ let main () =
     "\n\t- Samuel Ringel (sjr254@cornell.edu)\n\t- Rachel Shim "^
     "(cs899@cornell.edu)\n\nYou can find further documentation at:"^
     "\nhttps://github.com/rachelshim/Risc/blob/master/README.md")));
-<<<<<<< HEAD
+
   ignore(factory#add_item "Rules" ~callback:(run_blocking_dialog `INFO "Rules"
   ("TODO")));
   ignore(factory#add_item "Instructions" ~callback:(run_blocking_dialog `INFO
-=======
-  ignore(factory#add_item "Instructions" ~callback:(run_blocking_dialog `INFO
->>>>>>> 918806b9626888ff34810e2a903d6e5a4448e119
   "Instructions" ("TODO")));
 
   (*Continent label setup*)
