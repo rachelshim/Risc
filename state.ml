@@ -1015,7 +1015,9 @@ let rec update st a =
         if List.length final_st.players = 1
         then {final_st with
               current_move = CGame_Won a.id;
-              turns = final_st.turns + 1}
+              turns = final_st.turns + 1;
+              log = final_st.log ^ "\n> " ^ a.id ^
+                    " has conquered the world and won the game!"}
         else final_st
       end
     else
