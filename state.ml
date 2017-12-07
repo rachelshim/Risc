@@ -1076,7 +1076,7 @@ let test_map =
                 cards = [];
                 total_troops = 42;
                 continent_regions =
-                  [("Asia", 24); ("Africa", 0); ("North America", 18);
+                  [("Asia", 12); ("Africa", 0); ("North America", 9);
                   ("South America", 0); ("Europe", 0); ("Australia", 0)];
                 controls_cont = ["Asia"; "North America"];
               }; {
@@ -1084,8 +1084,8 @@ let test_map =
                   cards = [];
                   total_troops = 42;
                   continent_regions =
-                    [("Asia", 0); ("Africa", 12); ("North America", 0);
-                    ("South America", 8); ("Europe", 14); ("Australia", 8)];
+                    [("Asia", 0); ("Africa", 6); ("North America", 0);
+                    ("South America", 4); ("Europe", 7); ("Australia", 4)];
                   controls_cont = ["South America"; "Australia"; "Europe";
                                    "Africa"];
               }];

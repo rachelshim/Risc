@@ -9,6 +9,7 @@ let four_player = init_state 4
 
 let regions = get_regions two_player (* list of all regions in game *)
 
+let update_deploy_alaska = update test_map (ADeployment "Alaska")
 let tests =
 [
   (* Init tests on two-player game *)
@@ -84,7 +85,12 @@ let tests =
                           true regions) true);
 
   (* Tests with test_map *)
-  "deploy_test" >:: (fun _ -> assert_equal ((troops_in test_map "Alaska") + 1) (troops_in (update test_map (ADeployment "Alaska")) "Alaska"));
+  "deploy_test" >:: (fun _ -> assert_equal ((troops_in test_map "Alaska") + 1) (troops_in update_deploy_alaska "Alaska"));
+  "num_controlled_test" >:: (fun _ -> assert_equal 21 (current_player test_map |> num_controlled));
+
+
+
+
 ]
 
 let suite = "State tests" >::: tests
