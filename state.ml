@@ -353,6 +353,7 @@ let ctrl_of_reg st r =
   (region_of_name st r).controller
 
 let owner_of_cont st c =
+  print_endline ("continent: " ^ c);
   match List.assoc c st.continents with
   | None -> "Grey"
   | Some owner -> owner
@@ -913,7 +914,7 @@ let rec update st a =
        else CReinforcement new_troops;
      log =
        "It is now " ^ (List.hd ps).id ^ "'s turn. They may now reinforce" ^
-       " with" ^ string_of_int new_troops ^
+       " with " ^ string_of_int new_troops ^
        " troops or play a card combination."
      }
   | ANextTurn, _  | AAttack _, _  | AMovement _, _  | AReinforcement _, _ 
