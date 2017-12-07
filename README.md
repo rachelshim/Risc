@@ -71,4 +71,4 @@ To avoid circular dependencies, imperative functions for setting GUI state are p
 - Rachel developed the backend, implementing x y z. ~x hours
 
 ## Screenshots:
-![Two player game over screenshot](Risc/screenshots/game_over.png?raw=true)
+![Two player game over screenshot](screenshots/game_over.png?raw=true)
