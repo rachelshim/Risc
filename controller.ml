@@ -22,12 +22,13 @@ let update_gui (s : state) (st : state)
         (int * int * int * int -> unit) * (int -> unit) * (int -> unit) *
         (bool -> unit) * (string -> unit))) (act : action) =
   let pl = current_player st in
-  let move_to_next_turn = begin
+  let move_to_next_turn () = begin
     run_blocking_popup
       ("Your turn is over- please pass the computer to the next player. " ^
        "Huzzah!");
     update_cards (num_inf pl, num_cav pl, num_art pl, num_wild pl);
     update_current_player (player_id pl);
+    update_available_reinforcements (avail_troops st)
   end
   in
   write_log (get_log st);
@@ -65,13 +66,12 @@ let update_gui (s : state) (st : state)
   | AMovement ((r1, r2), num) -> update_territories
                                    [(r1, ctrl_of_reg st r1, troops_in st r1)];
     update_territories [(r2, ctrl_of_reg st r2, troops_in st r2)];
-    update_available_reinforcements (avail_troops st);
     if receiving_card st then begin
-      move_to_next_turn
+      move_to_next_turn ()
     end
   else ();
   | ANextTurn -> if current_player s <> current_player st then begin
-      move_to_next_turn
+      move_to_next_turn ()
   end
     else ()
 

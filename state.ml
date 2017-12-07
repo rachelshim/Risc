@@ -725,7 +725,7 @@ let rec update st a =
            Regions.add r {reg with troops = reg.troops + 1} st.regions;
          log =
            "Successfuly deployed to " ^ r ^ ". The game has now started! " ^
-           (List.hd p_list).id ^ " may now reinforce with" ^
+           (List.hd p_list).id ^ " may now reinforce with " ^
            (string_of_int reinforce_troops) ^ " troops."}
       else
       {st with
@@ -796,7 +796,7 @@ let rec update st a =
                         (string_of_int i) ^ " new troops" ^
                         (if n = i
                         then
-                          "You may now attack, move troops to end your " ^
+                          "\nYou may now attack, move troops to end your " ^
                           "turn, or end your turn without movement."
                         else
                           "You have " ^ string_of_int (n - i) ^

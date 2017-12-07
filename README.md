@@ -54,11 +54,15 @@ To avoid circular dependencies, imperative functions for setting GUI state are p
 - Lablgtk: https://opam.ocaml.org/packages/lablgtk/
 - GTK+2.0 runtime environment (via Apt or Homebrew) - required for  GUI to operate
 
-## Testing plan:
+## Testing:
 todo add blurb about testing approach
 - Interactive play-testing: we tested interactively by play-testing the game in both a non-malicious average user use case, and deliberately attempting to break the game through illegal actions.
 - Unit testing: used for the State, s used to demonstrate the correctness of our State implementation, as it was the only segment of the program isolated from GUI components and imperative features.
 - Utop: we used utop here and there to test State operations during programming.
+
+### Known problems:
+- App is only guaranteed to work on GNOME desktop environments, but may work  on some non-GNOME environments.
+- In some earlier design choices, we chose to separate Deployment (in the beginning of the game) and Reinforcement (occurs during each player's turn). If we were to revise our implementation, we would combine the two to avoid user confusion.
 
 ## Division of labor:
 - Avani worked in a full-stack capacity, implementing the Controller, State functions, improving UX and user-facing logging, and helping to coordinate functionality between the backend and frontend. ~x hours
