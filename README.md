@@ -69,7 +69,7 @@ To avoid circular dependencies, imperative functions for setting GUI state are p
 - Avani worked in a full-stack capacity, implementing the Controller, State functions, improving UX and user-facing logging, and helping to coordinate functionality between the backend and frontend. ~x hours
 - Haram worked largely on frontend and testing, implementing the entire GUI, in addition to development environment setup and debugging via ocamldebug. ~x hours
 - Sam developed the backend, implementing game initialization, troop deployment, attacking (including all results of an attack), turn ending, logging, and the rep_ok function. He also wrote state test cases. ~x hours
-- Rachel developed the backend, implementing x y z. ~x hours
+- Rachel developed the backend, implementing troop reinforcement, card logic including trading in and receiving cards, and troop movement including the search for a valid path. She also wrote tests cases for the state including ones with a test map for a controlled testing environment. ~x hours
 
 ## Screenshots:
 Some sample screenshots from GTK on GNOME (Ubuntu 16.04 LTS)
@@ -79,3 +79,7 @@ The game window at the start of a 6-player game.
 
 The game window at the end of a 2-player game.
 ![Two player game over screenshot](screenshots/game_over.png?raw=true)
+
+
+The card selection dialog box.
+![Card selection screenshot](screenshots/card_sel.png?raw=true)
