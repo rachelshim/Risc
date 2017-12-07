@@ -746,15 +746,15 @@ let rec check_path p s1 s2 reg =
   else
     let r1_routes = (Regions.find s1 reg).routes in
     let rec search_helper visited = function
-      | [] -> let () = print_endline "not found in this layer" in (false, visited)
+      | [] -> (false, visited)
       | h::t -> if List.mem h visited then search_helper visited t
                 else begin
-                  if check_target p h s2 reg then 
-                    let () = print_endline "found" in 
-                    (true, visited)
+                  if check_target p h s2 reg then (true, visited)
                   else if check_controls p h reg then
-                    let () = print_endline h in
-                    search_helper (h::visited) (Regions.find h reg).routes
+                    match search_helper (h::visited) (Regions.find h reg).routes
+                    with
+                    | true, l -> (true, l)
+                    | false, l -> search_helper (h::l) t
                   else search_helper (h::visited) t
                 end
     in
@@ -763,14 +763,12 @@ let rec check_path p s1 s2 reg =
       | x::xs ->
         if List.mem x visited then search visited xs
         else begin
-          if check_target p x s2 reg then 
-            let () = print_endline "found" in
-            true
+          if check_target p x s2 reg then true
           else if check_controls p x reg then
             let () = print_endline x in
             match search_helper (x::visited) (Regions.find x reg).routes with
             | true, _ -> true
-            | false, l -> let () = print_endline "oh" in search (x::l) xs
+            | false, l -> search (x::l) xs
           else search (x::visited) xs
         end
     in search [s1] r1_routes
