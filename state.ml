@@ -219,7 +219,7 @@ let init_regions =
     controller = "None";
     troops = 1};
    {name = "Middle East";
-    routes = ["East Africa"; "Egypt"; "Ukraine"; "Afghanistan"; "India"; 
+    routes = ["East Africa"; "Egypt"; "Ukraine"; "Afghanistan"; "India";
               "Southern Europe"];
     continent = "Asia";
     controller = "None";
@@ -332,7 +332,8 @@ let player_id pl =
 
 let avail_troops st =
   match st.current_move with
-  | CDeployment i -> i
+  | CDeployment _ -> 1
+  | CReinforcement i -> i
   | _ -> 0 (** TODO handle this better *)
 
 let player_of_id st id =
@@ -602,8 +603,8 @@ let transfer_region r st t =
        List.cons (r.continent, None)}
 
 (* helper function for testing dfs in utop delete later *)
-let find_terr p st = 
-  Regions.bindings st.regions 
+let find_terr p st =
+  Regions.bindings st.regions
   |> List.filter (fun (x, y) -> y.controller = p)
   |> List.map (fun (x, y) -> x)
 
@@ -806,7 +807,7 @@ let rec update st a =
   | AAttack _, _ ->
     {st with log = "Invalid move: cannot attack at this time"}
   | AMovement ((r1, r2), n), CAttack -> failwith "TODO"
-  | AMovement _, _ -> 
+  | AMovement _, _ ->
     { st with log = "Invalid move: cannot move troops at this time" }
   | _ -> failwith "TODO"
 
