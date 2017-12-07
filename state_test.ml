@@ -2,9 +2,15 @@ open OUnit2
 open State
 open Action
 
-let tests = 
+let tests =
 [
-	"format" >:: (fun _ -> assert_equal "jej" ("jej"));
+  "format" >:: (fun _ -> assert_equal "jej" ("jej"));
+
+  (** Initialize state *)
+  "init_state" >:: (fun _ -> assert_equal
+                       (player_id (current_player (init_state 2)))
+                       "Red"
+                   );
 ]
 
 let suite = "State tests" >::: tests

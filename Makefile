@@ -12,3 +12,6 @@ state:
 
 clean:
 	ocamlbuild -clean
+
+test:
+	ocamlbuild -use-ocamlfind state_test.byte

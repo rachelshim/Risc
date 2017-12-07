@@ -810,7 +810,7 @@ let rec update st a =
          replace_player new_d}
   | AAttack _, _ ->
     {st with log = "Invalid move: cannot attack at this time"}
-  | AMovement ((s1, s2), n), CAttack -> 
+  | AMovement ((s1, s2), n), CAttack ->
     let p = List.hd st.players in
     let r1 = Regions.find s1 st.regions in
     let r2 = Regions.find s2 st.regions in
@@ -825,7 +825,7 @@ let rec update st a =
     else
       { st with log = "Invalid move: try different regions."}
     (* add stuff for updating continent thing in player *)
-  | AMovement _, _ -> 
+  | AMovement _, _ ->
     { st with log = "Invalid move: cannot move troops at this time" }
   | ANextTurn, CAttack ->
     if List.length (List.hd st.players).cards > 4
