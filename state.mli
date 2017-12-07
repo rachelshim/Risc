@@ -67,3 +67,10 @@ val get_regions : state -> string list
 (** [receiving_card st] returns true if the user is receiving a card, false
 otherwise. *)
 val receiving_card : state -> bool
+
+(** [num_troops_deployed pl] returns the number of troops pl has on the map  *)
+val num_troops_deployed : player -> int
+
+(** [ready_next_turn st] returns whether the current player is able to move
+to the next turn. *)
+val ready_next_turn : state -> bool

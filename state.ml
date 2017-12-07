@@ -375,6 +375,14 @@ let receiving_card st =
   | CRecieve_Card _ -> true
   | _ -> false
 
+let num_troops_deployed pl =
+  pl.total_troops
+
+let ready_next_turn st =
+  match st.current_move with
+  | CReinforcement _ -> false
+  | _ -> (List.length (current_player st).cards) < 5
+
 (* ############################################################################
 
   Initial state stuff
@@ -700,10 +708,10 @@ let determine_card st =
     {st with
      players = prepend_player p' st.players;
      current_move = CRecieve_Card (Some card_togive);
-     log = st.log ^ "\n" ^ p.id ^ " recieved a card."}
+     log = st.log ^ "\n" ^ p.id ^ " received a card."}
   else
    {st with current_move = CRecieve_Card None;
-            log = st.log ^ "\n" ^ p.id ^ " did not recieve a card."}
+            log = st.log ^ "\n" ^ p.id ^ " did not receive a card."}
 
 let rec update st a =
   match a, st.current_move with

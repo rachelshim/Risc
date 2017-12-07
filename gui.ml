@@ -455,7 +455,7 @@ let confirm_button_handler parent () =
         let dest = !selection2 in
         match (src, dest) with
         | (Some sloc, Some dloc) -> begin
-          let src_troops = 
+          let src_troops =
             (Controller.get_troops_in_territory !controller sloc)- 1 in
           if src_troops = 0 then begin
             write_log ("Unable to comply. "
@@ -840,7 +840,7 @@ let main () =
     "\nhttps://github.com/rachelshim/Risc/blob/master/README.md")));
   ignore(factory#add_item "Rules" ~callback:(run_blocking_dialog `INFO "Rules"
   ("TODO")));
-  ignore(factory#add_item "Instructions" ~callback:(run_blocking_dialog `INFO 
+  ignore(factory#add_item "Instructions" ~callback:(run_blocking_dialog `INFO
   "Instructions" ("TODO")));
 
   (*Continent label setup*)
