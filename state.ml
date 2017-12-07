@@ -810,7 +810,7 @@ let rec update st a =
          replace_player new_d}
   | AAttack _, _ ->
     {st with log = "Invalid move: cannot attack at this time"}
-  | AMovement ((s1, s2), n), CAttack -> 
+  | AMovement ((s1, s2), n), CAttack ->
     let p = List.hd st.players in
     let r1 = Regions.find s1 st.regions in
     let r2 = Regions.find s2 st.regions in
