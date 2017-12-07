@@ -8,6 +8,7 @@ let four_player = init_state 4
 let five_player = init_state 5
 let six_player = init_state 6
 
+
 let tests =
 [
   (* Init tests on two-player game *)
