@@ -19,5 +19,8 @@ test:
 debug:
 	ocamlbuild -use-ocamlfind gui.d.byte
 
+gitlog:
+	git log --stat > gitlog.txt
+
 zip:
 	zip -r --exclude=*.git* Risc_archive.zip .
