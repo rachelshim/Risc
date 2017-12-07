@@ -25,6 +25,7 @@ let window_global = ref (GWindow.window ())
 let continent_labels_list = ref []
 let buttons_list = ref []
 let map_pixbuf = GdkPixbuf.from_file "resources/map.png"
+let icon_pixbuf = GdkPixbuf.from_file "resources/icon.png"
 let log_buffer = GText.buffer ()
 let log_window_global = ref (GBin.scrolled_window ())
 let player_label_global = ref (GMisc.label ())
@@ -701,7 +702,7 @@ let add_label (pack:GPack.fixed) x y width height name =
  *)
 let main () =
   (*Create window and connect close operation*)
-  let window = GWindow.window ~width:1450 ~height:860
+  let window = GWindow.window ~width:1450 ~height:860 ~icon:icon_pixbuf
                               ~title:"Risc" ~resizable:false () in
   window_global := window;
   ignore(window#connect#destroy ~callback:Main.quit);
@@ -945,6 +946,7 @@ let main () =
 
   (*Final window configuration and display*)
   window#add_accel_group accel_group;
+  window#set_icon (Some icon_pixbuf);
   window#show ();
   let pmap = GdkPixbuf.create_pixmap map_pixbuf |> fst in
   Gdk.Window.set_back_pixmap gameplay_pack#misc#window (`PIXMAP pmap);
