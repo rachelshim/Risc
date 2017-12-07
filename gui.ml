@@ -835,6 +835,8 @@ let main () =
     "\nhttps://github.com/rachelshim/Risc/blob/master/README.md")));
   ignore(factory#add_item "Rules" ~callback:(run_blocking_dialog `INFO "Rules"
   ("TODO")));
+  ignore(factory#add_item "Instructions" ~callback:(run_blocking_dialog `INFO 
+  "Instructions" ("TODO")));
 
   (*Continent label setup*)
   add_label gameplay_pack 274 204 110 25 "North America";
