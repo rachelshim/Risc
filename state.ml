@@ -621,28 +621,42 @@ let find_terr p st =
   |> List.filter (fun (x, y) -> y.controller = p)
   |> List.map (fun (x, y) -> x)
 
-let check_target p s1 s2 st =
-  let r1 = Regions.find s1 st in
-  let r2 = Regions.find s2 st in
+(* Helper function for [check_path]
+ * [check_target p s1 s2 reg] returns [true] if the regions represented by 
+ * strings [s1] and [s2] in the map of regions [reg] have the same name and
+ * both have controller [p], false otherwise
+ *)
+let check_target p s1 s2 reg =
+  let r1 = Regions.find s1 reg in
+  let r2 = Regions.find s2 reg in
   r1.name = r2.name && p = r1.controller && p = r2.controller
 
-let check_controls p s st =
-  let r = Regions.find s st in
+(* Helper function for [check_path]
+ * [check_controls p s reg] returns [true] if the (string )controller of the 
+ * region represented by string [s] in the map of regions [reg] is [p],
+ * [false] otherwise.
+ *)
+let check_controls p s reg =
+  let r = Regions.find s reg in
   r.controller = p
 
-(* TODO: Documentation *)
-let rec check_path p s1 s2 st =
-  if not (check_controls p s1 st) then false
-  else if check_target p s1 s2 st then true
+(* [check_path p s1 s2 reg] checks whether there valid troop movement path from 
+ * the regions represented by the strings [s1] and [s2] in the map of regions
+ * [reg].  A valid troop movement is defined as a contiguous path of all the
+ * territories owned by a certain player [p] that are connected.
+ *)
+let rec check_path p s1 s2 reg =
+  if not (check_controls p s1 reg) then false
+  else if check_target p s1 s2 reg then true
   else
-    let r1_routes = (Regions.find s1 st).routes in
+    let r1_routes = (Regions.find s1 reg).routes in
     let rec search_helper visited = function
       | [] -> (false, visited)
       | h::t -> if List.mem h visited then search_helper visited t
                 else begin
-                  if check_target p h s2 st then (true, visited)
-                  else if check_controls p h st then
-                    search_helper (h::visited) (Regions.find h st).routes
+                  if check_target p h s2 reg then (true, visited)
+                  else if check_controls p h reg then
+                    search_helper (h::visited) (Regions.find h reg).routes
                   else search_helper (h::visited) t
                 end
                 in
@@ -651,10 +665,10 @@ let rec check_path p s1 s2 st =
       | x::xs ->
         if List.mem x visited then search visited xs
         else begin
-          if check_target p x s2 st
+          if check_target p x s2 reg
             then true
-          else if check_controls p x st then
-            match search_helper (x::visited) (Regions.find x st).routes with
+          else if check_controls p x reg then
+            match search_helper (x::visited) (Regions.find x reg).routes with
             | true, _ -> true
             | false, l -> search (x::(l @ visited)) xs
           else search (x::visited) xs
@@ -687,7 +701,11 @@ let invalid_move_log a c_m =
   "Invalid move: You may not " ^ attempted_action ^
     " at this time. " ^ state_log
 
-(* TODO: documentnation *)
+(* [determine_card st] gives the current player in state [st] a new card if he 
+ * needs to receive a new card and returns the updated state, with the player 
+ * list, log, and current move update to reflect whether or not they recieved
+ * a card.
+ *)
 let determine_card st =
   let p = List.hd st.players in
   if st.gets_card then
@@ -704,6 +722,7 @@ let determine_card st =
   else
    {st with current_move = CRecieve_Card None;
             log = st.log ^ "\n" ^ p.id ^ " did not recieve a card."}
+
 
 let rec update st a =
   match a, st.current_move with
