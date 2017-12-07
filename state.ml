@@ -371,9 +371,17 @@ let receiving_card st =
   | CRecieve_Card _ -> true
   | _ -> false
 
+let num_troops_deployed pl =
+  pl.total_troops
+
+let ready_next_turn st =
+  match st.current_move with
+  | CReinforcement _ -> false
+  | _ -> (List.length (current_player st).cards) < 5
+
 let rep_ok st =
   (* Tabbing intentionally incorrect for increased readability *)
-  let check_troops p = 
+  let check_troops p =
     Regions.fold (fun _ r acc -> acc +
                     if p.id = r.controller
                     then r.troops
@@ -394,7 +402,7 @@ let rep_ok st =
   let zeroed_continent_regions p =
     Regions.fold (fun _ r acc_lst ->
                     if p.id = r.controller
-                    then 
+                    then
                       let n = List.assoc r.continent acc_lst in
                       acc_lst |>
                       List.remove_assoc r.continent |>
@@ -409,7 +417,7 @@ let rep_ok st =
   else
 
   let check_controls_cont p =
-    let (b, len) = 
+    let (b, len) =
       List.fold_left
         (fun (b, len) c_r ->
           if List.assoc (fst c_r) continents |> fst = snd c_r
@@ -417,7 +425,7 @@ let rep_ok st =
           else (b, len)) (true, 0) p.continent_regions in
     b && List.length p.controls_cont = len in
   if not (List.fold_left (fun b p -> b && check_controls_cont p)
-              true st.players) 
+              true st.players)
   then failwith "check_controls_cont doesn't hold"
   else
 
@@ -433,7 +441,7 @@ let rep_ok st =
   let check_continents =
     let (b, len) =
       List.fold_left
-        (fun (b, len) c -> 
+        (fun (b, len) c ->
           match snd c with
           | None -> (b, len)
           | Some p ->
@@ -444,7 +452,7 @@ let rep_ok st =
             len + (List.length p.controls_cont)) 0 st.players = len in
   if not check_continents
   then failwith "check_continents doesn't hold"
-  else 
+  else
 
   let check_players_in_game =
     let players_from_map =
@@ -625,9 +633,9 @@ let give_player_region r st =
     continents =
       if makes_continent then
         (r.continent, Some p.id)::(List.remove_assoc r.continent st.continents)
-      else 
+      else
         (r.continent, None)::(List.remove_assoc r.continent st.continents)}
-    
+
 (** [get_player p_id] returns the player in input list with id [p_id] *)
 let rec get_player p_id = function
   | [] -> failwith "precondition violation"
@@ -703,7 +711,7 @@ let find_terr p st =
   |> List.map (fun (x, y) -> x)
 
 (* Helper function for [check_path]
- * [check_target p s1 s2 reg] returns [true] if the regions represented by 
+ * [check_target p s1 s2 reg] returns [true] if the regions represented by
  * strings [s1] and [s2] in the map of regions [reg] have the same name and
  * both have controller [p], false otherwise
  *)
@@ -713,7 +721,7 @@ let check_target p s1 s2 reg =
   r1.name = r2.name && p = r1.controller && p = r2.controller
 
 (* Helper function for [check_path]
- * [check_controls p s reg] returns [true] if the (string )controller of the 
+ * [check_controls p s reg] returns [true] if the (string )controller of the
  * region represented by string [s] in the map of regions [reg] is [p],
  * [false] otherwise.
  *)
@@ -721,7 +729,7 @@ let check_controls p s reg =
   let r = Regions.find s reg in
   r.controller = p
 
-(* [check_path p s1 s2 reg] checks whether there valid troop movement path from 
+(* [check_path p s1 s2 reg] checks whether there valid troop movement path from
  * the regions represented by the strings [s1] and [s2] in the map of regions
  * [reg].  A valid troop movement is defined as a contiguous path of all the
  * territories owned by a certain player [p] that are connected.
@@ -781,8 +789,8 @@ let invalid_move_log a c_m =
   "Invalid move: You may not " ^ attempted_action ^
     " at this time. " ^ state_log
 
-(* [determine_card st] gives the current player in state [st] a new card if he 
- * needs to receive a new card and returns the updated state, with the player 
+(* [determine_card st] gives the current player in state [st] a new card if he
+ * needs to receive a new card and returns the updated state, with the player
  * list, log, and current move update to reflect whether or not they recieved
  * a card.
  *)
@@ -798,10 +806,10 @@ let determine_card st =
     {st with
      players = prepend_player p' st.players;
      current_move = CRecieve_Card (Some card_togive);
-     log = st.log ^ "\n" ^ p.id ^ " recieved a card."}
+     log = st.log ^ "\n" ^ p.id ^ " received a card."}
   else
    {st with current_move = CRecieve_Card None;
-            log = st.log ^ "\n" ^ p.id ^ " did not recieve a card."}
+            log = st.log ^ "\n" ^ p.id ^ " did not receive a card."}
 
 
 let rec update st a =

@@ -463,7 +463,7 @@ let confirm_button_handler parent () =
         match (src, dest) with
         | (Some sloc, Some dloc) -> begin
           (*get troops in source*)
-          let src_troops = 
+          let src_troops =
             (Controller.get_troops_in_territory !controller sloc)- 1 in
           (*don't bring up slider if we can't select troops*)
           if src_troops = 0 then begin
@@ -871,7 +871,13 @@ let main () =
     "\n\t- Samuel Ringel (sjr254@cornell.edu)\n\t- Rachel Shim "^
     "(cs899@cornell.edu)\n\nYou can find further documentation at:"^
     "\nhttps://github.com/rachelshim/Risc/blob/master/README.md")));
-  ignore(factory#add_item "Instructions" ~callback:(run_blocking_dialog `INFO 
+<<<<<<< HEAD
+  ignore(factory#add_item "Rules" ~callback:(run_blocking_dialog `INFO "Rules"
+  ("TODO")));
+  ignore(factory#add_item "Instructions" ~callback:(run_blocking_dialog `INFO
+=======
+  ignore(factory#add_item "Instructions" ~callback:(run_blocking_dialog `INFO
+>>>>>>> 918806b9626888ff34810e2a903d6e5a4448e119
   "Instructions" ("TODO")));
 
   (*Continent label setup*)

@@ -68,6 +68,13 @@ val get_regions : state -> string list
 otherwise. *)
 val receiving_card : state -> bool
 
+(** [num_troops_deployed pl] returns the number of troops pl has on the map  *)
+val num_troops_deployed : player -> int
+
+(** [ready_next_turn st] returns whether the current player is able to move
+to the next turn. *)
+val ready_next_turn : state -> bool
+
 (**
  * Checks RIs of state, including that the number of troops on the board matches
  * the stored number for each player, that each continents-storing data
