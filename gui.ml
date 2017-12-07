@@ -464,7 +464,7 @@ let confirm_button_handler parent () =
         match (src, dest) with
         | (Some sloc, Some dloc) -> begin
           (*get troops in source*)
-          let src_troops = 
+          let src_troops =
             (Controller.get_troops_in_territory !controller sloc)- 1 in
           (*don't bring up slider if we can't select troops*)
           if src_troops = 0 then begin
