@@ -5,8 +5,7 @@ open Action
 let two_player = init_state 2
 let three_player = init_state 3
 let four_player = init_state 4
-let five_player = init_state 5
-let six_player = init_state 6
+
 
 let regions = get_regions two_player (* list of all regions in game *)
 
@@ -84,6 +83,8 @@ let tests =
                             b && troops_in four_player r = 1)
                           true regions) true);
 
+  (* Tests with test_map *)
+  "deploy_test" >:: (fun _ -> assert_equal ((troops_in test_map "Alaska") + 1) (troops_in (update test_map (ADeployment "Alaska")) "Alaska"));
 ]
 
 let suite = "State tests" >::: tests

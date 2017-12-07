@@ -233,6 +233,7 @@ let rec update_continent_owners (data:(string * string) list) =
 
 let update_current_player player =
   !player_label_global#set_text player;
+  clear_selections();
   ()
 
 let update_available_reinforcements num =
@@ -267,7 +268,6 @@ let set_game_over over =
   if over then begin
     lock_all ();
     write_log "Game ended. User interface locked.";
-    (*Possible TODO: other things*)
     ()
   end
   else ()
@@ -463,7 +463,7 @@ let confirm_button_handler parent () =
         match (src, dest) with
         | (Some sloc, Some dloc) -> begin
           (*get troops in source*)
-          let src_troops = 
+          let src_troops =
             (Controller.get_troops_in_territory !controller sloc)- 1 in
           (*don't bring up slider if we can't select troops*)
           if src_troops = 0 then begin
@@ -579,7 +579,7 @@ let confirm_button_handler parent () =
   with
   | _ ->  write_log "An unexpected error has occurred."
   end;
-  clear_selections();
+  (*clear_selections();*)
   ()
 
 (*
@@ -862,7 +862,6 @@ let main () =
   ignore(factory#add_item "Quit" ~callback: Main.quit);
 
   (*Help menu setup*)
-  (*TODO: add text*)
   let factory = new GMenu.factory help_menu ~accel_group in
   ignore(factory#add_item "About" ~callback:(run_blocking_dialog `INFO "About"
     ("Risc is a OCaml implementation of the classic strategy game\nRisk, and a"^
@@ -872,7 +871,16 @@ let main () =
     "(cs899@cornell.edu)\n\nYou can find further documentation at:"^
     "\nhttps://github.com/rachelshim/Risc/blob/master/README.md")));
   ignore(factory#add_item "Instructions" ~callback:(run_blocking_dialog `INFO 
-  "Instructions" ("TODO")));
+  "Instructions" ("The game is divided into a setup and gameplay phase.\n"^
+    "In the setup phase, players take turns DEPLOY-ing 1 troop at a time.\n"^
+    "When all players have finished setup, we enter the gameplay phase.\n"^
+    "During this section, players are required to begin their turns by\n"^
+    "using the REINFORCE command to reinforce territories. They may then\n"^
+    "choose to SPEND CARDS, if available. After this, players may ATTACK\n"^
+    "any number of times. Once finished, players may either MOVE once,\n"^
+    "shifting troops across controlled contiguous territory, or END TURN.\n"^
+    "Please be aware that if you elect not to MOVE, you must END TURN twice\n"^
+    "so that your cards may be allocated.")));
 
   (*Continent label setup*)
   add_label gameplay_pack 274 204 110 25 "North America";

@@ -55,10 +55,10 @@ val num_controlled : player -> int
 (** [controller_of_reg st r] returns the player id that controls r in st. *)
 val ctrl_of_reg : state -> string -> string
 
-(** [owner_of_cont st c] returns the player id of the player that owns c in st*)
+(** [owner_of_cont st c] returns the player id of the player that owns c in st *)
 val owner_of_cont : state -> string -> string
 
-(** [cont_of_reg st r] returns the continent region r is located in, in st*)
+(** [cont_of_reg st r] returns the continent region r is located in, in st *)
 val cont_of_reg : state -> string -> string
 
 (** [get_log st] returns the log message contained in st. *)
@@ -71,6 +71,17 @@ val get_regions : state -> string list
 otherwise. *)
 val receiving_card : state -> bool
 
+(** [num_troops_deployed pl] returns the number of troops pl has on the map  *)
+val num_troops_deployed : player -> int
+
+(** [ready_next_turn st] returns whether the current player is able to move
+to the next turn. *)
+val ready_next_turn : state -> bool
+
+(* [is_over s] returns [true] if the game has a winner, [false] otherwise
+ *)
+val is_over : state -> bool
+
 (**
  * Checks RIs of state, including that the number of troops on the board matches
  * the stored number for each player, that each continents-storing data
@@ -80,3 +91,8 @@ val receiving_card : state -> bool
  * If any of these do not hold, the program fails with a relevant message.
  *)
 val rep_ok : state -> unit
+
+(* [test_map] creates a map that always has the same "seed"-- same # of
+ * players, which territories they own, etc. for testing purposes.
+ *)
+val test_map : state
