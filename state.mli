@@ -88,3 +88,8 @@ val is_over : state -> bool
  * If any of these do not hold, the program fails with a relevant message.
  *)
 val rep_ok : state -> unit
+
+(* [test_map] creates a map that always has the same "seed"-- same # of
+ * players, which territories they own, etc. for testing purposes.
+ *)
+val test_map : state

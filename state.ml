@@ -1045,3 +1045,55 @@ let rec update st a =
   | ANextTurn, _  | AAttack _, _  | AMovement _, _  | AReinforcement _, _
   | ADeployment _, _ | APlayCards _, _->
     {st with log = invalid_move_log a st.current_move}
+
+
+
+(* ############################################################################
+
+  Gameplay
+
+##############################################################################*)
+
+
+let test_map = 
+  let test_regions = 
+    List.map (fun r -> if r.continent = "North America" ||
+                          r.continent = "Asia" then
+                          { r with controller = "Red";
+                                   troops = 2; }
+                       else { r with controller = "Blue";
+                                     troops = 2; }) init_regions in
+  {
+    current_move = CDeployment 1;
+    players = [{
+                id = "Red";
+                cards = [];
+                total_troops = 0;
+                continent_regions =
+                  [("Asia", 0); ("Africa", 0); ("North America", 0);
+                  ("South America", 0); ("Europe", 0); ("Australia", 0)];
+                controls_cont = [];
+              }; {
+                  id = "Red";
+                  cards = [];
+                  total_troops = 0;
+                  continent_regions =
+                    [("Asia", 0); ("Africa", 0); ("North America", 0);
+                    ("South America", 0); ("Europe", 0); ("Australia", 0)];
+                  controls_cont = [];
+              }];
+    gets_card = false;
+    turns = 0;
+    continents = [("North America", Some "Red");
+                  ("Asia", Some "Red");
+                  ("South America", Some "Blue");
+                  ("Europe", Some "Blue");
+                  ("Africa", Some "Blue");
+                  ("Australia", Some "Blue")];
+    regions = 
+      List.fold_left
+        (fun map r -> Regions.add r.name r map) Regions.empty test_regions;
+    bonus_troops = 4;
+    log = "test game started";
+  }
+
