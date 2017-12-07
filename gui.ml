@@ -302,7 +302,7 @@ let run_init_dialog parent =
   in
   (*dialog components*)
   let init_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true
-                  ~title:"Risc" ~deletable:true ~width:300 ~height:150
+                  ~title:"Risc" ~deletable:true
                   ~resizable:false () in
   let init_dialog_label = GMisc.label
                   ~text:"Welcome! Please select the number of players."
@@ -435,7 +435,7 @@ let run_troop_dialog parent message (min, max) =
  * button with the side effect that it confirms the currently selected action
  * by extracting relevant data from the GUI, creating an Action based on that
  * information, and executing that action on the current state. This alters
- * the value stored by controller. This method is thread safe.
+ * the value stored by controller.
  *)
 let confirm_button_handler parent () =
   begin
@@ -554,7 +554,6 @@ let confirm_button_handler parent () =
 (*
  * [actions_cbox_handler box] is a function with the side effect that it
  * sets the gui state based on the action selected in the combobox [box].
- * This operation is thread safe.
  *)
 let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
   begin
@@ -567,15 +566,21 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
       clear_selections ();
       !confirm_button_global#misc#set_sensitive true;
       if index = 0 then begin
+        write_log ("Select a region by clicking its button.");
         set_selection_mode Single
       end
       else if index = 1 then begin
+        write_log ("Click on a source region to attack from, then " ^
+                   "a destination region to attack. Then click \"Confirm\".");
         set_selection_mode Double
       end
       else if index = 2 then begin
+        write_log ("Click on a region to reinforce, then click \"Confirm\".");
         set_selection_mode Single
       end
       else if index = 3 then begin
+        write_log ("Click on a source region to move troops from, then " ^
+                  "a destination region to move them to. Then click \"Confirm\"");
         set_selection_mode Double
       end
       else begin
@@ -591,14 +596,14 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
 (*
  * [territory_button_handler name button ()] is a function with the side effect
  * that it attempts to select the button specified by [name] and [button],
- * printing a failure message to the log if this is not possible. Thread safe.
+ * printing a failure message to the log if this is not possible.
  *)
 let territory_button_handler name (button: GButton.button) () =
   begin
   try
     write_log ("Region: " ^ name);
     let sel_result = make_selection name in
-    (if not sel_result then write_log ("Failed to select " ^ name));
+    (if not sel_result then write_log ("Failed to select " ^ name ^ "."));
     ();
   with
   | _ ->  write_log "An unexpected error has occurred.";
@@ -607,7 +612,7 @@ let territory_button_handler name (button: GButton.button) () =
 
 (*
  * [cancel_button_handler ()] is a function with the side effect that it clears
- * all territory selections in a thread-safe manner.
+ * all territory selections and displayed selection information.
  *)
 let cancel_button_handler () =
   begin
@@ -802,7 +807,8 @@ let main () =
   let log_view = GText.view ~buffer:log_buffer ~editable:false ~width:1590
                             ~height:300 ~packing:log_window#add () in
   log_buffer#set_text
-    ("> Game started with " ^ (string_of_int !player_num) ^ " players.");
+    ("> Game started with " ^ (string_of_int !player_num) ^ " players.\n" ^
+     "> Select a move from \"Move Selection\" in the right pane.");
 
   (*Menu bar creation*)
   let menubar = GMenu.menu_bar ~packing:(info_pack#add) () in
@@ -818,8 +824,15 @@ let main () =
   (*Help menu setup*)
   (*TODO: add text*)
   let factory = new GMenu.factory help_menu ~accel_group in
-  ignore(factory#add_item "About" ~callback:(run_blocking_dialog `INFO "About" "string"));
-  ignore(factory#add_item "Rules" ~callback:(run_blocking_dialog `INFO "Rules" "string"));
+  ignore(factory#add_item "About" ~callback:(run_blocking_dialog `INFO "About"
+    ("Risc is a OCaml implementation of the classic strategy game\nRisk, and a"^
+    " final project for our Fall 2017 CS3110 class.\n\nDeveloped by:\n\t- "^
+    "Avani Bhargava (ab2387@cornell.edu)\n\t- Haram Kim (hk592@cornell.edu)"^
+    "\n\t- Samuel Ringel (sjr254@cornell.edu)\n\t- Rachel Shim "^
+    "(cs899@cornell.edu)\n\nYou can find further documentation at:"^
+    "\nhttps://github.com/rachelshim/Risc/blob/master/README.md")));
+  ignore(factory#add_item "Rules" ~callback:(run_blocking_dialog `INFO "Rules"
+  ("TODO")));
 
   (*Continent label setup*)
   add_label gameplay_pack 274 204 110 25 "North America";
