@@ -601,7 +601,8 @@ let transfer_region r st t =
      players = replace_player new_p_d new_st.players;
      continents =
        List.remove_assoc r.continent new_st.continents |>
-       List.cons (r.continent, None)}
+       List.cons (r.continent, None);
+     log = p_a.id ^ " has taken " ^ r.name ^ "from " ^ p_d.id ^ "."}
 
 (* helper function for testing dfs in utop delete later *)
 let find_terr p st =
@@ -728,7 +729,8 @@ let rec update st a =
                     Regions.add r {region with troops = region.troops + i}
                       st.regions;
                   log = "Successfully reinforced " ^ r ^ " with " ^
-                        (string_of_int i) ^ " new troops."}
+                        (string_of_int i) ^ " new troops." ^
+                        (if n = i then " You may now attack." else "")}
     else { st with log = "You don't have enough troops. Try again." }
   | AReinforcement _, _ ->
     {st with log = "Invalid move: cannot reinforce at this time"}
@@ -842,13 +844,12 @@ let rec update st a =
        if new_troops = 0
        then CAttack
        else CReinforcement new_troops}
+  | ANextTurn, CReinforcement _ ->
+    {st with log = "Invalid move: must place all troops before ending turn."}
   | ANextTurn, _ ->
-    {st with log = "Invalid move: cannot advance to next turn at this time."}
+    {st with log = "Invalid move: cannot end turn at this time."}
   | AMovement _, _ ->
     { st with log = "Invalid move: cannot move troops at this time" }
-
-let is_over st =
-  failwith "unimplemented"
 
 let valid_mode a st =
   failwith "unimplemented"
