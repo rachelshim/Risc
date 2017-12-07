@@ -846,8 +846,8 @@ let rec update st a =
           else (fst top, snd top + 1) in
     let new_a = {a with total_troops = a.total_troops - a_lost_troops} in
     let new_d = {d with total_troops = d.total_troops - d_lost_troops} in
-    let new_r1 = {r1 with troops = r1.troops - a.total_troops} in
-    let new_r2 =  {r2 with troops = r2.troops - d.total_troops} in
+    let new_r1 = {r1 with troops = r1.troops - a_lost_troops} in
+    let new_r2 =  {r2 with troops = r2.troops - d_lost_troops} in
     if new_r2.troops = 0
     then
       let new_r1' = {new_r1 with troops = new_r1.troops - t} in
