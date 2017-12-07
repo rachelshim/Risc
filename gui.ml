@@ -435,7 +435,7 @@ let run_troop_dialog parent message (min, max) =
  * button with the side effect that it confirms the currently selected action 
  * by extracting relevant data from the GUI, creating an Action based on that
  * information, and executing that action on the current state. This alters
- * the value stored by controller. This method is thread safe.
+ * the value stored by controller.
  *)
 let confirm_button_handler parent () =
   begin
@@ -554,7 +554,6 @@ let confirm_button_handler parent () =
 (*
  * [actions_cbox_handler box] is a function with the side effect that it 
  * sets the gui state based on the action selected in the combobox [box].
- * This operation is thread safe.
  *)
 let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
   begin
@@ -591,7 +590,7 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
 (*
  * [territory_button_handler name button ()] is a function with the side effect
  * that it attempts to select the button specified by [name] and [button],
- * printing a failure message to the log if this is not possible. Thread safe.
+ * printing a failure message to the log if this is not possible.
  *)
 let territory_button_handler name (button: GButton.button) () =
   begin
@@ -607,7 +606,7 @@ let territory_button_handler name (button: GButton.button) () =
 
 (*
  * [cancel_button_handler ()] is a function with the side effect that it clears
- * all territory selections in a thread-safe manner.
+ * all territory selections and displayed selection information.
  *)
 let cancel_button_handler () =
   begin
@@ -818,8 +817,15 @@ let main () =
   (*Help menu setup*)
   (*TODO: add text*)
   let factory = new GMenu.factory help_menu ~accel_group in
-  ignore(factory#add_item "About" ~callback:(run_blocking_dialog `INFO "About" "string"));
-  ignore(factory#add_item "Rules" ~callback:(run_blocking_dialog `INFO "Rules" "string"));
+  ignore(factory#add_item "About" ~callback:(run_blocking_dialog `INFO "About" 
+    ("Risc is a OCaml implementation of the classic strategy game\nRisk, and a"^
+    " final project for our Fall 2017 CS3110 class.\n\nDeveloped by:\n\t- "^
+    "Avani Bhargava (ab2387@cornell.edu)\n\t- Haram Kim (hk592@cornell.edu)"^
+    "\n\t- Samuel Ringel (sjr254@cornell.edu)\n\t- Rachel Shim "^
+    "(cs899@cornell.edu)\n\nYou can find further documentation at:"^
+    "\nhttps://github.com/rachelshim/Risc/blob/master/README.md")));
+  ignore(factory#add_item "Rules" ~callback:(run_blocking_dialog `INFO "Rules" 
+  ("TODO")));
 
   (*Continent label setup*)
   add_label gameplay_pack 274 204 110 25 "North America";
