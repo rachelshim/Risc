@@ -1063,9 +1063,23 @@ let rec update st a =
        then CAttack
        else CReinforcement new_troops;
      log =
-       "It is now " ^ (List.hd ps).id ^ "'s turn. They may now reinforce" ^
-       " with " ^ string_of_int new_troops ^
-       " troops or play a card combination.";
+      if new_troops = 0
+      then
+        "It is now " ^ (List.hd ps).id ^ "'s turn. They have recieved 0" ^
+        " reinforcements.\n> " ^
+        begin 
+          if List.length (List.hd ps).cards > 4
+          then
+            "You have " ^ string_of_int (List.length (List.hd ps).cards) ^ 
+            " cards, so you must play a set."
+          else
+            "You may now attack, move troops to end your " ^
+            "turn, or end your turn without movement."
+      end
+      else
+        "It is now " ^ (List.hd ps).id ^ "'s turn. They may now reinforce" ^
+        " with " ^ string_of_int new_troops ^
+        " troops or play a card combination.";
      gets_card = false
      }
   | ANextTurn, _  | AAttack _, _  | AMovement _, _  | AReinforcement _, _
