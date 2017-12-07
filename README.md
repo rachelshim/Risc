@@ -66,9 +66,9 @@ To avoid circular dependencies, imperative functions for setting GUI state are p
 - In some earlier design choices, we chose to separate Deployment (in the beginning of the game) and Reinforcement (occurs during each player's turn). If we were to revise our implementation, we would combine the two to avoid user confusion.
 
 ## Division of labor:
-- Avani worked in a full-stack capacity, implementing the Controller, State functions, improving UX and user-facing logging, and helping to coordinate functionality between the backend and frontend. ~x hours
+- Avani worked in a full-stack capacity, implementing the Controller, State functions, improving UX and user-facing logging, and helping to coordinate functionality between the backend and frontend. 30-35 hours
 - Haram worked largely on frontend and testing, implementing the entire GUI, in addition to development environment setup and debugging via ocamldebug. 50 hours
-- Sam developed the backend, implementing game initialization, troop deployment, attacking (including all results of an attack), turn ending, logging, and the rep_ok function. He also wrote state test cases. ~30-35 hours
+- Sam developed the backend, implementing game initialization, troop deployment, attacking (including all results of an attack), turn ending, logging, and the rep_ok function. He also wrote state test cases. 30-35 hours
 - Rachel developed the backend, implementing troop reinforcement, card logic including trading in and receiving cards, and troop movement including the search for a valid path. She also wrote tests cases for the state including ones with a test map for a controlled testing environment. ~x hours
 
 ## Screenshots:
