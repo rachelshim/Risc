@@ -692,11 +692,10 @@ let determine_card st =
     {st with
      players = prepend_player p' st.players;
      current_move = CRecieve_Card (Some card_togive);
-     log = st.log ^ "\n" ^ p.id ^ " ended their turn and recieved a card."}
+     log = st.log ^ "\n" ^ p.id ^ " recieved a card."}
   else
    {st with current_move = CRecieve_Card None;
-            log = st.log ^ "\n" ^ p.id ^
-            " ended their turn and did not recieve a card."}
+            log = st.log ^ "\n" ^ p.id ^ " did not recieve a card."}
 
 let rec update st a =
   match a, st.current_move with
@@ -890,11 +889,11 @@ let rec update st a =
             { st with regions = Regions.add s1 r1' st.regions |>
                               Regions.add s2 r2';
                       log = "Successfully moved " ^ (string_of_int n) ^
-                            " troops from " ^ s1 ^ " to " ^ s2 }
+                            " troops from " ^ s1 ^ " to " ^ s2 ^ "."}
       else
         { st with log = "Invalid move: " ^ 
-                        "territories must have a contiguously controlled path"}
-    else { st with log = "Invalid move: you must control both territories" }
+                        "territories must have a contiguously controlled path."}
+    else { st with log = "Invalid move: you must control both territories." }
   | ANextTurn, CAttack ->
     if List.length (List.hd st.players).cards > 4
     then
