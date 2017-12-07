@@ -302,11 +302,7 @@ let run_init_dialog parent =
   in
   (*dialog components*)
   let init_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true
-<<<<<<< HEAD
                   ~title:"Risc" ~deletable:true
-=======
-                  ~title:"Risc" ~deletable:true ~width:350 ~height:150
->>>>>>> 74e1b21f0a1a8dea7308d2ea739ccaa840920d46
                   ~resizable:false () in
   let init_dialog_label = GMisc.label
                   ~text:"Welcome! Please select the number of players."
@@ -828,14 +824,14 @@ let main () =
   (*Help menu setup*)
   (*TODO: add text*)
   let factory = new GMenu.factory help_menu ~accel_group in
-  ignore(factory#add_item "About" ~callback:(run_blocking_dialog `INFO "About" 
+  ignore(factory#add_item "About" ~callback:(run_blocking_dialog `INFO "About"
     ("Risc is a OCaml implementation of the classic strategy game\nRisk, and a"^
     " final project for our Fall 2017 CS3110 class.\n\nDeveloped by:\n\t- "^
     "Avani Bhargava (ab2387@cornell.edu)\n\t- Haram Kim (hk592@cornell.edu)"^
     "\n\t- Samuel Ringel (sjr254@cornell.edu)\n\t- Rachel Shim "^
     "(cs899@cornell.edu)\n\nYou can find further documentation at:"^
     "\nhttps://github.com/rachelshim/Risc/blob/master/README.md")));
-  ignore(factory#add_item "Rules" ~callback:(run_blocking_dialog `INFO "Rules" 
+  ignore(factory#add_item "Rules" ~callback:(run_blocking_dialog `INFO "Rules"
   ("TODO")));
 
   (*Continent label setup*)
