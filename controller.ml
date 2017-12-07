@@ -37,8 +37,12 @@ let update_gui (s : state) (st : state)
     update_available_reinforcements (avail_troops st)
 (* TODO update_troop_count when implemented in state *)
   | AAttack ((r1, r2), num) ->
-    update_territories [(r1, ctrl_of_reg st r1, troops_in st r1)];
-    update_territories [(r2, ctrl_of_reg st r2, troops_in st r2)];
+    let ctrl1 = ctrl_of_reg st r1 in  
+    let troops1 = troops_in st r1 in
+    let ctrl2 = ctrl_of_reg st r2 in
+    let troops2 = troops_in st r2 in
+    update_territories [(r1, ctrl1, troops1)];
+    update_territories [(r2, ctrl2, troops2)];
     update_available_reinforcements (avail_troops st);
     let cont1 = cont_of_reg st r1 in
     let own1 = owner_of_cont st cont1 in
