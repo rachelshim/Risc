@@ -28,10 +28,6 @@ type region
  *)
 val init_state : int -> state
 
-(* [is_over s] returns [true] if the game has a winner, [false] otherwise
- *)
-val is_over : state -> bool
-
 (* [update a s] updates the state in accordance with the action [a]. *)
 val update : state -> action -> state
 
