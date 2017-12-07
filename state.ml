@@ -353,13 +353,9 @@ let ctrl_of_reg st r =
   (region_of_name st r).controller
 
 let owner_of_cont st c =
-  (*TODO: remove wrapper*)
-  try
-    match List.assoc c st.continents with
-    | None -> "Grey"
-    | Some owner -> owner
-  with
-  | e -> print_endline ("attempted to get continent: " ^ c); raise e
+  match List.assoc c st.continents with
+  | None -> "Grey"
+  | Some owner -> owner
 
 let cont_of_reg st r =
   (region_of_name st r).continent
@@ -382,6 +378,95 @@ let ready_next_turn st =
   match st.current_move with
   | CReinforcement _ -> false
   | _ -> (List.length (current_player st).cards) < 5
+
+let rep_ok st =
+  (* Tabbing intentionally incorrect for increased readability *)
+  let check_troops p =
+    Regions.fold (fun _ r acc -> acc +
+                    if p.id = r.controller
+                    then r.troops
+                    else 0) st.regions 0 = p.total_troops in
+  if not (List.fold_left (fun b p -> b && check_troops p) true st.players)
+  then failwith "check_troops doesn't hold"
+  else
+
+  let check_cr_att p =
+    List.length p.continent_regions = 6 &&
+    List.fold_left (fun b c -> b && List.mem_assoc c p.continent_regions) true
+      ["North America"; "South America"; "Europe";
+       "Africa"; "Asia"; "Australia"] in
+  if not (List.fold_left (fun b p -> b && check_cr_att p) true st.players)
+  then failwith "check_cr_att doesn't hold"
+  else
+
+  let zeroed_continent_regions p =
+    Regions.fold (fun _ r acc_lst ->
+                    if p.id = r.controller
+                    then
+                      let n = List.assoc r.continent acc_lst in
+                      acc_lst |>
+                      List.remove_assoc r.continent |>
+                      List.cons (r.continent, n - 1)
+                    else acc_lst) st.regions p.continent_regions in
+  let check_continent_regions p =
+    List.fold_left (fun b c -> b && (snd c = 0))
+      true (zeroed_continent_regions p) in
+  if not (List.fold_left (fun b p -> b && check_continent_regions p)
+                 true st.players)
+  then failwith "check_continent_regions doesn't hold"
+  else
+
+  let check_controls_cont p =
+    let (b, len) =
+      List.fold_left
+        (fun (b, len) c_r ->
+          if List.assoc (fst c_r) continents |> fst = snd c_r
+          then (b && List.mem (fst c_r) p.controls_cont, len + 1)
+          else (b, len)) (true, 0) p.continent_regions in
+    b && List.length p.controls_cont = len in
+  if not (List.fold_left (fun b p -> b && check_controls_cont p)
+              true st.players)
+  then failwith "check_controls_cont doesn't hold"
+  else
+
+  let check_c_att =
+    List.length st.continents = 6 &&
+    List.fold_left (fun b c -> b && List.mem_assoc c st.continents) true
+      ["North America"; "South America"; "Europe";
+       "Africa"; "Asia"; "Australia"] in
+  if not check_c_att
+  then failwith "check_c_att doesn't hold"
+  else
+
+  let check_continents =
+    let (b, len) =
+      List.fold_left
+        (fun (b, len) c ->
+          match snd c with
+          | None -> (b, len)
+          | Some p ->
+            (b && List.mem (fst c) (player_of_id st p).controls_cont, len + 1))
+        (true, 0) st.continents in
+    b && List.fold_left
+          (fun len p ->
+            len + (List.length p.controls_cont)) 0 st.players = len in
+  if not check_continents
+  then failwith "check_continents doesn't hold"
+  else
+
+  let check_players_in_game =
+    let players_from_map =
+      Regions.fold (fun _ r lst ->
+                      if List.mem r.controller lst
+                      then lst
+                      else r.controller::lst) st.regions [] in
+    List.length players_from_map = List.length st.players &&
+    List.fold_left
+      (fun b p -> b && List.mem p.id players_from_map) true st.players in
+  if not check_players_in_game
+  then failwith "check_players_in_game doesn't hold"
+  else ()
+
 
 (* ############################################################################
 
@@ -468,8 +553,8 @@ let init_state n =
       players_w_continents in
   {
     players = players_w_continents;
-    (* current_move = CDeployment (50 - 5 * n - (42 / n)); *)
-    current_move = CDeployment 2;
+    current_move = CDeployment (50 - 5 * n - (42 / n));
+    (*current_move = CDeployment 2;*)
     gets_card = false;
     turns = 0;
     continents = total_conts;
@@ -530,27 +615,26 @@ let get_player_reinforcements p =
  *)
 let give_player_region r st =
   let p = List.hd st.players in
-  let troops_in_cont = List.assoc r.name p.continent_regions + 1 in
+  let ctrl_regions_count = List.assoc r.continent p.continent_regions + 1 in
   let makes_continent =
-    List.assoc r.continent continents |> fst = troops_in_cont in
+    List.assoc r.continent continents |> fst = ctrl_regions_count in
   {st with
-   regions = Regions.add r.name r st.regions;
-   players =
-     (let new_p =
-       {p with
-        continent_regions =
+    regions = Regions.add r.name r st.regions;
+    players =
+      (let new_p =
+        {p with
+          continent_regions =
           List.remove_assoc r.name p.continent_regions |>
-          List.cons (r.name, troops_in_cont);
+          List.cons (r.name, ctrl_regions_count);
         controls_cont =
           if makes_continent then r.continent::p.controls_cont
           else p.controls_cont} in
-     prepend_player new_p st.players);
-   continents =
-     if makes_continent
-     then
-       List.remove_assoc r.continent st.continents |>
-       List.cons (r.continent, Some p.id)
-     else st.continents}
+      prepend_player new_p st.players);
+    continents =
+      if makes_continent then
+        (r.continent, Some p.id)::(List.remove_assoc r.continent st.continents)
+      else
+        (r.continent, None)::(List.remove_assoc r.continent st.continents)}
 
 (** [get_player p_id] returns the player in input list with id [p_id] *)
 let rec get_player p_id = function
@@ -593,7 +677,7 @@ let transfer_region r st t =
      gets_card = true} |>
     give_player_region new_r in
   if num_controlled p_d = 1
-  then
+  then begin
     let moved_cards = p_d.cards in
     let p_a' = List.hd new_st.players in
     let new_players =
@@ -602,13 +686,13 @@ let transfer_region r st t =
     {new_st with
      players = remove_player p_d.id new_players;
      log =
-       p_a.id ^ " has taken " ^ r.name ^ " and eliminated" ^ p_d.id ^ "!" ^
+       p_a.id ^ " has taken " ^ r.name ^ " and eliminated " ^ p_d.id ^ "!" ^
        (if List.length moved_cards > 0
         then
           "They take " ^ p_d.id ^ "'s " ^
           string_of_int (List.length moved_cards) ^ " cards."
         else "")}
-  else
+  end else
     let curr_cont_reg = List.assoc r.continent p_d.continent_regions in
     let new_p_d =
       {p_d with
@@ -618,10 +702,7 @@ let transfer_region r st t =
          List.cons (r.continent, curr_cont_reg - 1)} in
     {new_st with
      players = replace_player new_p_d new_st.players;
-     continents =
-       List.remove_assoc r.continent new_st.continents |>
-       List.cons (r.continent, None);
-     log = p_a.id ^ " has taken " ^ r.name ^ "from " ^ p_d.id ^ "."}
+     log = p_a.id ^ " has taken " ^ r.name ^ " from " ^ p_d.id ^ "."}
 
 (* helper function for testing dfs in utop delete later *)
 let find_terr p st =
@@ -629,28 +710,42 @@ let find_terr p st =
   |> List.filter (fun (x, y) -> y.controller = p)
   |> List.map (fun (x, y) -> x)
 
-let check_target p s1 s2 st =
-  let r1 = Regions.find s1 st in
-  let r2 = Regions.find s2 st in
+(* Helper function for [check_path]
+ * [check_target p s1 s2 reg] returns [true] if the regions represented by
+ * strings [s1] and [s2] in the map of regions [reg] have the same name and
+ * both have controller [p], false otherwise
+ *)
+let check_target p s1 s2 reg =
+  let r1 = Regions.find s1 reg in
+  let r2 = Regions.find s2 reg in
   r1.name = r2.name && p = r1.controller && p = r2.controller
 
-let check_controls p s st =
-  let r = Regions.find s st in
+(* Helper function for [check_path]
+ * [check_controls p s reg] returns [true] if the (string )controller of the
+ * region represented by string [s] in the map of regions [reg] is [p],
+ * [false] otherwise.
+ *)
+let check_controls p s reg =
+  let r = Regions.find s reg in
   r.controller = p
 
-(* TODO: Documentation *)
-let rec check_path p s1 s2 st =
-  if not (check_controls p s1 st) then false
-  else if check_target p s1 s2 st then true
+(* [check_path p s1 s2 reg] checks whether there valid troop movement path from
+ * the regions represented by the strings [s1] and [s2] in the map of regions
+ * [reg].  A valid troop movement is defined as a contiguous path of all the
+ * territories owned by a certain player [p] that are connected.
+ *)
+let rec check_path p s1 s2 reg =
+  if not (check_controls p s1 reg) then false
+  else if check_target p s1 s2 reg then true
   else
-    let r1_routes = (Regions.find s1 st).routes in
+    let r1_routes = (Regions.find s1 reg).routes in
     let rec search_helper visited = function
       | [] -> (false, visited)
       | h::t -> if List.mem h visited then search_helper visited t
                 else begin
-                  if check_target p h s2 st then (true, visited)
-                  else if check_controls p h st then
-                    search_helper (h::visited) (Regions.find h st).routes
+                  if check_target p h s2 reg then (true, visited)
+                  else if check_controls p h reg then
+                    search_helper (h::visited) (Regions.find h reg).routes
                   else search_helper (h::visited) t
                 end
                 in
@@ -659,10 +754,10 @@ let rec check_path p s1 s2 st =
       | x::xs ->
         if List.mem x visited then search visited xs
         else begin
-          if check_target p x s2 st
+          if check_target p x s2 reg
             then true
-          else if check_controls p x st then
-            match search_helper (x::visited) (Regions.find x st).routes with
+          else if check_controls p x reg then
+            match search_helper (x::visited) (Regions.find x reg).routes with
             | true, _ -> true
             | false, l -> search (x::(l @ visited)) xs
           else search (x::visited) xs
@@ -695,7 +790,11 @@ let invalid_move_log a c_m =
   "Invalid move: You may not " ^ attempted_action ^
     " at this time. " ^ state_log
 
-(* TODO: documentnation *)
+(* [determine_card st] gives the current player in state [st] a new card if he
+ * needs to receive a new card and returns the updated state, with the player
+ * list, log, and current move update to reflect whether or not they recieved
+ * a card.
+ *)
 let determine_card st =
   let p = List.hd st.players in
   if st.gets_card then
@@ -712,6 +811,7 @@ let determine_card st =
   else
    {st with current_move = CRecieve_Card None;
             log = st.log ^ "\n" ^ p.id ^ " did not receive a card."}
+
 
 let rec update st a =
   match a, st.current_move with
@@ -770,7 +870,7 @@ let rec update st a =
                     players = p_list;
                     bonus_troops = increment_bonus bonus_n;
                     log = "Successfully traded in cards for " ^
-                          (string_of_int bonus_n) ^ " extra troops"; }
+                          (string_of_int st.bonus_troops) ^ " extra troops"; }
         with Not_found ->
           {st with log = "Invalid move: you don't have those cards."}
       end
@@ -801,7 +901,7 @@ let rec update st a =
                     Regions.add r {region with troops = region.troops + i}
                       st.regions;
                   log = "Successfully reinforced " ^ r ^ " with " ^
-                        (string_of_int i) ^ " new troops" ^
+                        (string_of_int i) ^ " new troops.\n" ^
                         (if n = i
                         then
                           "\nYou may now attack, move troops to end your " ^
@@ -824,6 +924,12 @@ let rec update st a =
     then {st with log = "Invalid move: you don't control " ^ r1_name ^ "."}
     else if r2.controller = a.id
     then {st with log = "Invalid move: you control " ^ r2_name ^ "."}
+    else if not (List.mem r2.name r1.routes)
+    then
+      {st with
+       log =
+         "Invalid move: " ^ r1_name ^ " and " ^ r2_name ^
+         " do not border each other."}
     else if r1.troops <= t
     then {st with log = "Invalid move: you don't have enough troops."}
     else
@@ -929,17 +1035,9 @@ let rec update st a =
      log =
        "It is now " ^ (List.hd ps).id ^ "'s turn. They may now reinforce" ^
        " with " ^ string_of_int new_troops ^
-       " troops or play a card combination."
+       " troops or play a card combination.";
+     gets_card = false
      }
   | ANextTurn, _  | AAttack _, _  | AMovement _, _  | AReinforcement _, _
   | ADeployment _, _ | APlayCards _, _->
     {st with log = invalid_move_log a st.current_move}
-
-
-(* ############################################################################
-
-  Helper methods for testing
-
-##############################################################################*)
-
-let auto_deploy st = failwith "TODO"

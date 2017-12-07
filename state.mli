@@ -3,15 +3,15 @@ open Action
 (* [player] represents a player in the game *)
 type player
 
-(* [state] represents the current state of the game *)
+(** [state] represents the current state of the game *)
 type state
 
-(* [region] represents a region in Risk, which has fields for
+(** [region] represents a region in Risk, which has fields for
  * its name, the number of troops on it, and the player that controls it.
  *)
 type region
 
-(* [init_state n] creates a new game with [n] the players.
+(** [init_state n] creates a new game with [n] the players.
  *)
 val init_state : int -> state
 
@@ -74,3 +74,13 @@ val num_troops_deployed : player -> int
 (** [ready_next_turn st] returns whether the current player is able to move
 to the next turn. *)
 val ready_next_turn : state -> bool
+
+(**
+ * Checks RIs of state, including that the number of troops on the board matches
+ * the stored number for each player, that each continents-storing data
+ * structure in state and each player is correct, and that the players that
+ * control regions matches the players left in the game.
+ *
+ * If any of these do not hold, the program fails with a relevant message.
+ *)
+val rep_ok : state -> unit
