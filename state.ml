@@ -370,6 +370,11 @@ let get_log st =
 let get_regions st =
   Regions.bindings st.regions |> List.map fst
 
+let receiving_card st =
+  match st.current_move with
+  | CRecieve_Card _ -> true
+  | _ -> false
+
 (* ############################################################################
 
   Initial state stuff
@@ -657,7 +662,7 @@ let rec check_path p s1 s2 st =
         in
     search [s1] r1_routes
 
-(** 
+(**
  * [invalid_move_log] is an error log for an invalid combination of [a]
  * and [c_m]
  *)
@@ -670,10 +675,10 @@ let invalid_move_log a c_m =
     | AAttack _ -> "attack"
     | AMovement _ -> "move troops"
     | ANextTurn -> "end your turn" in
-  let state_log = 
+  let state_log =
     match c_m with
     | CDeployment _ -> "You must deploy a troop."
-    | CReinforcement n -> 
+    | CReinforcement n ->
       "You must either reinforce your territories or play cards. There are " ^
       (string_of_int n) ^ " reinforcements left this turn."
     | CAttack -> "You may either attack, move troops, or end your turn."
@@ -683,7 +688,7 @@ let invalid_move_log a c_m =
     " at this time. " ^ state_log
 
 (* TODO: documentnation *)
-let determine_card st = 
+let determine_card st =
   let p = List.hd st.players in
   if st.gets_card then
     let card_val = Random.int 22 in
@@ -720,7 +725,7 @@ let rec update st a =
            Regions.add r {reg with troops = reg.troops + 1} st.regions;
          log =
            "Successfuly deployed to " ^ r ^ ". The game has now started! " ^
-           (List.hd p_list).id ^ " may now reinforce with" ^
+           (List.hd p_list).id ^ " may now reinforce with " ^
            (string_of_int reinforce_troops) ^ " troops."}
       else
       {st with
@@ -764,7 +769,7 @@ let rec update st a =
     else
     {st with
     log =
-      "Invalid card combination. To recieve bonus troops, either the" ^ 
+      "Invalid card combination. To recieve bonus troops, either the" ^
       "cards played must all be of the same type of of different types, or a " ^
       "wild card must be included."}
   | APlayCards _, CAttack ->
@@ -791,7 +796,7 @@ let rec update st a =
                         (string_of_int i) ^ " new troops.\n" ^
                         (if n = i
                         then
-                          "You may now attack, move troops to end your " ^ 
+                          "\nYou may now attack, move troops to end your " ^
                           "turn, or end your turn without movement."
                         else
                           "You have " ^ string_of_int (n - i) ^
@@ -805,7 +810,7 @@ let rec update st a =
     if List.length a.cards > 4
     then
       {st with
-       log = "Invalid move: you have more than 5 cards, so you must play a " ^ 
+       log = "Invalid move: you have more than 5 cards, so you must play a " ^
              "card combination and recieve troops."}
     else if r1.controller <> a.id
     then {st with log = "Invalid move: you don't control " ^ r1_name ^ "."}
@@ -888,20 +893,20 @@ let rec update st a =
         else
           let r1' = { r1 with troops = r1.troops - n } in
           let r2' = { r2 with troops = r2.troops + n } in
-          determine_card 
+          determine_card
             { st with regions = Regions.add s1 r1' st.regions |>
                               Regions.add s2 r2';
                       log = "Successfully moved " ^ (string_of_int n) ^
                             " troops from " ^ s1 ^ " to " ^ s2 ^ "."}
       else
-        { st with log = "Invalid move: " ^ 
+        { st with log = "Invalid move: " ^
                         "territories must have a contiguously controlled path."}
     else { st with log = "Invalid move: you must control both territories." }
   | ANextTurn, CAttack ->
     if List.length (List.hd st.players).cards > 4
     then
       {st with
-      log = "Invalid move: you have more than 5 cards, so you must play a " ^ 
+      log = "Invalid move: you have more than 5 cards, so you must play a " ^
         "card combination and recieve troops."}
     else determine_card st
   | ANextTurn, CRecieve_Card _ ->
@@ -918,7 +923,7 @@ let rec update st a =
        " with " ^ string_of_int new_troops ^
        " troops or play a card combination."
      }
-  | ANextTurn, _  | AAttack _, _  | AMovement _, _  | AReinforcement _, _ 
+  | ANextTurn, _  | AAttack _, _  | AMovement _, _  | AReinforcement _, _
   | ADeployment _, _ | APlayCards _, _->
     {st with log = invalid_move_log a st.current_move}
 
@@ -930,6 +935,3 @@ let rec update st a =
 ##############################################################################*)
 
 let auto_deploy st = failwith "TODO"
-
-
-
