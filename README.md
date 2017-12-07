@@ -55,21 +55,20 @@ To avoid circular dependencies, imperative functions for setting GUI state are p
 - GTK+2.0 runtime environment (via Apt or Homebrew) - required for  GUI to operate
 
 ## Testing:
-- Interactive play-testing: we tested interactively by play-testing the game in both a non-malicious average user use case, and deliberately attempting to break the game through illegal actions. A detailed rep_ok function was also run on each state during play-testing.
-- Unit testing: used to demonstrate the correctness of our State implementation, as it was the only segment of the program isolated from GUI components and imperative features.
+- Interactive play-testing: we conducted extensive play-testing of the game in both a non-malicious average user use case, and deliberately attempting to break the game through illegal actions. A detailed rep_ok function was also run on each state during play-testing.
+- Unit testing: used to demonstrate the correctness of our State implementation. Tests that state is correctly initialized and updated in a variety of cases. 
 - Utop: we used during development to test State operations during programming.
 - Ocamldebug: for specific error cases, we used Ocamldebug to identify the locations of problems and to verify that they were corrected after corrections were made.
 
 ### Known problems:
 - App is only guaranteed to work on GNOME desktop environments, but may work  on some non-GNOME environments. This is because other desktop systems require GTK to be implemented differently, and can cause display problems for our program.
 - Low resolution displays may have difficulty displaying the program GUI in full, due to restrictions on resizing the gameplay widget frame.
-- In some earlier design choices, we chose to separate Deployment (in the beginning of the game) and Reinforcement (occurs during each player's turn). If we were to revise our implementation, we would combine the two to avoid user confusion.
 
 ## Division of labor:
 - Avani worked in a full-stack capacity, implementing the Controller, State functions, improving UX and user-facing logging, and helping to coordinate functionality between the backend and frontend. 30-35 hours
 - Haram worked largely on frontend and testing, implementing the entire GUI, in addition to development environment setup and debugging via ocamldebug. 50 hours
 - Sam developed the backend, implementing game initialization, troop deployment, attacking (including all results of an attack), turn ending, logging, and the rep_ok function. He also wrote state test cases. 30-35 hours
-- Rachel developed the backend, implementing troop reinforcement, card logic including trading in and receiving cards, and troop movement including the search for a valid path. She also wrote tests cases for the state including ones with a test map for a controlled testing environment. ~x hours
+- Rachel developed the backend, implementing troop reinforcement, card logic including trading in and receiving cards, and troop movement including the search for a valid path. She also wrote tests cases for the state including ones with a test map for a controlled testing environment. 30-35 hours
 
 ## Screenshots:
 Some sample screenshots from GTK on GNOME (Ubuntu 16.04 LTS)
