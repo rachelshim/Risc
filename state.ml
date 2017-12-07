@@ -745,33 +745,19 @@ let rec check_path p s1 s2 reg =
   else if check_target p s1 s2 reg then true
   else
     let r1_routes = (Regions.find s1 reg).routes in
-    let rec search_helper visited = function
-      | [] -> (false, visited)
-      | h::t -> if List.mem h visited then search_helper visited t
-                else begin
-                  if check_target p h s2 reg then (true, visited)
-                  else if check_controls p h reg then
-                    match search_helper (h::visited) (Regions.find h reg).routes
-                    with
-                    | true, l -> (true, l)
-                    | false, l -> search_helper (h::l) t
-                  else search_helper (h::visited) t
-                end
-    in
     let rec search visited = function
-      | [] -> false
-      | x::xs ->
-        if List.mem x visited then search visited xs
+      | [] -> (false, visited)
+      | h::t -> 
+        if List.mem h visited then search visited t
         else begin
-          if check_target p x s2 reg then true
-          else if check_controls p x reg then
-            let () = print_endline x in
-            match search_helper (x::visited) (Regions.find x reg).routes with
-            | true, _ -> true
-            | false, l -> search (x::l) xs
-          else search (x::visited) xs
+          if check_target p h s2 reg then (true, visited)
+          else if check_controls p h reg then
+            match search (h::visited) (Regions.find h reg).routes with
+            | true, l -> (true, l)
+            | false, l -> search (h::l) t
+          else search (h::visited) t
         end
-    in search [s1] r1_routes
+    in search [s1] r1_routes |> fst
 
 (**
  * [invalid_move_log] is an error log for an invalid combination of [a]
