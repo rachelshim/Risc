@@ -631,7 +631,6 @@ let rec check_path p s1 s2 st =
                 else begin
                   if check_target p h s2 st then (true, visited)
                   else if check_controls p h st then
-                    let () = print_endline h in
                     search_helper (h::visited) (Regions.find h st).routes
                   else search_helper (h::visited) t
                 end
@@ -644,7 +643,6 @@ let rec check_path p s1 s2 st =
           if check_target p x s2 st
             then true
           else if check_controls p x st then
-            let () = print_endline x in
             match search_helper (x::visited) (Regions.find x st).routes with
             | true, _ -> true
             | false, l -> search (x::(l @ visited)) xs
