@@ -748,8 +748,11 @@ let rec check_path p s1 s2 reg =
       | [] -> (false, visited)
       | h::t -> if List.mem h visited then search_helper visited t
                 else begin
-                  if check_target p h s2 reg then (true, visited)
+                  if check_target p h s2 reg then 
+                    let () = print_endline "found" in 
+                    (true, visited)
                   else if check_controls p h reg then
+                    let () = print_endline h in
                     search_helper (h::visited) (Regions.find h reg).routes
                   else search_helper (h::visited) t
                 end
@@ -759,9 +762,11 @@ let rec check_path p s1 s2 reg =
       | x::xs ->
         if List.mem x visited then search visited xs
         else begin
-          if check_target p x s2 reg
-            then true
+          if check_target p x s2 reg then 
+            let () = print_endline "found" in
+            true
           else if check_controls p x reg then
+            let () = print_endline x in
             match search_helper (x::visited) (Regions.find x reg).routes with
             | true, _ -> true
             | false, l -> search (x::l) xs
@@ -1050,7 +1055,7 @@ let rec update st a =
 
 (* ############################################################################
 
-  Gameplay
+  Testing Stuff
 
 ##############################################################################*)
 
@@ -1064,23 +1069,24 @@ let test_map =
                        else { r with controller = "Blue";
                                      troops = 2; }) init_regions in
   {
-    current_move = CDeployment 1;
+    current_move = CDeployment 0;
     players = [{
                 id = "Red";
                 cards = [];
-                total_troops = 0;
+                total_troops = 42;
                 continent_regions =
-                  [("Asia", 0); ("Africa", 0); ("North America", 0);
+                  [("Asia", 24); ("Africa", 0); ("North America", 18);
                   ("South America", 0); ("Europe", 0); ("Australia", 0)];
-                controls_cont = [];
+                controls_cont = ["Asia"; "North America"];
               }; {
-                  id = "Red";
+                  id = "Blue";
                   cards = [];
-                  total_troops = 0;
+                  total_troops = 42;
                   continent_regions =
-                    [("Asia", 0); ("Africa", 0); ("North America", 0);
-                    ("South America", 0); ("Europe", 0); ("Australia", 0)];
-                  controls_cont = [];
+                    [("Asia", 0); ("Africa", 12); ("North America", 0);
+                    ("South America", 8); ("Europe", 14); ("Australia", 8)];
+                  controls_cont = ["South America"; "Australia"; "Europe";
+                                   "Africa"];
               }];
     gets_card = false;
     turns = 0;

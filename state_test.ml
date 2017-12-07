@@ -3,10 +3,9 @@ open State
 open Action
 
 let two_player = init_state 2
-let three_player = init_state 3
-let four_player = init_state 4
-let five_player = init_state 5
-let six_player = init_state 6
+let testmap = test_map
+
+let () = rep_ok testmap
 
 
 let tests =
@@ -23,6 +22,9 @@ let tests =
                                    else (p1, p2 + 1))
                                  (0, 0)
                                  (get_regions two_player)) (21, 21))
+
+
+  (* Tests with testmap *)
 
 ]
 
