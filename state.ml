@@ -620,6 +620,7 @@ let check_controls p s st =
   let r = Regions.find s st in
   r.controller = p
 
+(* TODO: Documentation *)
 let rec check_path p s1 s2 st =
   if not (check_controls p s1 st) then false
   else if check_target p s1 s2 st then true
@@ -650,6 +651,21 @@ let rec check_path p s1 s2 st =
         end
         in
     search [s1] r1_routes
+
+(* TODO: documentnation *)
+let determine_card st = 
+  let p = List.hd st.players in
+  if st.gets_card then
+    let card_val = Random.int 22 in
+    let card_togive = if card_val = 21 then Wild
+                      else if card_val mod 3 = 0 then Artillery
+                      else if card_val mod 3 = 1 then Cavalry
+                      else Infantry in
+    let p' = { p with cards = card_togive::p.cards } in
+    { st with players = prepend_player p' st.players;
+              current_move = CRecieve_Card (Some card_togive) }
+  else { st with current_move = CRecieve_Card None }
+
 
 let rec update st a =
   match a, st.current_move with
@@ -824,38 +840,19 @@ let rec update st a =
                             Regions.add s2 r2' }
     else
       { st with log = "Invalid move: try different regions."}
-    (* add stuff for updating continent thing in player *)
     (* also add transitioning into next state *)
+  | AMovement _, CRecieve_Card _ -> determine_card st
   | AMovement _, _ -> 
     { st with log = "Invalid move: cannot move troops at this time" }
   | ANextTurn, CAttack ->
     if List.length (List.hd st.players).cards > 4
-    then {st with log = "Invalid move: you must play cards."}
-    else if st.gets_card
-    then
-      let card_val = Random.int 22 in
-      let card =
-        if card_val = 21
-        then Wild
-        else if card_val mod 3 = 0
-        then Artillery
-        else if card_val mod 3 = 1
-        then Cavalry
-        else Infantry in
-      let p =
-        {(List.hd st.players) with
-         cards = card::(List.hd st.players).cards} in
-      {st with
-       players = prepend_player p st.players;
-       current_move = CRecieve_Card (Some card)}
-    else
-    {st with
-     current_move = CRecieve_Card None}
+      then {st with log = "Invalid move: you must play cards."}
+    else determine_card st
   | ANextTurn, CRecieve_Card _ ->
-    let players = append_player (List.hd st.players) st.players in
-    let new_troops = get_player_reinforcements (List.hd players) in
+    let ps = append_player (List.hd st.players) st.players in
+    let new_troops = get_player_reinforcements (List.hd ps) in
     {st with
-     players = players;
+     players = ps;
      current_move =
        if new_troops = 0
        then CAttack
@@ -875,7 +872,9 @@ let valid_mode a st =
 
 ##############################################################################*)
 
-
+let auto_deploy st = 
+  let num_players = List.length st.players in
+  failwith "TODO"
 
 
 
