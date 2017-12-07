@@ -302,7 +302,11 @@ let run_init_dialog parent =
   in
   (*dialog components*)
   let init_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true
+<<<<<<< HEAD
+                  ~title:"Risc" ~deletable:true
+=======
                   ~title:"Risc" ~deletable:true ~width:350 ~height:150
+>>>>>>> 74e1b21f0a1a8dea7308d2ea739ccaa840920d46
                   ~resizable:false () in
   let init_dialog_label = GMisc.label
                   ~text:"Welcome! Please select the number of players."
@@ -566,15 +570,21 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
       clear_selections ();
       !confirm_button_global#misc#set_sensitive true;
       if index = 0 then begin
+        write_log ("Select a region by clicking its button.");
         set_selection_mode Single
       end
       else if index = 1 then begin
+        write_log ("Click on a source region to attack from, then " ^
+                   "a destination region to attack. Then click \"Confirm\".");
         set_selection_mode Double
       end
       else if index = 2 then begin
+        write_log ("Click on a region to reinforce, then click \"Confirm\".");
         set_selection_mode Single
       end
       else if index = 3 then begin
+        write_log ("Click on a source region to move troops from, then " ^
+                  "a destination region to move them to. Then click \"Confirm\"");
         set_selection_mode Double
       end
       else begin
@@ -597,7 +607,7 @@ let territory_button_handler name (button: GButton.button) () =
   try
     write_log ("Region: " ^ name);
     let sel_result = make_selection name in
-    (if not sel_result then write_log ("Failed to select " ^ name));
+    (if not sel_result then write_log ("Failed to select " ^ name ^ "."));
     ();
   with
   | _ ->  write_log "An unexpected error has occurred.";
@@ -801,7 +811,8 @@ let main () =
   let log_view = GText.view ~buffer:log_buffer ~editable:false ~width:1590
                             ~height:300 ~packing:log_window#add () in
   log_buffer#set_text
-    ("> Game started with " ^ (string_of_int !player_num) ^ " players.");
+    ("> Game started with " ^ (string_of_int !player_num) ^ " players.\n" ^
+     "> Select a move from \"Move Selection\" in the right pane.");
 
   (*Menu bar creation*)
   let menubar = GMenu.menu_bar ~packing:(info_pack#add) () in

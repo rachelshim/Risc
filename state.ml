@@ -333,7 +333,8 @@ let player_id pl =
 
 let avail_troops st =
   match st.current_move with
-  | CDeployment i -> i
+  | CDeployment _ -> 1
+  | CReinforcement i -> i
   | _ -> 0 (** TODO handle this better *)
 
 let player_of_id st id =
@@ -812,6 +813,8 @@ let rec update st a =
   | AAttack _, _ ->
     {st with log = "Invalid move: cannot attack at this time"}
   | AMovement ((r1, r2), n), CAttack -> failwith "TODO"
+<<<<<<< HEAD
+=======
   | ANextTurn, CAttack ->
     if List.length (List.hd st.players).cards > 4
     then {st with log = "Invalid move: you must play cards."}
@@ -848,6 +851,7 @@ let rec update st a =
     {st with log = "Invalid move: must place all troops before ending turn."}
   | ANextTurn, _ ->
     {st with log = "Invalid move: cannot end turn at this time."}
+>>>>>>> 74e1b21f0a1a8dea7308d2ea739ccaa840920d46
   | AMovement _, _ ->
     { st with log = "Invalid move: cannot move troops at this time" }
 
