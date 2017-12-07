@@ -657,9 +657,9 @@ let give_player_region r st =
     players =
       (let new_p =
         {p with
-          continent_regions =
-          List.remove_assoc r.name p.continent_regions |>
-          List.cons (r.name, ctrl_regions_count);
+        continent_regions =
+          List.remove_assoc r.continent p.continent_regions |>
+          List.cons (r.continent, ctrl_regions_count);
         controls_cont =
           if makes_continent then r.continent::p.controls_cont
           else p.controls_cont} in
