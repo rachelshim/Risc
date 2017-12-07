@@ -881,7 +881,7 @@ let rec update st a =
     let p = List.hd st.players in
     let r1 = Regions.find s1 st.regions in
     let r2 = Regions.find s2 st.regions in
-    if not (p.id == r1.controller && p.id == r2.controller) then
+    if not (p.id = r1.controller && p.id = r2.controller) then
       if check_path p.id s1 s2 st.regions then
         if r1.troops <= n then
           { st with log = "Invalid move: you don't have enough troops"}
