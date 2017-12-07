@@ -43,6 +43,9 @@ val region_of_name : state -> string -> region
     ment for player pl in st. *)
 val avail_troops : state -> int
 
+(** [player_of_id st id] is the player with id [id] in [st] *)
+val player_of_id : state -> string -> player
+
 (** [troops_in st r] returns the number of troops currently in region r *)
 val troops_in : state -> string -> int
 
