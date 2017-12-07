@@ -23,4 +23,4 @@ gitlog:
 	git log --stat > gitlog.txt
 
 zip:
-	zip -r --exclude=*.git* Risc_archive.zip .
+	zip -r --exclude=*.git* ../Risc_archive.zip .
