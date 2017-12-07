@@ -586,9 +586,9 @@ let init_state n =
       players_w_continents in
   {
     players = players_w_continents;
-    (*TODO: revert*)
-    (* current_move = CDeployment (50 - 5 * n - (42 / n)); *)
-    current_move = CDeployment 2;
+    (*switch to other current_move def for debugging*)
+    current_move = CDeployment (50 - 5 * n - (42 / n));
+    (*current_move = CDeployment 2;*)
     gets_card = false;
     continents = total_conts;
     regions = regions_map;
@@ -839,8 +839,8 @@ let determine_card st =
 
 
 let rec update st a =
-  (*TODO: remove this line*)
-  rep_ok st;
+  (*only enable rep_ok when debugging*)
+  (*rep_ok st;*)
   match a, st.current_move with
   | ADeployment r, CDeployment n ->
     let p = List.hd st.players in
