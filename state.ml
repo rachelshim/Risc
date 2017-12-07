@@ -788,7 +788,7 @@ let rec update st a =
                     Regions.add r {region with troops = region.troops + i}
                       st.regions;
                   log = "Successfully reinforced " ^ r ^ " with " ^
-                        (string_of_int i) ^ " new troops" ^
+                        (string_of_int i) ^ " new troops.\n" ^
                         (if n = i
                         then
                           "You may now attack, move troops to end your " ^ 
