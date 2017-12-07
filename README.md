@@ -55,7 +55,7 @@ To avoid circular dependencies, imperative functions for setting GUI state are p
 - GTK+2.0 runtime environment (via Apt or Homebrew) - required for  GUI to operate
 
 ## Testing:
-- Interactive play-testing: we conducted extensive play-testing of the game in both a non-malicious average user use case, and deliberately attempting to break the game through illegal actions. A detailed rep_ok function was also run on each state during play-testing.
+- Interactive play-testing: we conducted extensive play-testing of the game in both a non-malicious average user use case, and deliberately attempting to break the game through illegal actions. A detailed rep_ok function was also run on each state during play-testing. Most of our testing occurred this way, as results are easily verifiable.
 - Unit testing: used to demonstrate the correctness of our State implementation. Tests that state is correctly initialized and updated in a variety of cases. 
 - Utop: we used during development to test State operations during programming.
 - Ocamldebug: for specific error cases, we used Ocamldebug to identify the locations of problems and to verify that they were corrected after corrections were made.
