@@ -529,6 +529,10 @@ let rec add_regions ps map rs =
     let new_map = Regions.add h.name {h with controller = p.id} map in
     add_regions ((List.tl ps) @ [new_p]) new_map t
 
+(**
+ * [add_conts c_ts] is a [player]'s [controls_cont] if [c_ts] is their
+ * [continent_reigons].
+ *)
 let rec add_conts c_ts =
   match c_ts with
   | [] -> []
@@ -538,6 +542,7 @@ let rec add_conts c_ts =
     else add_conts t
 
 let init_state n =
+  (*initializes each player without troops or regions*)
   let players =
     first_n ["Red"; "Blue"; "Green"; "Yellow"; "Purple"; "Orange"] n |>
     List.map
@@ -551,15 +556,18 @@ let init_state n =
               ("South America", 0); ("Europe", 0); ("Australia", 0)];
            controls_cont = [];
          }) in
+  (* distributes regions to players *)
   let (players_w_regions, regions_map) =
     Random.self_init ();
     List.map (fun r -> (Random.float 5.0, r)) init_regions |>
     List.sort (fun c1 c2 -> compare (fst c1) (fst c2)) |>
     add_regions players init_regions_map in
+  (* determines what continents each player owns *)
   let players_w_continents =
     List.map
       (fun p -> {p with controls_cont = add_conts p.continent_regions})
       players_w_regions in
+  (* determines continent ownership for state record *)
   let total_conts =
     List.fold_left
       (fun cs p ->
@@ -698,6 +706,7 @@ let transfer_region r st t =
      gets_card = true} |>
     give_player_region new_r in
   if num_controlled p_d = 1
+  (* runs if a player is eliminated *)
   then begin
     let moved_cards = p_d.cards in
     let p_a' = List.hd new_st.players in
@@ -713,6 +722,7 @@ let transfer_region r st t =
           "They take " ^ p_d.id ^ "'s " ^
           string_of_int (List.length moved_cards) ^ " cards."
         else "")}
+  (* if a player is not eliminated *)
   end else
     let curr_cont_reg = List.assoc r.continent p_d.continent_regions in
     let new_p_d =
@@ -816,10 +826,12 @@ let determine_card st =
     {st with
      players = prepend_player p' st.players;
      current_move = CRecieve_Card (Some card_togive);
-     log = st.log ^ "\n> " ^ p.id ^ " received a card."}
+     log = st.log ^ "\n> " ^ p.id ^ " received a card." ^
+           "\n> Select 'Next Turn' to end your turn."}
   else
    {st with current_move = CRecieve_Card None;
-            log = st.log ^ "\n> " ^ p.id ^ " did not receive a card."}
+            log = st.log ^ "\n> " ^ p.id ^ " did not receive a card." ^
+            "\n> Select 'Next Turn' to end your turn."}
 
 
 let rec update st a =
@@ -948,6 +960,7 @@ let rec update st a =
       let d_troops = min 2 r2.troops in
       let (a_lost_troops, d_lost_troops) =
         if min a_troops d_troops = 1
+        (* runs if one pair of dice is compared*)
         then
           let a_max =
             Random.int 6
@@ -957,6 +970,7 @@ let rec update st a =
             Random.int 6
             |> max (if a_troops = 2 then (Random.int 6) else 0) in
           begin if a_max <= b_max then (1, 0) else (0, 1) end
+        (* runs if two pairs of dice are compared*)
         else
           let a_max =
             let fst_roll = Random.int 6 in
@@ -976,11 +990,13 @@ let rec update st a =
           if snd a_max <= snd b_max
           then (fst top + 1, snd top)
           else (fst top, snd top + 1) in
+    (* changes troop levels in each region and player *)
     let new_a = {a with total_troops = a.total_troops - a_lost_troops} in
     let new_d = {d with total_troops = d.total_troops - d_lost_troops} in
     let new_r1 = {r1 with troops = r1.troops - a_lost_troops} in
     let new_r2 =  {r2 with troops = r2.troops - d_lost_troops} in
     if new_r2.troops = 0
+    (* runs if region is captured*)
     then
       let new_r1' = {new_r1 with troops = new_r1.troops - t} in
       let new_st =
