@@ -21,7 +21,8 @@ let update_gui (st : state)
   | ADeployment reg -> update_territories
                          [(reg, ctrl_of_reg st reg, troops_in st reg)];
     update_available_reinforcements (avail_troops st);
-    update_territories_count (num_controlled pl)
+    update_territories_count (num_controlled pl);
+    update_current_player (player_id pl)
     (* TODO update_troop_count when implemented in state *)
   | APlayCards (c1, c2, c3) ->
     update_cards (num_inf pl, num_cav pl, num_art pl, num_wild pl);

@@ -549,6 +549,7 @@ let confirm_button_handler parent () =
   with
   | _ ->  write_log "An unexpected error has occurred.";
   end;
+  clear_selections();
   ()
 
 (*
