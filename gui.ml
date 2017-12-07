@@ -61,15 +61,15 @@ let string_of_card card =
   | Wild -> "Wildcard"
 
 (*
- * [set_color wid col_str] is a function with the side effect that it sets the 
+ * [set_color wid col_str] is a function with the side effect that it sets the
  * color properties of the Gtk widget [wid] to the color [col_str], which must
- * be a member of the list of strings given in /usr/lib/x11/rgb.txt, or the 
- * function will have no effect (fails silently in the event of 
+ * be a member of the list of strings given in /usr/lib/x11/rgb.txt, or the
+ * function will have no effect (fails silently in the event of
  * Gdk.Error("color_parse")).
  *)
 let set_color wid col_str =
   let sty = wid#misc#style#copy in
-  let () = 
+  let () =
     try
       sty#set_bg[`NORMAL,`NAME col_str; `INSENSITIVE,`NAME col_str;
         `NORMAL,`NAME col_str;`PRELIGHT,`NAME col_str;`SELECTED,`NAME col_str];
@@ -80,7 +80,7 @@ let set_color wid col_str =
 
 (*
  * [set_territory_sensitivity name new_sens] is a function with the side effect
- * that the territory button associated with [name] in buttons_list is set to 
+ * that the territory button associated with [name] in buttons_list is set to
  * have the sensitivity specified by [new_sens].
  *)
 let set_territory_sensitivity name new_sens =
@@ -284,8 +284,8 @@ let setters = (write_log, update_territories, update_continent_owners,
 (*
  * [run_init_dialog parent] is a blocking function that creates a dialog window
  * with parent [parent] that allows the user to select the number of players
- * in the game (2 - 6, inclusive). The return value is an int option of None if 
- * the user failed to respond (i.e. by closing the window) or Some value of 
+ * in the game (2 - 6, inclusive). The return value is an int option of None if
+ * the user failed to respond (i.e. by closing the window) or Some value of
  * player count if they selected and accepted.
  *)
 let run_init_dialog parent =
@@ -302,10 +302,10 @@ let run_init_dialog parent =
   in
   (*dialog components*)
   let init_dialog = GWindow.dialog ~parent:parent ~destroy_with_parent:true
-                  ~title:"Initialization Dialog" ~deletable:true
+                  ~title:"Risc" ~deletable:true ~width:300 ~height:150
                   ~resizable:false () in
   let init_dialog_label = GMisc.label
-                  ~text:"Please select the number of players."
+                  ~text:"Welcome! Please select the number of players."
                   ~packing:init_dialog#vbox#add () in
   let init_dialog_options = ["2";"3";"4";"5";"6"] in
   let init_dialog_combobox = GEdit.combo_box_text
@@ -325,10 +325,10 @@ let run_init_dialog parent =
   !players_num
 
 (*
- * [run_cards_dialog parent] is a blocking function that creates a dialog 
+ * [run_cards_dialog parent] is a blocking function that creates a dialog
  * window with parent [parent] requring them to select a set of 3 cards to play.
  * The return value is an int * int * int option of None if the user failed
- * to respond (i.e. by closing the window) or Some (card1,card2,card3) 
+ * to respond (i.e. by closing the window) or Some (card1,card2,card3)
  * if they responded correctly, where the int values represent infantry,
  * cavalry, artillery, or wild cards (as values 0-3), respectively.
  *)
@@ -384,9 +384,9 @@ let run_cards_dialog parent =
   !cards_selected
 
 (*
- * [run_troop_dialog parent message (min, max)] is a blocking function that 
+ * [run_troop_dialog parent message (min, max)] is a blocking function that
  * creates a dialog window with parent [parent] and text content [message]
- * requring them to select some number on a slider between [min] [max] 
+ * requring them to select some number on a slider between [min] [max]
  * (inclusive). The return value is an int option of None if the user failed
  * to respond (i.e. by closing the window) or Some value if they responded
  * correctly.
@@ -431,8 +431,8 @@ let run_troop_dialog parent message (min, max) =
   !value
 
 (*
- * [confirm_button_handler parent] is a function callback for the GUI confirm 
- * button with the side effect that it confirms the currently selected action 
+ * [confirm_button_handler parent] is a function callback for the GUI confirm
+ * button with the side effect that it confirms the currently selected action
  * by extracting relevant data from the GUI, creating an Action based on that
  * information, and executing that action on the current state. This alters
  * the value stored by controller.
@@ -466,7 +466,7 @@ let confirm_button_handler parent () =
           match (src, dest, num) with
           | (Some s, Some d, Some n) -> write_log ("Attacking " ^ d ^ " from "
                                                   ^ s ^ " with " ^
-                                                  (string_of_int n) 
+                                                  (string_of_int n)
                                                   ^ " unit(s).");
                                         Some (AAttack ((s, d), n))
           | _ -> None
@@ -506,7 +506,7 @@ let confirm_button_handler parent () =
             "Select the number of troops to move." (1, src_troops) in
           match (src, dest, num) with
           | (Some s, Some d, Some n) -> write_log ("Moving "^(string_of_int n) ^
-                                                  " unit(s) from " ^ s ^ " to " 
+                                                  " unit(s) from " ^ s ^ " to "
                                                   ^ d ^ ".");
                                         Some (AMovement ((s, d), n))
           | _ -> None
@@ -552,7 +552,7 @@ let confirm_button_handler parent () =
   ()
 
 (*
- * [actions_cbox_handler box] is a function with the side effect that it 
+ * [actions_cbox_handler box] is a function with the side effect that it
  * sets the gui state based on the action selected in the combobox [box].
  *)
 let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
@@ -636,8 +636,8 @@ let add_territory (pack:GPack.fixed) x y name extra =
   ()
 
 (*
- * [add_label pack x y width height name] adds a framed label to the GUI 
- * gameplay fixed packing [pack] at pixel coords [x], [y] with a frame 
+ * [add_label pack x y width height name] adds a framed label to the GUI
+ * gameplay fixed packing [pack] at pixel coords [x], [y] with a frame
  * of width [width] and height [height] and the name [name]. This function
  * is for use in creating continent labels.
  *)
@@ -651,7 +651,7 @@ let add_label (pack:GPack.fixed) x y width height name =
   ()
 
 (*
- * [main ()] sets requisite mutable global values, prompts the user for 
+ * [main ()] sets requisite mutable global values, prompts the user for
  * appropriate init information, creates the controller, and displays the GUI
  * in its initial state.
  *)
