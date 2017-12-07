@@ -63,3 +63,7 @@ val get_log : state -> string
 
 (** [get_regions st] returns a list of region names in the map *)
 val get_regions : state -> string list
+
+(** [receiving_card st] returns true if the user is receiving a card, false
+otherwise. *)
+val receiving_card : state -> bool

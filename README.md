@@ -7,7 +7,7 @@ Authors: Avani Bhargava (ab2387), Haram Kim (hk592), Sam Ringel (sjr254), Rachel
 A fun, multi-player implementation of the popular board game Risk with a graphical user interface.
 
 ### Description:
-An Ocaml desktop app implementation of online/board game Risk supporting multiplayer  play on one computer. Our UI displays an interactive map, game details, controls, and log for the user.
+An OCaml desktop app implementation of online/board game Risk supporting multiplayer play on one computer. Our UI displays an interactive map, game details, controls, and log for the user.
 
 ### Key features:
 - Fully implemented logic for Risk
