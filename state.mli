@@ -75,6 +75,10 @@ val num_troops_deployed : player -> int
 to the next turn. *)
 val ready_next_turn : state -> bool
 
+(* [is_over s] returns [true] if the game has a winner, [false] otherwise
+ *)
+val is_over : state -> bool
+
 (**
  * Checks RIs of state, including that the number of troops on the board matches
  * the stored number for each player, that each continents-storing data

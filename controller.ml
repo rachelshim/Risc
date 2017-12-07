@@ -76,7 +76,10 @@ let update_gui (s : state) (st : state)
         update_current_player (player_id pl);
         write_log (player_id pl);
       end
-    else write_log (get_log st)
+    else write_log (get_log st);
+  (*check if game is over*)
+  if (State.is_over st) then set_game_over true
+  else ()
 
 let controller_update (st : state)
     (funcs:((string -> unit) * ((string * string * int) list -> unit) *

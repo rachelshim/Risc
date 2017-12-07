@@ -379,6 +379,11 @@ let ready_next_turn st =
   | CReinforcement _ -> false
   | _ -> (List.length (current_player st).cards) < 5
 
+let is_over st =
+  match st.current_move with
+  | CGame_Won _ -> true
+  | _ -> false
+
 let rep_ok st =
   (* Tabbing intentionally incorrect for increased readability *)
   let check_troops p =
@@ -553,8 +558,8 @@ let init_state n =
       players_w_continents in
   {
     players = players_w_continents;
-    current_move = CDeployment (50 - 5 * n - (42 / n));
-    (*current_move = CDeployment 2;*)
+    (*current_move = CDeployment (50 - 5 * n - (42 / n));*)
+    current_move = CDeployment 2;
     gets_card = false;
     turns = 0;
     continents = total_conts;
