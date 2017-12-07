@@ -353,10 +353,13 @@ let ctrl_of_reg st r =
   (region_of_name st r).controller
 
 let owner_of_cont st c =
-  print_endline ("continent: " ^ c);
-  match List.assoc c st.continents with
-  | None -> "Grey"
-  | Some owner -> owner
+  (*TODO: remove wrapper*)
+  try
+    match List.assoc c st.continents with
+    | None -> "Grey"
+    | Some owner -> owner
+  with
+  | e -> print_endline ("attempted to get continent: " ^ c); raise e
 
 let cont_of_reg st r =
   (region_of_name st r).continent
