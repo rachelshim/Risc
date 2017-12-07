@@ -746,7 +746,7 @@ let rec check_path p s1 s2 reg =
   else
     let r1_routes = (Regions.find s1 reg).routes in
     let rec search_helper visited = function
-      | [] -> (false, visited)
+      | [] -> let () = print_endline "not found in this layer" in (false, visited)
       | h::t -> if List.mem h visited then search_helper visited t
                 else begin
                   if check_target p h s2 reg then 

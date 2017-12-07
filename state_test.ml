@@ -5,8 +5,6 @@ open Action
 let two_player = init_state 2
 let testmap = test_map
 
-let () = rep_ok testmap
-
 
 let tests =
 [
