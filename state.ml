@@ -654,8 +654,8 @@ let rec update st a =
   match a, st.current_move with
   | ADeployment r, CDeployment n ->
     let p = List.hd st.players in
-    let region = Regions.find r st.regions in
-    if region.controller <> p.id
+    let reg = Regions.find r st.regions in
+    if reg.controller <> p.id
     then {st with log = "Invalid move: You don't control " ^ r ^ "." }
     else
       let p' = {p with total_troops = p.total_troops + 1} in
@@ -670,10 +670,10 @@ let rec update st a =
            else CDeployment (n - 1)
          else CDeployment n;
        regions =
-         Regions.add r {region with troops = region.troops + 1} st.regions;
+         Regions.add r {reg with troops = reg.troops + 1} st.regions;
        log = "Successfuly deployed to " ^ r ^ "."}
   | ADeployment _, _ ->
-    {st with log= "Invalid move: cannot deploy at this time."}
+    {st with log = "Invalid move: cannot deploy at this time."}
   | APlayCards (c1, c2, c3), CReinforcement n ->
     let p = List.hd st.players in
     (* making sure card trade-in is valid *)
@@ -805,7 +805,21 @@ let rec update st a =
          replace_player new_d}
   | AAttack _, _ ->
     {st with log = "Invalid move: cannot attack at this time"}
-  | AMovement ((r1, r2), n), CAttack -> failwith "TODO"
+  | AMovement ((s1, s2), n), CAttack -> 
+    let p = List.hd st.players in
+    let r1 = Regions.find s1 st.regions in
+    let r2 = Regions.find s2 st.regions in
+    if check_path p.id s1 s2 st.regions then
+      if r1.troops <= n then
+        { st with log = "Invalid move: you don't have enough troops"}
+      else
+        let r1' = { r1 with troops = r1.troops - n } in
+        let r2' = { r2 with troops = r2.troops + n } in
+        { st with regions = Regions.add s1 r1' st.regions |>
+                            Regions.add s2 r2' }
+    else
+      { st with log = "Invalid move: try different regions."}
+    (* add stuff for updating continent thing in player *)
   | AMovement _, _ -> 
     { st with log = "Invalid move: cannot move troops at this time" }
   | _ -> failwith "TODO"
