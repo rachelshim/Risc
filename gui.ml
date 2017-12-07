@@ -1,6 +1,7 @@
 open GMain
 open Gtk
 open Action
+open Printexc
 
 (*Selection modes*)
 type selection_mode =
@@ -9,6 +10,11 @@ type selection_mode =
   | Double
 
 (*Globals setup*)
+(*
+ * Note: Ivars don't work for many of these cases because the values contained
+ * must be mutated, and overhead caused by having half Ivar and half ref
+ * would have been significant.
+ *)
 let color_options = ["Red"; "Blue"; "Green"; "Yellow"; "Purple"; "Orange"]
 let actions_strings =   ["Deploy"; "Attack"; "Reinforce"; "Move";
                          "Trade Cards"; "End turn"]
@@ -110,7 +116,7 @@ let set_territory_buttons_sensitivity new_sens =
 let make_selection name =
   match !current_selection_mode with
   | No_selection -> false
-  | Single -> begin
+  | Single -> begin (*single selection case*)
     match !selection1 with
     | None -> selection1 := Some name;
             selection2 := None;
@@ -120,15 +126,15 @@ let make_selection name =
             true
     | Some _ -> false
   end
-  | Double -> begin
+  | Double -> begin (*cases for two-selection actions*)
     match !selection1 with
-    | None -> selection1 := Some name;
+    | None -> selection1 := Some name; (*first isn't selected yet*)
               selection2 := None;
               !selection1_label_global#set_text name;
               !selection2_label_global#set_text "No Selection";
               set_territory_sensitivity name false;
               true
-    | Some _ -> begin
+    | Some _ -> begin (*first is already selected*)
       match !selection2 with
       | None -> selection2 := Some name;
                 !selection2_label_global#set_text name;
@@ -451,43 +457,53 @@ let confirm_button_handler parent () =
       end
       (*Attack: 1*)
       else if index = 1 then begin
+        (*check that selections were valid and exist*)
         let src = !selection1 in
         let dest = !selection2 in
         match (src, dest) with
         | (Some sloc, Some dloc) -> begin
+          (*get troops in source*)
           let src_troops = 
             (Controller.get_troops_in_territory !controller sloc)- 1 in
+          (*don't bring up slider if we can't select troops*)
           if src_troops = 0 then begin
             write_log ("Unable to comply. "
               ^"Insufficient troops in source territory.");
             None
           end
+          (*otherwise show slider*)
           else begin
             let num = run_troop_dialog parent
               "Select the number of troops to attack with." (1, src_troops) in
-            match (src, dest, num) with
-            | (Some s, Some d, Some n) -> write_log ("Attacking " ^ d ^ " from "
-                                                    ^ s ^ " with " ^
+            (*create action if slider result was valid, abort otherwise*)
+            match num with
+            | Some n -> write_log ("Attacking " ^ dloc ^ " from "
+                                                    ^ sloc ^ " with " ^
                                                     (string_of_int n)
                                                     ^ " unit(s).");
-                                          Some (AAttack ((s, d), n))
+                                          Some (AAttack ((sloc, dloc), n))
             | _ -> None
           end
         end
+        (*if we have less than 2 territories selected, abort*)
         | _ ->  write_log "You must have selected two territories to attack.";
                 None
       end
       (*Reinforce: 2*)
       else if index = 2 then begin
+        (*Check that we have a selection; abort if not*)
         let loc = !selection1 in
           match loc with
           | None -> None
           | Some dep -> begin
+            (*get available troops for the player*)
             let aval_troops = (Controller.get_available_reinforcement
                                 !controller) in
+            (*get desired reinforcement level from user*)
             let num = run_troop_dialog parent
               "Select the number of troops to reinforce with."
               (1, aval_troops) in
+            (*proceed only if we get good data*)
             match num with
             | None -> None
             | Some x -> write_log ("Reinforcing " ^ dep ^ " with " ^
@@ -497,11 +513,14 @@ let confirm_button_handler parent () =
       end
       (*Move: 3*)
       else if index = 3 then begin
+        (*get selections and troop counts*)
         let src = !selection1 in
         let dest = !selection2 in
+        (*fetch troops from source region*)
         let src_troops = match src with
         | None -> 0
         | Some loc -> (Controller.get_troops_in_territory !controller loc)- 1 in
+        (*don't show dialog box if we have too few troops*)
         if src_troops = 0 then begin
           write_log"Unable to comply. Insufficient troops in source territory.";
           None
@@ -519,15 +538,20 @@ let confirm_button_handler parent () =
       end
       (*Trade Cards: 4*)
       else if index = 4 then begin
+        (*get user's card selections*)
         let cards = run_cards_dialog parent in
+        (*only enter logic if they selected cards*)
         match cards with
         | None -> None
         | Some (c_int1, c_int2, c_int3) -> begin
+          (*convert cards int ids to variants*)
           let card1 = card_of_int c_int1 in
           let card2 = card_of_int c_int2 in
           let card3 = card_of_int c_int3 in
+          (*guarantee that our ids were valid*)
           match (card1, card2, card3) with
           | (Some c1, Some c2, Some c3) ->
+                                        (*convert cards to strings for display*)
                                         let st1 = string_of_card c1 in
                                         let st2 = string_of_card c2 in
                                         let st3 = string_of_card c3 in
@@ -541,6 +565,7 @@ let confirm_button_handler parent () =
       else if index = 5 then begin
         Some ANextTurn
       end
+      (*other case is bad data - do nothing*)
       else begin
         None
       end)
@@ -553,7 +578,7 @@ let confirm_button_handler parent () =
                   ();
   with
   (*TODO: suppress*)
-  | e ->  write_log "An unexpected error has occurred."; raise e
+  | e ->  write_log "An unexpected error has occurred."; print_endline (e |> Printexc.exn_slot_id |> Printexc.get_callstack |> Printexc.raw_backtrace_to_string); print_endline (Printexc.to_string e); ()
   end;
   clear_selections();
   ()
@@ -570,26 +595,33 @@ let actions_cbox_handler (box: GEdit.combo_box GEdit.text_combo) () =
     if index >= 0 || index >= List.length actions_strings then begin
       let sel = List.nth actions_strings index in
       write_log ("Selected Action: " ^ sel);
+      (*Clear and set confirm state after an action is selected*)
       clear_selections ();
       !confirm_button_global#misc#set_sensitive true;
+      (*Cases for selection operations*)
+      (*Case for deployment*)
       if index = 0 then begin
         write_log ("Select a region by clicking its button.");
         set_selection_mode Single
       end
+      (*Case for attacking*)
       else if index = 1 then begin
         write_log ("Click on a source region to attack from, then " ^
                    "a destination region to attack. Then click \"Confirm\".");
         set_selection_mode Double
       end
+      (*Case for reinforcement*)
       else if index = 2 then begin
         write_log ("Click on a region to reinforce, then click \"Confirm\".");
         set_selection_mode Single
       end
+      (*Case for movement*)
       else if index = 3 then begin
         write_log ("Click on a source region to move troops from, then " ^
-                  "a destination region to move them to. Then click \"Confirm\"");
+                "a destination region to move them to. Then click \"Confirm\"");
         set_selection_mode Double
       end
+      (*Otherwise, we don't want to allow selection*)
       else begin
         set_selection_mode No_selection
       end;
@@ -669,11 +701,13 @@ let add_label (pack:GPack.fixed) x y width height name =
  * in its initial state.
  *)
 let main () =
+  (*Create window and connect close operation*)
   let window = GWindow.window ~width:1450 ~height:860
                               ~title:"Risc" ~resizable:false () in
   window_global := window;
   ignore(window#connect#destroy ~callback:Main.quit);
 
+  (*Create packings and labeling frames for widgets to be placed*)
   let top_pane_pack = GPack.paned ~width:1450 ~height:860
                               ~packing:window#add ~border_width:5
                               `HORIZONTAL () in
@@ -712,7 +746,7 @@ let main () =
   let actions_pack = GPack.vbox ~width:210 ~height:300 ~spacing:3
                   ~packing:actions_frame#add () in
 
-  (*Get number of players via dialog box*)
+  (*Get number of players via dialog box; repeat until we get an answer*)
   let got_player_num = ref false in
   let player_num = ref 0 in
   while not (!got_player_num) do
