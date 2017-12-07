@@ -79,3 +79,7 @@ The game window at the start of a 6-player game.
 
 The game window at the end of a 2-player game.
 ![Two player game over screenshot](screenshots/game_over.png?raw=true)
+
+
+The card selection dialog box.
+![Card selection screenshot](screenshots/card_sel.png?raw=true)
